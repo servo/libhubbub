@@ -1,0 +1,83 @@
+Hubbub parser architecture
+==========================
+
+Introduction
+------------
+
+  Hubbub is a flexible HTML parser. It offers two interfaces:
+  
+    * a SAX-style event interface
+    * a DOM-style tree-based interface
+
+Overview
+--------
+
+  Hubbub is comprised of four parts:
+  
+    * a charset handler
+    * an input stream veneer
+    * a tokeniser
+    * a tree builder
+
+  Charset handler
+  ---------------
+  
+    The charset handler converts the raw data input into a requested encoding.
+  
+  Input stream veneer
+  -------------------
+  
+    The input stream veneer provides an abstract stream-like interface over
+    the document buffer. This is used by the tokeniser. The document buffer
+    will be encoded in either UTf-8 or UTF-16 (this is client-selectable).
+  
+  Tokeniser
+  ---------
+  
+    The tokeniser divides the data held in the document buffer into chunks. 
+    It sends SAX-style events for each chunk. The tokeniser is agnostic to
+    the charset the document buffer is stored in.
+  
+  Tree builder
+  ------------
+  
+    The tree builder constructs a DOM tree from the SAX events emitted by the 
+    tokeniser. The tree builder is tied to the document buffer charset.
+
+Memory usage and ownership
+--------------------------
+
+  Memory usage within the library is well defined, as is ownership of allocated
+  memory.
+  
+  Raw input data provided by the library client is owned by the client. 
+  
+  The document buffer is allocated on the fly by the library. 
+  
+  The document buffer is created and resized by the charset handler. Its 
+  location is passed to the tree builder through a dedicated event. While 
+  parsing is occurring, the ownership of the document buffer lies with the 
+  charset handler. Upon parse completion, the tree builder may request 
+  ownership of the buffer. If it does not, the buffer will be freed on parser
+  destruction.
+
+  SAX events which refer to document segments contain direct references into 
+  the document buffer (i.e. no copying of data held in the document buffer 
+  occurs).
+
+  The tree builder will allocate memory for use as DOM nodes. References to 
+  strings in the document buffer will be direct and will operate a 
+  copy-on-write strategy. All strings (excepting those which comprise part of 
+  the document buffer) and nodes within the DOM are reference counted. Upon a 
+  reference count reaching 0, the item is freed.
+
+  The above strategy permits data copying to be kept to a minimum, hence 
+  minimising memory usage.
+
+Parse errors
+------------
+
+  Notification of parse errors is made through a dedicated event similar to 
+  that used for notification of movement of the document buffer. This event
+  contains the line/column offset of the error location, along with a message
+  detailing the error.

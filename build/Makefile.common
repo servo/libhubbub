@@ -1,0 +1,39 @@
+# Top-level Makefile fragment for Hubbub
+
+# Name of component
+export COMPONENT = libhubbub
+
+# Environment
+export EXPORT = $(CURDIR)/dist
+export TOP = $(CURDIR)
+
+.PHONY: release debug test clean setup export distclean
+
+# Rules
+release: setup
+	@$(MAKE) $(MAKEFLAGS) -C src release
+
+debug: setup
+	@$(MAKE) $(MAKEFLAGS) -C src debug
+
+test: debug
+	@$(MAKE) $(MAKEFLAGS) -C test test
+
+clean:
+	@$(MAKE) $(MAKEFLAGS) -C src clean
+	@$(MAKE) $(MAKEFLAGS) -C test clean
+
+setup:
+	@$(MAKE) $(MAKEFLAGS) -C src setup
+	@$(MAKE) $(MAKEFLAGS) -C test setup
+
+export: release
+	@$(MKDIR) $(MKDIRFLAGS) $(TOP)/dist/lib
+	@$(CP) $(CPFLAGS) -r include $(EXPORT)/
+	@$(MAKE) $(MAKEFLAGS) -C src export
+	@$(MAKE) $(MAKEFLAGS) -C test export
+
+distclean: clean
+	-@$(RM) $(RMFLAGS) -r $(TOP)/dist
+	@$(MAKE) $(MAKEFLAGS) -C src distclean
+	@$(MAKE) $(MAKEFLAGS) -C test distclean

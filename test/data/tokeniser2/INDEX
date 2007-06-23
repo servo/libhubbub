@@ -1,0 +1,7 @@
+# Index file for tokeniser tests
+#
+# Test			Description
+
+test1.test		html5lib tests (part 1)
+test2.test		html5lib tests (part 2)
+contentModelFlags.test	html5lib content model tests

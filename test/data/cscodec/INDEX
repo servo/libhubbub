@@ -1,0 +1,5 @@
+# Index file for charset codec tests
+#
+# Test			Description
+
+simple.dat		Simple tests, designed to validate testdriver

@@ -1,0 +1,26 @@
+JSON-C patches
+==============
+
+This directory contains a couple of patches to JSON-C 0.7.
+Upstream sources may be found at http://oss.metaparadigm.com/json-c/
+
+hex-chars.jmb1.p:
+
+  Fix handling of upper case hex digits.
+  The previous behaviour resulted in the likes of \uFFFD causing a parse
+  error.
+
+void-prototypes.jmb1.p:
+
+  Fix compiler warnings about function prototypes in header files when
+  compiling client code in standards mode with pedantic warnings switched
+  on.
+
+Apply them as follows:
+
+  $ cd json-c-0.7
+  $ patch -p 1 -i ../hex-chars.jmb1.p
+  $ patch -p 1 -i ../void-prototypes.jmb1.p
+
+They have been submitted upstream, so will probably disappear in due 
+course.
