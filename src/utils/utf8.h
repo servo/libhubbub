@@ -10,7 +10,7 @@
  */
 
 #ifndef hubbub_utils_utf8_h_
-#define hubbub_utils_utf8_h
+#define hubbub_utils_utf8_h_
 
 #include <inttypes.h>
 
