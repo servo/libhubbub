@@ -27,7 +27,7 @@
 inline hubbub_error hubbub_utf16_to_ucs4(const uint8_t *s, size_t len,
 		uint32_t *ucs4, size_t *clen)
 {
-	const uint16_t *ss = (const uint16_t *) s;
+	const uint16_t *ss = (const uint16_t *) (const void *) s;
 
 	if (s == NULL || ucs4 == NULL || clen == NULL)
 		return HUBBUB_BADPARM;
@@ -65,7 +65,7 @@ inline hubbub_error hubbub_utf16_to_ucs4(const uint8_t *s, size_t len,
 inline hubbub_error hubbub_utf16_from_ucs4(uint32_t ucs4, uint8_t *s,
 		size_t *len)
 {
-	uint16_t *ss = (uint16_t *) s;
+	uint16_t *ss = (uint16_t *) (void *) s;
 	uint32_t l = 0;
 
 	if (s == NULL || len == NULL)
@@ -97,8 +97,8 @@ inline hubbub_error hubbub_utf16_from_ucs4(uint32_t ucs4, uint8_t *s,
 inline hubbub_error hubbub_utf16_length(const uint8_t *s, size_t max,
 		size_t *len)
 {
-	const uint16_t *ss = (const uint16_t *) s;
-	const uint16_t *end = (const uint16_t *) (s + max);
+	const uint16_t *ss = (const uint16_t *) (const void *) s;
+	const uint16_t *end = (const uint16_t *) (const void *) (s + max);
 	int l = 0;
 
 	if (s == NULL || len == NULL)
@@ -128,7 +128,7 @@ inline hubbub_error hubbub_utf16_length(const uint8_t *s, size_t max,
 inline hubbub_error hubbub_utf16_char_byte_length(const uint8_t *s,
 		size_t *len)
 {
-	const uint16_t *ss = (const uint16_t *) s;
+	const uint16_t *ss = (const uint16_t *) (const void *) s;
 
 	if (s == NULL || len == NULL)
 		return HUBBUB_BADPARM;
@@ -153,7 +153,7 @@ inline hubbub_error hubbub_utf16_char_byte_length(const uint8_t *s,
 inline hubbub_error hubbub_utf16_prev(const uint8_t *s, uint32_t off,
 		uint32_t *prevoff)
 {
-	const uint16_t *ss = (const uint16_t *) s;
+	const uint16_t *ss = (const uint16_t *) (const void *) s;
 
 	if (s == NULL || prevoff == NULL)
 		return HUBBUB_BADPARM;
@@ -181,7 +181,7 @@ inline hubbub_error hubbub_utf16_prev(const uint8_t *s, uint32_t off,
 inline hubbub_error hubbub_utf16_next(const uint8_t *s, uint32_t len,
 		uint32_t off, uint32_t *nextoff)
 {
-	const uint16_t *ss = (const uint16_t *) s;
+	const uint16_t *ss = (const uint16_t *) (const void *) s;
 
 	if (s == NULL || off >= len || nextoff == NULL)
 		return HUBBUB_BADPARM;
@@ -209,7 +209,7 @@ inline hubbub_error hubbub_utf16_next(const uint8_t *s, uint32_t len,
 inline hubbub_error hubbub_utf16_next_paranoid(const uint8_t *s,
 		uint32_t len, uint32_t off, uint32_t *nextoff)
 {
-	const uint16_t *ss = (const uint16_t *) s;
+	const uint16_t *ss = (const uint16_t *) (const void *) s;
 
 	if (s == NULL || off >= len || nextoff == NULL)
 		return HUBBUB_BADPARM;

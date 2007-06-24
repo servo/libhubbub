@@ -376,7 +376,8 @@ uint32_t hubbub_utf16stream_cur_pos(hubbub_inputstream *stream,
  */
 void hubbub_utf16stream_lowercase(hubbub_inputstream *stream)
 {
-	uint16_t *buf = (uint16_t *) (stream->buffer + stream->cursor);
+	uint16_t *buf = (uint16_t *)
+			((void *) (stream->buffer + stream->cursor));
 
 	if (0x0041 <= buf[0] && buf[0] <= 0x005B)
 		buf[0] += 0x0020;
@@ -389,7 +390,8 @@ void hubbub_utf16stream_lowercase(hubbub_inputstream *stream)
  */
 void hubbub_utf16stream_uppercase(hubbub_inputstream *stream)
 {
-	uint16_t *buf = (uint16_t *) (stream->buffer + stream->cursor);
+	uint16_t *buf = (uint16_t *)
+			((void *) (stream->buffer + stream->cursor));
 
 	if (0x0061 <= buf[0] && buf[0] <= 0x007B)
 		buf[0] -= 0x0020;
@@ -472,8 +474,8 @@ int hubbub_utf16stream_compare_range_ci(hubbub_inputstream *stream,
 		return 0;
 
 	do {
-		c1 = *((uint16_t *) range1);
-		c2 = *((uint16_t *) range2);
+		c1 = *((uint16_t *) (void *) range1);
+		c2 = *((uint16_t *) (void *) range2);
 
 		if ((0x0041 <= c1 && c1 <= 0x005B))
 			c1 |= 0x0020;
@@ -530,7 +532,7 @@ int hubbub_utf16stream_compare_range_ascii(hubbub_inputstream *stream,
 		return 1; /* arbitrary */
 
 	do {
-		c1 = *((uint16_t *) range);
+		c1 = *((uint16_t *) (void *) range);
 		c2 = *data;
 
 		range += 2;
