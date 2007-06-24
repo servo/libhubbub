@@ -11,5 +11,6 @@ filter		Input stream filtering
 hubbub		Library initialisation/finalisation
 inputstream	Buffered input stream			html
 parser		Public parser API			html
+parser-utf16	Public parser API (utf-16 internally)	html
 tokeniser	HTML tokeniser				html
 tokeniser2	HTML tokeniser (again)			tokeniser2

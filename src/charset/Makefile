@@ -22,7 +22,7 @@
 CFLAGS += -I$(CURDIR)
 
 # Objects
-OBJS = aliases codec codec_iconv codec_utf8 detect
+OBJS = aliases codec codec_iconv codec_utf8 codec_utf16 detect
 
 .PHONY: clean debug distclean export release setup test
 

@@ -22,7 +22,7 @@
 CFLAGS += -I$(CURDIR)
 
 # Objects
-OBJS = filter inputstream utf8_stream
+OBJS = filter inputstream utf8_stream utf16_stream
 
 .PHONY: clean debug distclean export release setup test
 

@@ -13,9 +13,11 @@
 
 extern hubbub_charsethandler hubbub_iconv_codec_handler;
 extern hubbub_charsethandler hubbub_utf8_codec_handler;
+extern hubbub_charsethandler hubbub_utf16_codec_handler;
 
 static hubbub_charsethandler *handler_table[] = {
 	&hubbub_utf8_codec_handler,
+	&hubbub_utf16_codec_handler,
 	&hubbub_iconv_codec_handler,
 	NULL,
 };

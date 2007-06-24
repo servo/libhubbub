@@ -32,7 +32,7 @@ DEBUG =
 
 # Objects
 OBJS = aliases cscodec csdetect dict entities filter hubbub \
-	inputstream parser tokeniser tokeniser2
+	inputstream parser parser-utf16 tokeniser tokeniser2
 OBJS += regression/cscodec-segv regression/filter-segv
 
 .PHONY: clean debug export release setup test

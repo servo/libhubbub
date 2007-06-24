@@ -22,9 +22,11 @@ struct hubbub_inputstream_bm_handler {
 };
 
 extern hubbub_streamhandler utf8stream;
+extern hubbub_streamhandler utf16stream;
 
 static hubbub_streamhandler *handler_table[] = {
 	&utf8stream,
+	&utf16stream,
 	NULL
 };
 

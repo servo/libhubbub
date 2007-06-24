@@ -22,7 +22,7 @@
 CFLAGS += -I$(CURDIR)
 
 # Objects
-OBJS = dict errors utf8
+OBJS = dict errors utf8 utf16
 
 .PHONY: clean debug distclean export release setup test
 
