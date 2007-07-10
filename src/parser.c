@@ -108,6 +108,8 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 	case HUBBUB_PARSER_CONTENT_MODEL:
 		toktype = HUBBUB_TOKENISER_CONTENT_MODEL;
 		break;
+	default:
+		return HUBBUB_INVALID;
 	}
 
 	return hubbub_tokeniser_setopt(parser->tok, toktype,

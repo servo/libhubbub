@@ -226,7 +226,7 @@ void token_handler(const hubbub_token *token, void *pw)
 	};
 	size_t i;
 	context *ctx = (context *) pw;
-	struct json_object *obj;
+	struct json_object *obj = NULL;
 	struct array_list *items;
 
 	for (; ctx->output_index < array_list_length(ctx->output);
