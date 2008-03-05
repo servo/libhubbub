@@ -74,11 +74,11 @@ while (my $line = <TINDEX>) {
 			print $msg;
 
 			# Run testcase
-			$pid = open3("&<NULL", \*OUT, ">&NULL", 
+			$pid = open3("&<NULL", \*OUT, \*ERR, 
 					"./$test", "./data/Aliases", 
 					"./data/$data/$dtest");
 
-			my $last;
+			my $last = "FAIL";
 
 			# Marshal testcase output to log file
 			while (my $output = <OUT>) {
@@ -93,10 +93,15 @@ while (my $line = <TINDEX>) {
 
 			# Bail, noisily, on failure
 			if (substr($last, 0, 4) eq "FAIL") {
-				  print "\n\nFailure detected: " .
-				  		"consult log file\n\n\n";
+				# Write any stderr output to the log
+				while (my $errors = <ERR>) {
+					print LOG "    $errors";
+				}
 
-				  exit(1);
+				print "\n\nFailure detected: " .
+						"consult log file\n\n\n";
+
+				exit(1);
 			}
                 }
 
@@ -112,10 +117,10 @@ while (my $line = <TINDEX>) {
 		print $msg;
 
 		# Run testcase
-		$pid = open3("&<NULL", \*OUT, "&>NULL", 
+		$pid = open3("&<NULL", \*OUT, \*ERR, 
 				"./$test", "./data/Aliases");
 
-		my $last;
+		my $last = "FAIL";
 
 		# Marshal testcase output to log file
 		while (my $output = <OUT>) {
@@ -130,10 +135,15 @@ while (my $line = <TINDEX>) {
 
 		# Bail, noisily, on failure
 		if (substr($last, 0, 4) eq "FAIL") {
-			  print "\n\nFailure detected: " . 
-			  		"consult log file\n\n\n";
+			# Write any stderr output to the log
+			while (my $errors = <ERR>) {
+				print LOG "    $errors";
+			}
 
-			  exit(1);
+			print "\n\nFailure detected: " . 
+					"consult log file\n\n\n";
+
+			exit(1);
 		}
 	}
 
