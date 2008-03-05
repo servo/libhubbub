@@ -29,7 +29,7 @@ Overview
   
     The input stream veneer provides an abstract stream-like interface over
     the document buffer. This is used by the tokeniser. The document buffer
-    will be encoded in either UTf-8 or UTF-16 (this is client-selectable).
+    will be encoded in either UTF-8 or UTF-16 (this is client-selectable).
   
   Tokeniser
   ---------
