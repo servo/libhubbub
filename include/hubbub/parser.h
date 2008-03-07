@@ -2,7 +2,7 @@
  * This file is part of Hubbub.
  * Licensed under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
- * Copyright 2007 John-Mark Bell <jmb@netsurf-browser.org>
+ * Copyright 2007-8 John-Mark Bell <jmb@netsurf-browser.org>
  */
 
 #ifndef hubbub_parser_h_
@@ -12,6 +12,7 @@
 
 #include <hubbub/errors.h>
 #include <hubbub/functypes.h>
+#include <hubbub/tree.h>
 #include <hubbub/types.h>
 
 typedef struct hubbub_parser hubbub_parser;
@@ -24,6 +25,7 @@ typedef enum hubbub_parser_opttype {
 	HUBBUB_PARSER_BUFFER_HANDLER,
 	HUBBUB_PARSER_ERROR_HANDLER,
 	HUBBUB_PARSER_CONTENT_MODEL,
+	HUBBUB_PARSER_TREE_HANDLER,
 } hubbub_parser_opttype;
 
 /**
@@ -48,6 +50,8 @@ typedef union hubbub_parser_optparams {
 	struct {
 		hubbub_content_model model;
 	} content_model;
+
+	hubbub_tree_handler tree_handler;
 } hubbub_parser_optparams;
 
 /* Create a hubbub parser */

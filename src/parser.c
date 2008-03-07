@@ -2,13 +2,14 @@
  * This file is part of Hubbub.
  * Licensed under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
- * Copyright 2007 John-Mark Bell <jmb@netsurf-browser.org>
+ * Copyright 2007-8 John-Mark Bell <jmb@netsurf-browser.org>
  */
 
 #include <hubbub/parser.h>
 
 #include "input/inputstream.h"
 #include "tokeniser/tokeniser.h"
+#include "treebuilder/treebuilder.h"
 
 /**
  * Hubbub parser object
@@ -16,6 +17,7 @@
 struct hubbub_parser {
 	hubbub_inputstream *stream;	/**< Input stream instance */
 	hubbub_tokeniser *tok;		/**< Tokeniser instance */
+	hubbub_treebuilder *tb;		/**< Treebuilder instance */
 
 	hubbub_alloc alloc;		/**< Memory (de)allocation function */
 	void *pw;			/**< Client data */
@@ -55,6 +57,14 @@ hubbub_parser *hubbub_parser_create(const char *enc, const char *int_enc,
 		return NULL;
 	}
 
+	parser->tb = hubbub_treebuilder_create(parser->tok, alloc, pw);
+	if (parser->tb == NULL) {
+		hubbub_tokeniser_destroy(parser->tok);
+		hubbub_inputstream_destroy(parser->stream);
+		alloc(parser, 0, pw);
+		return NULL;
+	}
+
 	parser->alloc = alloc;
 	parser->pw = pw;
 
@@ -70,6 +80,8 @@ void hubbub_parser_destroy(hubbub_parser *parser)
 {
 	if (parser == NULL)
 		return;
+
+	hubbub_treebuilder_destroy(parser->tb);
 
 	hubbub_tokeniser_destroy(parser->tok);
 
@@ -90,30 +102,67 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 		hubbub_parser_opttype type,
 		hubbub_parser_optparams *params)
 {
-	hubbub_tokeniser_opttype toktype;
+	hubbub_error result = HUBBUB_OK;;
 
 	if (parser == NULL || params == NULL)
 		return HUBBUB_BADPARM;
 
 	switch (type) {
 	case HUBBUB_PARSER_TOKEN_HANDLER:
-		toktype = HUBBUB_TOKENISER_TOKEN_HANDLER;
+		if (parser->tb != NULL) {
+			/* Client is defining their own token handler, 
+			 * so we must destroy the default treebuilder */
+			hubbub_treebuilder_destroy(parser->tb);
+			parser->tb = NULL;
+		}
+		result = hubbub_tokeniser_setopt(parser->tok,
+				HUBBUB_TOKENISER_TOKEN_HANDLER,
+				(hubbub_tokeniser_optparams *) params);
 		break;
 	case HUBBUB_PARSER_BUFFER_HANDLER:
-		toktype = HUBBUB_TOKENISER_BUFFER_HANDLER;
+		/* The buffer handler cascades, so if there's a treebuilder, 
+		 * simply inform that. Otherwise, tell the tokeniser. */
+		if (parser->tb != NULL) {
+			result = hubbub_treebuilder_setopt(parser->tb,
+					HUBBUB_TREEBUILDER_BUFFER_HANDLER,
+					(hubbub_treebuilder_optparams *) params);
+		} else {
+			result = hubbub_tokeniser_setopt(parser->tok,
+					HUBBUB_TOKENISER_BUFFER_HANDLER,
+					(hubbub_tokeniser_optparams *) params);
+		}
 		break;
 	case HUBBUB_PARSER_ERROR_HANDLER:
-		toktype = HUBBUB_TOKENISER_BUFFER_HANDLER;
+		/* The error handler does not cascade, so tell both the
+		 * treebuilder (if extant) and the tokeniser. */
+		if (parser->tb != NULL) {
+			result = hubbub_treebuilder_setopt(parser->tb,
+					HUBBUB_TREEBUILDER_ERROR_HANDLER,
+					(hubbub_treebuilder_optparams *) params);
+		}
+		if (result == HUBBUB_OK) {
+			result = hubbub_tokeniser_setopt(parser->tok,
+					HUBBUB_TOKENISER_ERROR_HANDLER,
+					(hubbub_tokeniser_optparams *) params);
+		}
 		break;
 	case HUBBUB_PARSER_CONTENT_MODEL:
-		toktype = HUBBUB_TOKENISER_CONTENT_MODEL;
+		result = hubbub_tokeniser_setopt(parser->tok,
+				HUBBUB_TOKENISER_CONTENT_MODEL,
+				(hubbub_tokeniser_optparams *) params);
+		break;
+	case HUBBUB_PARSER_TREE_HANDLER:
+		if (parser->tb != NULL) {
+			result = hubbub_treebuilder_setopt(parser->tb,
+					HUBBUB_TREEBUILDER_TREE_HANDLER,
+					(hubbub_treebuilder_optparams *) params);
+		}
 		break;
 	default:
-		return HUBBUB_INVALID;
+		result = HUBBUB_INVALID;
 	}
 
-	return hubbub_tokeniser_setopt(parser->tok, toktype,
-			(hubbub_tokeniser_optparams *) params);
+	return result;
 }
 
 /**

@@ -37,6 +37,7 @@ release: $(addprefix Release/, $(addsuffix .o, $(OBJS)))
 	@${MAKE} -C charset release
 	@${MAKE} -C input release
 	@${MAKE} -C tokeniser release
+	@${MAKE} -C treebuilder release
 	@${MAKE} -C utils release
 	@${AR} ${ARFLAGS} $(RELEASE) Release/*
 
@@ -44,6 +45,7 @@ debug: $(addprefix Debug/, $(addsuffix .o, $(OBJS)))
 	@${MAKE} -C charset debug
 	@${MAKE} -C input debug
 	@${MAKE} -C tokeniser debug
+	@${MAKE} -C treebuilder debug
 	@${MAKE} -C utils debug
 	@${AR} ${ARFLAGS} $(DEBUG) Debug/*
 
@@ -51,6 +53,7 @@ clean:
 	@${MAKE} -C charset clean
 	@${MAKE} -C input clean
 	@${MAKE} -C tokeniser clean
+	@${MAKE} -C treebuilder clean
 	@${MAKE} -C utils clean
 	-@${RM} ${RMFLAGS} $(addprefix Release/, $(addsuffix .o, ${OBJS}))
 	-@${RM} ${RMFLAGS} $(addprefix Debug/, $(addsuffix .o, ${OBJS}))
