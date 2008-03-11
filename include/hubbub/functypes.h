@@ -49,8 +49,8 @@ typedef int (*hubbub_tree_create_doctype)(void *ctx, const hubbub_string *qname,
 /**
  * Type of tree element node creation function
  */
-typedef int (*hubbub_tree_create_element)(void *ctx, 
-		const hubbub_string *tag_name, void **result);
+typedef int (*hubbub_tree_create_element)(void *ctx, const hubbub_tag *tag, 
+		void **result);
 
 /**
  * Type of tree text node creation function
@@ -59,9 +59,14 @@ typedef int (*hubbub_tree_create_text)(void *ctx, const hubbub_string *data,
 		void **result);
 
 /**
- * Type of tree node destruction function
+ * Type of tree node reference function
  */
-typedef int (*hubbub_tree_free_node)(void *ctx, void *node);
+typedef int (*hubbub_tree_ref_node)(void *ctx, void *node);
+
+/**
+ * Type of tree node dereference function
+ */
+typedef int (*hubbub_tree_unref_node)(void *ctx, void *node);
 
 /**
  * Type of tree node appending function

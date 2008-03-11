@@ -158,6 +158,13 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 					(hubbub_treebuilder_optparams *) params);
 		}
 		break;
+	case HUBBUB_PARSER_DOCUMENT_NODE:
+		if (parser->tb != NULL) {
+			result = hubbub_treebuilder_setopt(parser->tb,
+					HUBBUB_TREEBUILDER_DOCUMENT_NODE,
+					(hubbub_treebuilder_optparams *) params);
+		}
+		break;
 	default:
 		result = HUBBUB_INVALID;
 	}

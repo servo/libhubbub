@@ -27,6 +27,7 @@ typedef enum hubbub_treebuilder_opttype {
 	HUBBUB_TREEBUILDER_BUFFER_HANDLER,
 	HUBBUB_TREEBUILDER_ERROR_HANDLER,
 	HUBBUB_TREEBUILDER_TREE_HANDLER,
+	HUBBUB_TREEBUILDER_DOCUMENT_NODE,
 } hubbub_treebuilder_opttype;
 
 /**
@@ -44,6 +45,8 @@ typedef union hubbub_treebuilder_optparams {
 	} error_handler;
 
 	hubbub_tree_handler tree_handler;
+
+	void *document_node;
 } hubbub_treebuilder_optparams;
 
 /* Create a hubbub treebuilder */

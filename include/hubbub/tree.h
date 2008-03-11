@@ -18,7 +18,8 @@ typedef struct hubbub_tree_handler {
 	hubbub_tree_create_doctype create_doctype;
 	hubbub_tree_create_element create_element;
 	hubbub_tree_create_text create_text;
-	hubbub_tree_free_node free_node;
+	hubbub_tree_ref_node ref_node;
+	hubbub_tree_unref_node unref_node;
 	hubbub_tree_append_child append_child;
 	hubbub_tree_insert_before insert_before;
 	hubbub_tree_remove_child remove_child;
