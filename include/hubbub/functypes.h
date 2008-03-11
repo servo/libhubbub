@@ -95,7 +95,7 @@ typedef int (*hubbub_tree_clone_node)(void *ctx, void *node, bool deep,
 /**
  * Type of tree quirks mode notification function
  */
-typedef int (*hubbub_tree_set_quirks_mode)(void *ctx, bool quirky);
+typedef int (*hubbub_tree_set_quirks_mode)(void *ctx, hubbub_quirks_mode mode);
 
 #endif
 

@@ -33,6 +33,15 @@ typedef enum hubbub_content_model {
 } hubbub_content_model;
 
 /**
+ * Quirks mode flag
+ */
+typedef enum hubbub_quirks_mode {
+	HUBBUB_QUIRKS_MODE_NONE,
+	HUBBUB_QUIRKS_MODE_LIMITED,
+	HUBBUB_QUIRKS_MODE_FULL
+} hubbub_quirks_mode;
+
+/**
  * Type of an emitted token
  */
 typedef enum hubbub_token_type {

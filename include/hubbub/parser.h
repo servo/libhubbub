@@ -52,7 +52,7 @@ typedef union hubbub_parser_optparams {
 		hubbub_content_model model;
 	} content_model;
 
-	hubbub_tree_handler tree_handler;
+	hubbub_tree_handler *tree_handler;
 
 	void *document_node;
 } hubbub_parser_optparams;

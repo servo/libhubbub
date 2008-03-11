@@ -44,7 +44,7 @@ typedef union hubbub_treebuilder_optparams {
 		void *pw;
 	} error_handler;
 
-	hubbub_tree_handler tree_handler;
+	hubbub_tree_handler *tree_handler;
 
 	void *document_node;
 } hubbub_treebuilder_optparams;
