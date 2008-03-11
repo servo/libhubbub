@@ -37,6 +37,8 @@ static int create_doctype(void *ctx, const hubbub_string *qname,
 		const hubbub_string *public_id, const hubbub_string *system_id,
 		void **result);
 static int create_element(void *ctx, const hubbub_tag *tag, void **result);
+static int create_element_verbatim(void *ctx, const uint8_t *name, size_t len,
+		void **result);
 static int create_text(void *ctx, const hubbub_string *data, void **result);
 static int ref_node(void *ctx, void *node);
 static int unref_node(void *ctx, void *node);
@@ -51,6 +53,7 @@ static hubbub_tree_handler tree_handler = {
 	create_comment,
 	create_doctype,
 	create_element,
+	create_element_verbatim,
 	create_text,
 	ref_node,
 	unref_node,
@@ -221,6 +224,22 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	printf("Creating (%u) [element '%.*s']\n", ++node_counter,
 			tag->name.len, pbuffer + tag->name.data_off);
+
+	GROW_REF
+	node_ref[node_counter] = 0;
+
+	ref_node(ctx, (void *) node_counter);
+
+	*result = (void *) node_counter;
+
+	return 0;
+}
+
+int create_element_verbatim(void *ctx, const uint8_t *name, size_t len, 
+		void **result)
+{
+	printf("Creating (%u) [element verbatim '%.*s']\n", 
+			++node_counter, len, name);
 
 	GROW_REF
 	node_ref[node_counter] = 0;

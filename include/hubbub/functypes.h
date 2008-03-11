@@ -53,6 +53,12 @@ typedef int (*hubbub_tree_create_element)(void *ctx, const hubbub_tag *tag,
 		void **result);
 
 /**
+ * Type of tree element node creation function (verbatim name)
+ */
+typedef int (*hubbub_tree_create_element_verbatim)(void *ctx, 
+		const uint8_t *name, size_t name_len, void **result);
+
+/**
  * Type of tree text node creation function
  */
 typedef int (*hubbub_tree_create_text)(void *ctx, const hubbub_string *data,

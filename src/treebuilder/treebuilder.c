@@ -119,6 +119,8 @@ static void hubbub_treebuilder_token_handler(const hubbub_token *token,
 
 static bool handle_initial(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+static bool handle_before_html(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 
 /** \todo Uncomment the static keyword here once these functions are actually used */
 
@@ -393,6 +395,8 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 			reprocess = handle_initial(treebuilder, token);
 			break;
 		case BEFORE_HTML:
+			reprocess = handle_before_html(treebuilder, token);
+			break;
 		case BEFORE_HEAD:
 		case IN_HEAD:
 		case IN_HEAD_NOSCRIPT:
@@ -538,6 +542,177 @@ bool handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 		treebuilder->context.mode = BEFORE_HTML;
 		reprocess = true;
 		break;
+	}
+
+	return reprocess;
+}
+
+/**
+ * Handle token in "before html" insertion mode
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to handle
+ * \return True to reprocess token, false otherwise
+ */
+bool handle_before_html(hubbub_treebuilder *treebuilder, 
+		const hubbub_token *token)
+{
+	bool reprocess = false;
+
+	switch (token->type) {
+	case HUBBUB_TOKEN_DOCTYPE:
+		/** \todo parse error */
+		break;
+	case HUBBUB_TOKEN_COMMENT:
+	{
+		int success;
+		void *comment, *appended;
+
+		success = treebuilder->tree_handler->create_comment(
+				treebuilder->tree_handler->ctx,
+				&token->data.comment, &comment);
+		if (success != 0) {
+			/** \todo errors */
+		}
+
+		/* Append to Document node */
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.document,
+				comment, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					comment);
+		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, comment);
+	}
+		break;
+	case HUBBUB_TOKEN_CHARACTER:
+	{
+		const uint8_t *data = treebuilder->input_buffer + 
+				token->data.character.data_off;
+		size_t len = token->data.character.len;
+		size_t c;
+
+		/** \todo UTF-16 */
+
+		for (c = 0; c < len; c++) {
+			if (data[c] != 0x09 && data[c] != 0x0A && 
+					data[c] != 0x0B && data[c] != 0x0C &&
+					data[c] != 0x20)
+				break;
+		}
+		/* Non-whitespace characters in token, so reprocess */
+		if (c != len) {
+			/* Update token data to strip leading whitespace */
+			((hubbub_token *) token)->data.character.data_off += 
+					len - c;
+			((hubbub_token *) token)->data.character.len -= c;
+
+			treebuilder->context.mode = BEFORE_HEAD;
+			reprocess = true;
+		}
+	}
+		break;
+	case HUBBUB_TOKEN_START_TAG:
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		treebuilder->context.mode = BEFORE_HEAD;
+
+		if (type == HTML) {
+			int success;
+			void *html, *appended;
+
+			success = treebuilder->tree_handler->create_element(
+					treebuilder->tree_handler->ctx,
+					&token->data.tag, &html);
+			if (success != 0) {
+				/** \todo errors */
+			}
+
+			success = treebuilder->tree_handler->append_child(
+					treebuilder->tree_handler->ctx,
+					treebuilder->context.document,
+					html, &appended);
+			if (success != 0) {
+				/** \todo errors */
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						html);
+			}
+
+			/* We can't use element_stack_push() here, as it 
+			 * assumes that current_node is pointing at the index 
+			 * before the one to insert at. For the first entry in 
+			 * the stack, this does not hold so we must insert
+			 * manually. */
+			treebuilder->context.element_stack[0].type = HTML;
+			treebuilder->context.element_stack[0].node = html;
+			treebuilder->context.current_node = 0;
+
+			/** \todo cache selection algorithm */
+
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					appended);
+		} else {
+			reprocess = true;
+		}
+	}
+		break;
+	case HUBBUB_TOKEN_END_TAG:
+	case HUBBUB_TOKEN_EOF:
+		treebuilder->context.mode = BEFORE_HEAD;
+		reprocess = true;
+		break;
+	}
+
+	if (reprocess == true) {
+		/* Need to manufacture html element */
+		int success;
+		void *html, *appended;
+
+		/** \todo UTF-16 */
+		success = treebuilder->tree_handler->create_element_verbatim(
+				treebuilder->tree_handler->ctx,
+				(const uint8_t *) "html", SLEN("html"), &html);
+		if (success != 0) {
+			/** \todo errors */
+		}
+
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.document,
+				html, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					html);
+		}
+
+		/* We can't use element_stack_push() here, as it 
+		 * assumes that current_node is pointing at the index 
+		 * before the one to insert at. For the first entry in 
+		 * the stack, this does not hold so we must insert
+		 * manually. */
+		treebuilder->context.element_stack[0].type = HTML;
+		treebuilder->context.element_stack[0].node = html;
+		treebuilder->context.current_node = 0;
+
+		/** \todo cache selection algorithm */
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				appended);
 	}
 
 	return reprocess;
