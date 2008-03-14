@@ -1984,7 +1984,7 @@ bool element_stack_push(hubbub_treebuilder *treebuilder,
 {
 	uint32_t slot = treebuilder->context.current_node + 1;
 
-	if (slot > treebuilder->context.stack_alloc) {
+	if (slot >= treebuilder->context.stack_alloc) {
 		element_context *temp = treebuilder->alloc(
 				treebuilder->context.element_stack, 
 				(treebuilder->context.stack_alloc + 
