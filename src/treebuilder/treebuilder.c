@@ -33,6 +33,8 @@ typedef enum
 	AFTER_FRAMESET,
 	AFTER_AFTER_BODY,
 	AFTER_AFTER_FRAMESET,
+	GENERIC_RCDATA,
+	SCRIPT_COLLECT_CHARACTERS,
 } insertion_mode;
 
 typedef enum
@@ -89,6 +91,13 @@ typedef struct hubbub_treebuilder_context
 					 * opened FORM element */
 
 	void *document;			/**< Pointer to the document node */
+
+	struct {
+		insertion_mode mode;	/**< Insertion mode to return to */
+		void *node;		/**< Node to attach Text child to */
+		element_type type;	/**< Type of node */
+		hubbub_string string;	/**< Text data */
+	} collect;			/**< Context for character collecting */
 } hubbub_treebuilder_context;
 
 struct hubbub_treebuilder
@@ -123,12 +132,20 @@ static bool handle_before_html(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static bool handle_before_head(hubbub_treebuilder *treebuilder, 
 		const hubbub_token *token);
+static bool handle_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
+static bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
+static bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 
 static bool process_characters_expect_whitespace(
-		hubbub_treebuilder *treebuilder, const hubbub_token *token);
+		hubbub_treebuilder *treebuilder, const hubbub_token *token,
+		bool insert_into_current_node);
 static void process_comment_append(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, void *parent);
-
+static void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token, bool rcdata);
 
 /** \todo Uncomment the static keyword here once these functions are actually used */
 
@@ -141,6 +158,8 @@ static void insert_element(hubbub_treebuilder *treebuilder,
 		const hubbub_tag *tag_name);
 static void insert_element_verbatim(hubbub_treebuilder *treebuilder,
 		const uint8_t *name, size_t len);
+static void insert_element_no_push(hubbub_treebuilder *treebuilder,
+		const hubbub_tag *tag_name);
 /*static*/ void close_implied_end_tags(hubbub_treebuilder *treebuilder, 
 		element_type except);
 /*static*/ void reset_insertion_mode(hubbub_treebuilder *treebuilder);
@@ -413,6 +432,8 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 			reprocess = handle_before_head(treebuilder, token);
 			break;
 		case IN_HEAD:
+			reprocess = handle_in_head(treebuilder, token);
+			break;
 		case IN_HEAD_NOSCRIPT:
 		case AFTER_HEAD:
 		case IN_BODY:
@@ -431,6 +452,13 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 		case AFTER_AFTER_FRAMESET:
 			reprocess = false;
 			break;
+		case GENERIC_RCDATA:
+			reprocess = handle_generic_rcdata(treebuilder, token);
+			break;
+		case SCRIPT_COLLECT_CHARACTERS:
+			reprocess = handle_script_collect_characters(
+					treebuilder, token);
+			break;
 		}
 	}
 }
@@ -448,7 +476,8 @@ bool handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (process_characters_expect_whitespace(treebuilder, token)) {
+		if (process_characters_expect_whitespace(treebuilder, token,
+				false) == true) {
 			/** \todo parse error */
 
 			treebuilder->tree_handler->set_quirks_mode(
@@ -538,7 +567,7 @@ bool handle_before_html(hubbub_treebuilder *treebuilder,
 		break;
 	case HUBBUB_TOKEN_CHARACTER:
 		reprocess = process_characters_expect_whitespace(treebuilder, 
-				token);
+				token, false);
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 	{
@@ -659,7 +688,7 @@ bool handle_before_head(hubbub_treebuilder *treebuilder,
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
 		reprocess = process_characters_expect_whitespace(treebuilder,
-				token);
+				token, false);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		process_comment_append(treebuilder, token, 
@@ -723,16 +752,351 @@ bool handle_before_head(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a character token in cases where we expect only whitespace
+ * Handle token in "in head" insertion mode
  *
  * \param treebuilder  The treebuilder instance
- * \param token        The character token
+ * \param token        The token to handle
+ * \return True to reprocess token, false otherwise
+ */
+bool handle_in_head(hubbub_treebuilder *treebuilder, 
+		const hubbub_token *token)
+{
+	bool reprocess = false;
+
+	switch (token->type) {
+	case HUBBUB_TOKEN_CHARACTER:
+		reprocess = process_characters_expect_whitespace(treebuilder,
+				token, true);
+		break;
+	case HUBBUB_TOKEN_COMMENT:
+		process_comment_append(treebuilder, token,
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node);
+		break;
+	case HUBBUB_TOKEN_DOCTYPE:
+		/** \todo parse error */
+		break;
+	case HUBBUB_TOKEN_START_TAG:
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		if (type == HTML) {
+			/** \todo Process as if "in body" */
+		} else if (type == BASE || type == LINK || type == META) {
+			insert_element_no_push(treebuilder, &token->data.tag);
+			
+			if (type == META) {
+				/** \todo charset extraction */
+			}
+		} else if (type == TITLE) {
+			parse_generic_rcdata(treebuilder, token, true);
+		} else if (type == NOSCRIPT) {
+			/** \todo determine if scripting is enabled */
+			if (false /*scripting_is_enabled*/) {
+				parse_generic_rcdata(treebuilder, token, false);
+			} else {
+				insert_element(treebuilder, &token->data.tag);
+				treebuilder->context.mode = IN_HEAD_NOSCRIPT;
+			}
+		} else if (type == STYLE) {
+			parse_generic_rcdata(treebuilder, token, false);
+		} else if (type == SCRIPT) {
+			int success;
+			void *script;
+			hubbub_tokeniser_optparams params;
+
+			success = treebuilder->tree_handler->create_element(
+					treebuilder->tree_handler->ctx,
+					&token->data.tag, &script);
+			if (success != 0) {
+				/** \todo errors */
+			}
+
+			/** \todo mark script as parser-inserted */
+
+			/* It would be nice to be able to re-use the generic
+			 * rcdata character collector here. Unfortunately, we
+			 * can't as we need to do special processing after the
+			 * script data has been collected, so we use an almost
+			 * identical insertion mode which does the right magic
+			 * at the end. */
+			params.content_model.model = HUBBUB_CONTENT_MODEL_CDATA;
+			hubbub_tokeniser_setopt(treebuilder->tokeniser,
+					HUBBUB_TOKENISER_CONTENT_MODEL, 
+					&params);
+
+			treebuilder->context.collect.mode =
+					treebuilder->context.mode;
+			treebuilder->context.collect.node = script;
+			treebuilder->context.collect.type = type;
+			treebuilder->context.collect.string.data_off = 0;
+			treebuilder->context.collect.string.len = 0;
+
+			treebuilder->context.mode = SCRIPT_COLLECT_CHARACTERS;
+		} else if (type == HEAD) {
+			/** \todo parse error */
+		}
+	}
+		break;
+	case HUBBUB_TOKEN_END_TAG:
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		if (type == HEAD) {
+			element_type otype;
+			void *node;
+
+			if (element_stack_pop(treebuilder, 
+					&otype, &node) == false) {
+				/** \todo errors */
+			}
+
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					node);
+
+			treebuilder->context.mode = AFTER_HEAD;
+		} else if (type == BODY || type == HTML || 
+				type == P || type == BR) {
+			reprocess = true;
+		}
+	}
+		break;
+	case HUBBUB_TOKEN_EOF:
+		reprocess = true;
+		break;
+	}
+
+	if (reprocess == true) {
+		element_type otype;
+		void *node;
+
+		if (element_stack_pop(treebuilder, 
+				&otype, &node) == false) {
+			/** \todo errors */
+		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
+
+		treebuilder->context.mode = AFTER_HEAD;
+	}
+
+	return reprocess;
+}
+
+/**
+ * Handle tokens in "generic rcdata" insertion mode
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ * \return True to reprocess the token, false otherwise
+ */
+bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	bool reprocess = false;
+	bool done = false;
+
+	switch (token->type) {
+	case HUBBUB_TOKEN_CHARACTER:
+		if (treebuilder->context.collect.string.len == 0) {
+			treebuilder->context.collect.string.data_off =
+					token->data.character.data_off;
+		}
+		treebuilder->context.collect.string.len += 
+				token->data.character.len;
+		break;
+	case HUBBUB_TOKEN_END_TAG:
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		if (type != treebuilder->context.collect.type) {
+			assert(0);
+		}
+
+		done = true;
+	}
+		break;
+	case HUBBUB_TOKEN_EOF:
+		/** \todo parse error */
+		done = reprocess = true;
+		break;
+	case HUBBUB_TOKEN_COMMENT:
+	case HUBBUB_TOKEN_DOCTYPE:
+	case HUBBUB_TOKEN_START_TAG:
+		/* Should never happen */
+		assert(0);
+		break;
+	}
+
+	if (done == true) {
+		int success;
+		void *text, *appended;
+
+		success = treebuilder->tree_handler->create_text(
+				treebuilder->tree_handler->ctx,
+				&treebuilder->context.collect.string,
+				&text);
+		if (success != 0) {
+			/** \todo errors */
+		}
+
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.collect.node,
+				text, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					text);
+		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, text);
+
+		/* Clean up context */
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.collect.node);
+		treebuilder->context.collect.node = NULL;
+
+		/* Return to previous insertion mode */
+		treebuilder->context.mode =
+				treebuilder->context.collect.mode;
+	}
+
+	return reprocess;
+}
+
+/**
+ * Handle tokens in "script collect characters" insertion mode
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ * \return True to reprocess the token, false otherwise
+ */
+bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	bool reprocess = false;
+	bool done = false;
+
+	switch (token->type) {
+	case HUBBUB_TOKEN_CHARACTER:
+		if (treebuilder->context.collect.string.len == 0) {
+			treebuilder->context.collect.string.data_off =
+					token->data.character.data_off;
+		}
+		treebuilder->context.collect.string.len += 
+				token->data.character.len;
+		break;
+	case HUBBUB_TOKEN_END_TAG:
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		if (type != treebuilder->context.collect.type) {
+			/** \todo parse error */
+			/** \todo Mark script as "already executed" */
+		}
+
+		done = true;
+	}
+		break;
+	case HUBBUB_TOKEN_EOF:
+	case HUBBUB_TOKEN_COMMENT:
+	case HUBBUB_TOKEN_DOCTYPE:
+	case HUBBUB_TOKEN_START_TAG:
+		/** \todo parse error */
+		/** \todo Mark script as "already executed" */
+		done = reprocess = true;
+		break;
+	}
+
+	if (done == true) {
+		int success;
+		void *text, *appended;
+
+		/** \todo fragment case -- skip this lot entirely */
+
+		success = treebuilder->tree_handler->create_text(
+				treebuilder->tree_handler->ctx,
+				&treebuilder->context.collect.string,
+				&text);
+		if (success != 0) {
+			/** \todo errors */
+		}
+
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.collect.node,
+				text, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					text);
+		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, text);
+
+		/** \todo insertion point manipulation */
+
+		/* Append script node to current node */
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node,
+				treebuilder->context.collect.node, &appended);
+		if (success != 0) {
+			/** \todo errors */
+		}
+
+		/** \todo restore insertion point */
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.collect.node);
+		treebuilder->context.collect.node = NULL;
+
+		/** \todo process any pending script */
+
+		/* Return to previous insertion mode */
+		treebuilder->context.mode =
+				treebuilder->context.collect.mode;
+	}
+
+	return reprocess;
+}
+
+
+/**
+ * Process a character token in cases where we expect only whitespace
+ *
+ * \param treebuilder               The treebuilder instance
+ * \param token                     The character token
+ * \param insert_into_current_node  Whether to insert whitespace into 
+ *                                  current node
  * \return True if the token needs reprocessing 
  *              (token data updated to skip any leading whitespace), 
  *         false if it contained only whitespace
  */
 bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token)
+		const hubbub_token *token, bool insert_into_current_node)
 {
 	const uint8_t *data = treebuilder->input_buffer + 
 			token->data.character.data_off;
@@ -749,6 +1113,44 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 	}
 	/* Non-whitespace characters in token, so reprocess */
 	if (c != len) {
+		if (c > 0 && insert_into_current_node == true) {
+			hubbub_string temp;
+			int success;
+			void *text, *appended;
+
+			temp.data_off = token->data.character.data_off;
+			temp.len = len - c;
+
+			/** \todo Append to pre-existing text child, iff
+			 * one exists and it's the last in the child list */
+
+			success = treebuilder->tree_handler->create_text(
+					treebuilder->tree_handler->ctx,
+					&temp, &text);
+			if (success != 0) {
+				/** \todo errors */
+			}
+
+			success = treebuilder->tree_handler->append_child(
+					treebuilder->tree_handler->ctx,
+					treebuilder->context.element_stack[
+					treebuilder->context.current_node].node,
+					text, &appended);
+			if (success != 0) {
+				/** \todo errors */
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						text);
+			}
+
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					appended);
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					text);
+		}
+
 		/* Update token data to strip leading whitespace */
 		((hubbub_token *) token)->data.character.data_off += 
 				len - c;
@@ -795,6 +1197,60 @@ void process_comment_append(hubbub_treebuilder *treebuilder,
 			treebuilder->tree_handler->ctx, appended);
 	treebuilder->tree_handler->unref_node(
 			treebuilder->tree_handler->ctx, comment);
+}
+
+/**
+ * Trigger parsing of generic (R)CDATA
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The current token
+ * \param rcdata       True for RCDATA, false for CDATA
+ */
+void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token, bool rcdata)
+{
+	int success;
+	void *node, *appended;
+	element_type type;
+	hubbub_tokeniser_optparams params;
+
+	type = element_type_from_name(treebuilder, &token->data.tag.name);
+
+	success = treebuilder->tree_handler->create_element(
+			treebuilder->tree_handler->ctx,
+			&token->data.tag, &node);
+	if (success != 0) {
+		/** \todo errors */
+	}
+
+	success = treebuilder->tree_handler->append_child(
+			treebuilder->tree_handler->ctx,
+			treebuilder->context.element_stack[
+			treebuilder->context.current_node].node,
+			node, &appended);
+	if (success != 0) {
+		/** \todo errors */
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
+	}
+
+	params.content_model.model = rcdata ? HUBBUB_CONTENT_MODEL_RCDATA 
+					    : HUBBUB_CONTENT_MODEL_CDATA;
+	hubbub_tokeniser_setopt(treebuilder->tokeniser,
+				HUBBUB_TOKENISER_CONTENT_MODEL, &params);
+
+	treebuilder->context.collect.mode = treebuilder->context.mode;
+	treebuilder->context.collect.type = type;
+	treebuilder->context.collect.node = node;
+	treebuilder->context.collect.string.data_off = 0;
+	treebuilder->context.collect.string.len = 0;
+
+	treebuilder->tree_handler->unref_node(
+			treebuilder->tree_handler->ctx,
+			appended);
+
+	treebuilder->context.mode = GENERIC_RCDATA;
 }
 
 /**
@@ -1030,6 +1486,39 @@ void insert_element_verbatim(hubbub_treebuilder *treebuilder,
 			node) == false) {
 		/** \todo errors */
 	}
+}
+
+/**
+ * Create element and insert it into the DOM, do not push it onto the stack
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param tag          The element to insert
+ */
+void insert_element_no_push(hubbub_treebuilder *treebuilder, 
+		const hubbub_tag *tag)
+{
+	int success;
+	void *node, *appended;
+
+	success = treebuilder->tree_handler->create_element(
+			treebuilder->tree_handler->ctx, tag, &node);
+	if (success != 0) {
+		/** \todo errors */
+	}
+
+	success = treebuilder->tree_handler->append_child(
+			treebuilder->tree_handler->ctx,
+			treebuilder->context.element_stack[
+				treebuilder->context.current_node].node,
+			node, &appended);
+	if (success != 0) {
+		/** \todo errors */
+	}
+
+	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
+			appended);
+	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
+			node);
 }
 
 /**
