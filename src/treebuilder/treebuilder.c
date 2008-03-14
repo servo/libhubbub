@@ -134,6 +134,10 @@ static bool handle_before_head(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static bool handle_in_head(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+static bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
+static bool handle_after_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 static bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
@@ -146,6 +150,10 @@ static void process_comment_append(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, void *parent);
 static void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool rcdata);
+static void process_base_link_meta_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token, element_type type);
+static void process_script_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 
 /** \todo Uncomment the static keyword here once these functions are actually used */
 
@@ -435,7 +443,11 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 			reprocess = handle_in_head(treebuilder, token);
 			break;
 		case IN_HEAD_NOSCRIPT:
+			reprocess = handle_in_head_noscript(treebuilder, token);
+			break;
 		case AFTER_HEAD:
+			reprocess = handle_after_head(treebuilder, token);
+			break;
 		case IN_BODY:
 		case IN_TABLE:
 		case IN_CAPTION:
@@ -784,11 +796,8 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 		if (type == HTML) {
 			/** \todo Process as if "in body" */
 		} else if (type == BASE || type == LINK || type == META) {
-			insert_element_no_push(treebuilder, &token->data.tag);
-			
-			if (type == META) {
-				/** \todo charset extraction */
-			}
+			process_base_link_meta_in_head(treebuilder, 
+					token, type);
 		} else if (type == TITLE) {
 			parse_generic_rcdata(treebuilder, token, true);
 		} else if (type == NOSCRIPT) {
@@ -802,38 +811,7 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 		} else if (type == STYLE) {
 			parse_generic_rcdata(treebuilder, token, false);
 		} else if (type == SCRIPT) {
-			int success;
-			void *script;
-			hubbub_tokeniser_optparams params;
-
-			success = treebuilder->tree_handler->create_element(
-					treebuilder->tree_handler->ctx,
-					&token->data.tag, &script);
-			if (success != 0) {
-				/** \todo errors */
-			}
-
-			/** \todo mark script as parser-inserted */
-
-			/* It would be nice to be able to re-use the generic
-			 * rcdata character collector here. Unfortunately, we
-			 * can't as we need to do special processing after the
-			 * script data has been collected, so we use an almost
-			 * identical insertion mode which does the right magic
-			 * at the end. */
-			params.content_model.model = HUBBUB_CONTENT_MODEL_CDATA;
-			hubbub_tokeniser_setopt(treebuilder->tokeniser,
-					HUBBUB_TOKENISER_CONTENT_MODEL, 
-					&params);
-
-			treebuilder->context.collect.mode =
-					treebuilder->context.mode;
-			treebuilder->context.collect.node = script;
-			treebuilder->context.collect.type = type;
-			treebuilder->context.collect.string.data_off = 0;
-			treebuilder->context.collect.string.len = 0;
-
-			treebuilder->context.mode = SCRIPT_COLLECT_CHARACTERS;
+			process_script_in_head(treebuilder, token);
 		} else if (type == HEAD) {
 			/** \todo parse error */
 		}
@@ -883,6 +861,194 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 				node);
 
 		treebuilder->context.mode = AFTER_HEAD;
+	}
+
+	return reprocess;
+}
+
+/**
+ * Handle tokens in "in head noscript" insertion mode
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ * \return True to reprocess the token, false otherwise
+ */
+bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	bool reprocess = false;
+
+	switch (token->type) {
+	case HUBBUB_TOKEN_CHARACTER:
+		reprocess = process_characters_expect_whitespace(treebuilder,
+				token, true);
+		break;
+	case HUBBUB_TOKEN_COMMENT:
+		process_comment_append(treebuilder, token,
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node);
+		break;
+	case HUBBUB_TOKEN_DOCTYPE:
+		/** \todo parse error */
+		break;
+	case HUBBUB_TOKEN_START_TAG:
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		if (type == HTML) {
+			/** \todo Process as "in body" */
+		} else if (type == LINK || type == META) {
+			process_base_link_meta_in_head(treebuilder, 
+					token, type);
+		} else if (type == STYLE) {
+			parse_generic_rcdata(treebuilder, token, false);
+		} else if (type == HEAD || type == NOSCRIPT) {
+			/** \todo parse error */
+		} else {
+			/** \todo parse error */
+			reprocess = true;
+		}
+	}
+		break;
+	case HUBBUB_TOKEN_END_TAG:
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		if (type == NOSCRIPT) {
+			element_type otype;
+			void *node;
+
+			if (element_stack_pop(treebuilder, 
+					&otype, &node) == false) {
+				/** \todo errors */
+			}
+
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					node);
+
+			treebuilder->context.mode = IN_HEAD;
+		} else if (type == P || type == BR) {
+			/** \todo parse error */
+			reprocess = true;
+		} else {
+			/** \todo parse error */
+		}
+	}
+		break;
+	case HUBBUB_TOKEN_EOF:
+		/** \todo parse error */
+		reprocess = true;
+		break;
+	}
+
+	if (reprocess == true) {
+		element_type otype;
+		void *node;
+
+		if (element_stack_pop(treebuilder, &otype, &node) == false) {
+			/** \todo errors */
+		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
+
+		treebuilder->context.mode = IN_HEAD;
+	}
+
+	return reprocess;
+}
+
+/**
+ * Handle tokens in "after head" insertion mode
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ * \return True to reprocess the token, false otherwise
+ */
+bool handle_after_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	bool reprocess = false;
+
+	switch (token->type) {
+	case HUBBUB_TOKEN_CHARACTER:
+		reprocess = process_characters_expect_whitespace(treebuilder,
+				token, true);
+		break;
+	case HUBBUB_TOKEN_COMMENT:
+		process_comment_append(treebuilder, token,
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node);
+		break;
+	case HUBBUB_TOKEN_DOCTYPE:
+		/** \todo parse error */
+		break;
+	case HUBBUB_TOKEN_START_TAG:
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		if (type == HTML) {
+			/** \todo Process as if "in body" */
+		} else if (type == BODY) {
+			insert_element(treebuilder, &token->data.tag);
+			treebuilder->context.mode = IN_BODY;
+		} else if (type == FRAMESET) {
+			insert_element(treebuilder, &token->data.tag);
+			treebuilder->context.mode = IN_FRAMESET;
+		} else if (type == BASE || type == LINK || type == META ||
+				type == SCRIPT || type == STYLE || 
+				type == TITLE) {
+			element_type otype;
+			void *node;
+
+			/** \todo parse error */
+
+			if (element_stack_push(treebuilder, 
+					HEAD, 
+					treebuilder->context.head_element) == 
+					false) {
+				/** \todo errors */
+			}
+
+			if (type == BASE || type == LINK || type == META) {
+				process_base_link_meta_in_head(treebuilder, 
+						token, type);
+			} else if (type == SCRIPT) {
+				process_script_in_head(treebuilder, token);
+			} else if (type == STYLE) {
+				parse_generic_rcdata(treebuilder, token, false);
+			} else if (type == TITLE) {
+				parse_generic_rcdata(treebuilder, token, true);
+			}
+
+			if (element_stack_pop(treebuilder, &otype, &node) == 
+					false) {
+				/** \todo errors */
+			}
+
+			/* No need to unref node as we never increased 
+			 * its reference count when pushing it on the stack */
+		} else {
+			reprocess = true;
+		}
+	}
+		break;
+	case HUBBUB_TOKEN_END_TAG:
+	case HUBBUB_TOKEN_EOF:
+		reprocess = true;
+		break;
+	}
+
+	if (reprocess == true) {
+		insert_element_verbatim(treebuilder, 
+				(const uint8_t *) "body", SLEN("body"));
+
+		treebuilder->context.mode = IN_BODY;
 	}
 
 	return reprocess;
@@ -1251,6 +1417,65 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 			appended);
 
 	treebuilder->context.mode = GENERIC_RCDATA;
+}
+
+/**
+ * Process a <base>, <link>, or <meta> start tag as if in "in head"
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ * \param type         The type of element (BASE, LINK, or META)
+ */
+void process_base_link_meta_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token, element_type type)
+{
+	insert_element_no_push(treebuilder, &token->data.tag);
+
+	if (type == META) {
+		/** \todo charset extraction */
+	}
+}
+
+/**
+ * Process a <script> start tag as if in "in head"
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ */
+void process_script_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	int success;
+	void *script;
+	hubbub_tokeniser_optparams params;
+
+	success = treebuilder->tree_handler->create_element(
+			treebuilder->tree_handler->ctx,
+			&token->data.tag, &script);
+	if (success != 0) {
+		/** \todo errors */
+	}
+
+	/** \todo mark script as parser-inserted */
+
+	/* It would be nice to be able to re-use the generic
+	 * rcdata character collector here. Unfortunately, we
+	 * can't as we need to do special processing after the
+	 * script data has been collected, so we use an almost
+	 * identical insertion mode which does the right magic
+	 * at the end. */
+	params.content_model.model = HUBBUB_CONTENT_MODEL_CDATA;
+	hubbub_tokeniser_setopt(treebuilder->tokeniser,
+			HUBBUB_TOKENISER_CONTENT_MODEL, 
+			&params);
+
+	treebuilder->context.collect.mode = treebuilder->context.mode;
+	treebuilder->context.collect.node = script;
+	treebuilder->context.collect.type = SCRIPT;
+	treebuilder->context.collect.string.data_off = 0;
+	treebuilder->context.collect.string.len = 0;
+
+	treebuilder->context.mode = SCRIPT_COLLECT_CHARACTERS;
 }
 
 /**
