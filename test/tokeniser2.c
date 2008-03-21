@@ -280,7 +280,7 @@ void token_handler(const hubbub_token *token, void *pw)
 		bool expvalid = json_object_get_boolean((struct json_object *)
 				array_list_get_idx(items, 2));
 		char *gotname = (char *) (ctx->pbuffer +
-				token->data.doctype.name.data_off);
+				token->data.doctype.name.data.off);
 
 		printf("'%.*s' (%svalid)\n",
 				(int) token->data.doctype.name.len,
@@ -302,7 +302,7 @@ void token_handler(const hubbub_token *token, void *pw)
 			(struct json_object *)
 					array_list_get_idx(items, 2))->head;
 		char *tagname = (char *) (ctx->pbuffer +
-				token->data.tag.name.data_off);
+				token->data.tag.name.data.off);
 
 		printf("'%.*s' %s\n",
 				(int) token->data.tag.name.len,
@@ -318,11 +318,11 @@ void token_handler(const hubbub_token *token, void *pw)
 			char *expval = json_object_get_string(
 					(struct json_object *) expattrs->v);
 			char *gotname = (char *) (ctx->pbuffer +
-				token->data.tag.attributes[i].name.data_off);
+				token->data.tag.attributes[i].name.data.off);
 			size_t namelen =
 				token->data.tag.attributes[i].name.len;
 			char *gotval = (char *) (ctx->pbuffer +
-				token->data.tag.attributes[i].value.data_off);
+				token->data.tag.attributes[i].value.data.off);
 			size_t vallen =
 				token->data.tag.attributes[i].value.len;
 
@@ -347,7 +347,7 @@ void token_handler(const hubbub_token *token, void *pw)
 		char *expname = json_object_get_string((struct json_object *)
 				array_list_get_idx(items, 1));
 		char *tagname = (char *) (ctx->pbuffer +
-				token->data.tag.name.data_off);
+				token->data.tag.name.data.off);
 
 		printf("'%.*s' %s\n",
 				(int) token->data.tag.name.len,
@@ -364,7 +364,7 @@ void token_handler(const hubbub_token *token, void *pw)
 		char *expstr = json_object_get_string((struct json_object *)
 				array_list_get_idx(items, 1));
 		char *gotstr = (char *) (ctx->pbuffer +
-				token->data.comment.data_off);
+				token->data.comment.data.off);
 
 		printf("'%.*s'\n", (int) token->data.comment.len, gotstr);
 
@@ -377,7 +377,7 @@ void token_handler(const hubbub_token *token, void *pw)
 		char *expstr = json_object_get_string((struct json_object *)
 				array_list_get_idx(items, 1));
 		char *gotstr = (char *) (ctx->pbuffer +
-				token->data.character.data_off);
+				token->data.character.data.off);
 		size_t len = min(token->data.character.len,
 				strlen(expstr + ctx->char_off));
 
@@ -392,7 +392,7 @@ void token_handler(const hubbub_token *token, void *pw)
 			hubbub_token t;
 
 			t.type = HUBBUB_TOKEN_CHARACTER;
-			t.data.character.data_off += len;
+			t.data.character.data.off += len;
 			t.data.character.len -= len;
 
 			ctx->char_off = 0;

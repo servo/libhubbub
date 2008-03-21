@@ -241,6 +241,8 @@ hubbub_treebuilder *hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 	assert(HTML != 0);
 	tb->context.element_stack[0].type = 0;
 
+	tb->context.collect.string.type = HUBBUB_STRING_OFF;
+
 	tb->buffer_handler = NULL;
 	tb->buffer_pw = NULL;
 
@@ -1070,8 +1072,8 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
 		if (treebuilder->context.collect.string.len == 0) {
-			treebuilder->context.collect.string.data_off =
-					token->data.character.data_off;
+			treebuilder->context.collect.string.data.off =
+					token->data.character.data.off;
 		}
 		treebuilder->context.collect.string.len += 
 				token->data.character.len;
@@ -1158,8 +1160,8 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
 		if (treebuilder->context.collect.string.len == 0) {
-			treebuilder->context.collect.string.data_off =
-					token->data.character.data_off;
+			treebuilder->context.collect.string.data.off =
+					token->data.character.data.off;
 		}
 		treebuilder->context.collect.string.len += 
 				token->data.character.len;
@@ -1265,7 +1267,7 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool insert_into_current_node)
 {
 	const uint8_t *data = treebuilder->input_buffer + 
-			token->data.character.data_off;
+			token->data.character.data.off;
 	size_t len = token->data.character.len;
 	size_t c;
 
@@ -1284,7 +1286,7 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 			int success;
 			void *text, *appended;
 
-			temp.data_off = token->data.character.data_off;
+			temp.data.off = token->data.character.data.off;
 			temp.len = len - c;
 
 			/** \todo Append to pre-existing text child, iff
@@ -1318,7 +1320,7 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 		}
 
 		/* Update token data to strip leading whitespace */
-		((hubbub_token *) token)->data.character.data_off += 
+		((hubbub_token *) token)->data.character.data.off += 
 				len - c;
 		((hubbub_token *) token)->data.character.len -= c;
 
@@ -1409,7 +1411,7 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 	treebuilder->context.collect.mode = treebuilder->context.mode;
 	treebuilder->context.collect.type = type;
 	treebuilder->context.collect.node = node;
-	treebuilder->context.collect.string.data_off = 0;
+	treebuilder->context.collect.string.data.off = 0;
 	treebuilder->context.collect.string.len = 0;
 
 	treebuilder->tree_handler->unref_node(
@@ -1472,7 +1474,7 @@ void process_script_in_head(hubbub_treebuilder *treebuilder,
 	treebuilder->context.collect.mode = treebuilder->context.mode;
 	treebuilder->context.collect.node = script;
 	treebuilder->context.collect.type = SCRIPT;
-	treebuilder->context.collect.string.data_off = 0;
+	treebuilder->context.collect.string.data.off = 0;
 	treebuilder->context.collect.string.len = 0;
 
 	treebuilder->context.mode = SCRIPT_COLLECT_CHARACTERS;
@@ -1846,7 +1848,7 @@ void reset_insertion_mode(hubbub_treebuilder *treebuilder)
 element_type element_type_from_name(hubbub_treebuilder *treebuilder,
 		const hubbub_string *tag_name)
 {
-	const uint8_t *name = treebuilder->input_buffer + tag_name->data_off;
+	const uint8_t *name = treebuilder->input_buffer + tag_name->data.off;
 
 	return element_type_from_verbatim_name(name, tag_name->len);
 }

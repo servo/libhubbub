@@ -129,44 +129,44 @@ void token_handler(const hubbub_token *token, void *pw)
 	case HUBBUB_TOKEN_DOCTYPE:
 		printf("'%.*s' (%svalid)\n",
 				(int) token->data.doctype.name.len,
-				pbuffer + token->data.doctype.name.data_off,
+				pbuffer + token->data.doctype.name.data.off,
 				token->data.doctype.correct ? "" : "in");
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 		printf("'%.*s' %s\n",
 				(int) token->data.tag.name.len,
-				pbuffer + token->data.tag.name.data_off,
+				pbuffer + token->data.tag.name.data.off,
 				(token->data.tag.n_attributes > 0) ?
 						"attributes:" : "");
 		for (i = 0; i < token->data.tag.n_attributes; i++) {
 			printf("\t'%.*s' = '%.*s'\n",
 					(int) token->data.tag.attributes[i].name.len,
-					pbuffer + token->data.tag.attributes[i].name.data_off,
+					pbuffer + token->data.tag.attributes[i].name.data.off,
 					(int) token->data.tag.attributes[i].value.len,
-					pbuffer + token->data.tag.attributes[i].value.data_off);
+					pbuffer + token->data.tag.attributes[i].value.data.off);
 		}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
 		printf("'%.*s' %s\n",
 				(int) token->data.tag.name.len,
-				pbuffer + token->data.tag.name.data_off,
+				pbuffer + token->data.tag.name.data.off,
 				(token->data.tag.n_attributes > 0) ?
 						"attributes:" : "");
 		for (i = 0; i < token->data.tag.n_attributes; i++) {
 			printf("\t'%.*s' = '%.*s'\n",
 					(int) token->data.tag.attributes[i].name.len,
-					pbuffer + token->data.tag.attributes[i].name.data_off,
+					pbuffer + token->data.tag.attributes[i].name.data.off,
 					(int) token->data.tag.attributes[i].value.len,
-					pbuffer + token->data.tag.attributes[i].value.data_off);
+					pbuffer + token->data.tag.attributes[i].value.data.off);
 		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		printf("'%.*s'\n", (int) token->data.comment.len,
-				pbuffer + token->data.comment.data_off);
+				pbuffer + token->data.comment.data.off);
 		break;
 	case HUBBUB_TOKEN_CHARACTER:
 		printf("'%.*s'\n", (int) token->data.character.len,
-				pbuffer + token->data.character.data_off);
+				pbuffer + token->data.character.data.off);
 		break;
 	case HUBBUB_TOKEN_EOF:
 		printf("\n");

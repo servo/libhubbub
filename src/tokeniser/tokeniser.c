@@ -236,6 +236,12 @@ hubbub_tokeniser *hubbub_tokeniser_create(hubbub_inputstream *input,
 	}
 
 	memset(&tok->context, 0, sizeof(hubbub_tokeniser_context));
+	tok->context.current_tag.name.type = HUBBUB_STRING_OFF;
+	tok->context.current_comment.type = HUBBUB_STRING_OFF;
+	tok->context.current_doctype.name.type = HUBBUB_STRING_OFF;
+	tok->context.current_chars.type = HUBBUB_STRING_OFF;
+	tok->context.close_tag_match.tag.type = HUBBUB_STRING_OFF;
+	tok->context.match_entity.str.type = HUBBUB_STRING_OFF;
 
 	return tok;
 }
@@ -434,7 +440,7 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 	uint32_t c;
 
 	/* Clear current characters */
-	tokeniser->context.current_chars.data_off = 0;
+	tokeniser->context.current_chars.data.off = 0;
 	tokeniser->context.current_chars.len = 0;
 
 	while ((c = hubbub_inputstream_peek(tokeniser->input)) !=
@@ -462,7 +468,7 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 			}
 
 			/* Buffer '<' */
-			tokeniser->context.current_chars.data_off =
+			tokeniser->context.current_chars.data.off =
 				hubbub_inputstream_cur_pos(tokeniser->input,
 					&tokeniser->context.current_chars.len);
 
@@ -478,7 +484,7 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 					&len);
 
 			if (tokeniser->context.current_chars.len == 0) {
-				tokeniser->context.current_chars.data_off =
+				tokeniser->context.current_chars.data.off =
 						pos;
 			}
 			tokeniser->context.current_chars.len++;
@@ -495,7 +501,7 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
-		tokeniser->context.current_chars.data_off = 0;
+		tokeniser->context.current_chars.data.off = 0;
 		tokeniser->context.current_chars.len = 0;
 	}
 
@@ -524,7 +530,8 @@ bool hubbub_tokeniser_handle_entity_data(hubbub_tokeniser *tokeniser)
 
 		/* Emit character */
 		token.type = HUBBUB_TOKEN_CHARACTER;
-		token.data.character.data_off =
+		token.data.character.type = HUBBUB_STRING_OFF;
+		token.data.character.data.off =
 				hubbub_inputstream_cur_pos(tokeniser->input,
 						&token.data.character.len);
 
@@ -601,7 +608,7 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 			tokeniser->context.current_tag_type =
 					HUBBUB_TOKEN_START_TAG;
 
-			ctag->name.data_off =
+			ctag->name.data.off =
 				hubbub_inputstream_cur_pos(tokeniser->input,
 				&ctag->name.len);
 			ctag->n_attributes = 0;
@@ -613,7 +620,7 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 			tokeniser->context.current_tag_type =
 					HUBBUB_TOKEN_START_TAG;
 
-			ctag->name.data_off =
+			ctag->name.data.off =
 				hubbub_inputstream_cur_pos(tokeniser->input,
 				&ctag->name.len);
 			ctag->n_attributes = 0;
@@ -644,7 +651,7 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 					&len);
 			tokeniser->context.current_chars.len += len;
 
-			tokeniser->context.current_comment.data_off = pos;
+			tokeniser->context.current_comment.data.off = pos;
 			tokeniser->context.current_comment.len = len;
 			tokeniser->state =
 				HUBBUB_TOKENISER_STATE_BOGUS_COMMENT;
@@ -688,7 +695,7 @@ bool hubbub_tokeniser_handle_close_tag_open(hubbub_tokeniser *tokeniser)
 
 			tokeniser->context.current_tag_type =
 					HUBBUB_TOKEN_END_TAG;
-			ctag->name.data_off = pos;
+			ctag->name.data.off = pos;
 			ctag->name.len = len;
 			ctag->n_attributes = 0;
 
@@ -700,7 +707,7 @@ bool hubbub_tokeniser_handle_close_tag_open(hubbub_tokeniser *tokeniser)
 
 			tokeniser->context.current_tag_type =
 					HUBBUB_TOKEN_END_TAG;
-			ctag->name.data_off = pos;
+			ctag->name.data.off = pos;
 			ctag->name.len = len;
 			ctag->n_attributes = 0;
 
@@ -724,7 +731,7 @@ bool hubbub_tokeniser_handle_close_tag_open(hubbub_tokeniser *tokeniser)
 			pos = hubbub_inputstream_cur_pos(tokeniser->input,
 					&len);
 
-			tokeniser->context.current_comment.data_off = pos;
+			tokeniser->context.current_comment.data.off = pos;
 			tokeniser->context.current_comment.len = len;
 
 			tokeniser->state =
@@ -756,7 +763,7 @@ bool hubbub_tokeniser_handle_close_tag_match(hubbub_tokeniser *tokeniser)
 		off = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (ctx->close_tag_match.tag.len == 0) {
-			ctx->close_tag_match.tag.data_off = off;
+			ctx->close_tag_match.tag.data.off = off;
 			ctx->close_tag_match.tag.len = len;
 		} else {
 			ctx->close_tag_match.tag.len += len;
@@ -768,8 +775,8 @@ bool hubbub_tokeniser_handle_close_tag_match(hubbub_tokeniser *tokeniser)
 			(ctx->close_tag_match.tag.len == ctag->name.len &&
 				hubbub_inputstream_compare_range_ci(
 					tokeniser->input,
-					ctag->name.data_off,
-					ctx->close_tag_match.tag.data_off,
+					ctag->name.data.off,
+					ctx->close_tag_match.tag.data.off,
 					ctag->name.len) != 0)) {
 			hubbub_token token;
 
@@ -792,8 +799,8 @@ bool hubbub_tokeniser_handle_close_tag_match(hubbub_tokeniser *tokeniser)
 		} else if (ctx->close_tag_match.tag.len == ctag->name.len &&
 				hubbub_inputstream_compare_range_ci(
 					tokeniser->input,
-					ctag->name.data_off,
-					ctx->close_tag_match.tag.data_off,
+					ctag->name.data.off,
+					ctx->close_tag_match.tag.data.off,
 					ctag->name.len) == 0) {
 			/* Matched => stop searching */
 			break;
@@ -968,9 +975,11 @@ bool hubbub_tokeniser_handle_before_attribute_name(
 
 		ctag->attributes = attr;
 
-		attr[ctag->n_attributes].name.data_off = pos;
+		attr[ctag->n_attributes].name.type = HUBBUB_STRING_OFF;
+		attr[ctag->n_attributes].name.data.off = pos;
 		attr[ctag->n_attributes].name.len = len;
-		attr[ctag->n_attributes].value.data_off = 0;
+		attr[ctag->n_attributes].value.type = HUBBUB_STRING_OFF;
+		attr[ctag->n_attributes].value.data.off = 0;
 		attr[ctag->n_attributes].value.len = 0;
 
 		ctag->n_attributes++;
@@ -1008,9 +1017,11 @@ bool hubbub_tokeniser_handle_before_attribute_name(
 
 		ctag->attributes = attr;
 
-		attr[ctag->n_attributes].name.data_off = pos;
+		attr[ctag->n_attributes].name.type = HUBBUB_STRING_OFF;
+		attr[ctag->n_attributes].name.data.off = pos;
 		attr[ctag->n_attributes].name.len = len;
-		attr[ctag->n_attributes].value.data_off = 0;
+		attr[ctag->n_attributes].value.type = HUBBUB_STRING_OFF;
+		attr[ctag->n_attributes].value.data.off = 0;
 		attr[ctag->n_attributes].value.len = 0;
 
 		ctag->n_attributes++;
@@ -1135,9 +1146,11 @@ bool hubbub_tokeniser_handle_after_attribute_name(
 
 		ctag->attributes = attr;
 
-		attr[ctag->n_attributes].name.data_off = pos;
+		attr[ctag->n_attributes].name.type = HUBBUB_STRING_OFF;
+		attr[ctag->n_attributes].name.data.off = pos;
 		attr[ctag->n_attributes].name.len = len;
-		attr[ctag->n_attributes].value.data_off = 0;
+		attr[ctag->n_attributes].value.type = HUBBUB_STRING_OFF;
+		attr[ctag->n_attributes].value.data.off = 0;
 		attr[ctag->n_attributes].value.len = 0;
 
 		ctag->n_attributes++;
@@ -1179,9 +1192,11 @@ bool hubbub_tokeniser_handle_after_attribute_name(
 
 		ctag->attributes = attr;
 
-		attr[ctag->n_attributes].name.data_off = pos;
+		attr[ctag->n_attributes].name.type = HUBBUB_STRING_OFF;
+		attr[ctag->n_attributes].name.data.off = pos;
 		attr[ctag->n_attributes].name.len = len;
-		attr[ctag->n_attributes].value.data_off = 0;
+		attr[ctag->n_attributes].value.type = HUBBUB_STRING_OFF;
+		attr[ctag->n_attributes].value.data.off = 0;
 		attr[ctag->n_attributes].value.len = 0;
 
 		ctag->n_attributes++;
@@ -1240,7 +1255,7 @@ bool hubbub_tokeniser_handle_before_attribute_value(
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		ctag->attributes[ctag->n_attributes - 1].value.data_off = pos;
+		ctag->attributes[ctag->n_attributes - 1].value.data.off = pos;
 		ctag->attributes[ctag->n_attributes - 1].value.len = len;
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_ATTRIBUTE_VALUE_UQ;
@@ -1285,7 +1300,7 @@ bool hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeniser)
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (ctag->attributes[ctag->n_attributes - 1].value.len == 0) {
-			ctag->attributes[ctag->n_attributes - 1].value.data_off =
+			ctag->attributes[ctag->n_attributes - 1].value.data.off =
 					pos;
 		}
 
@@ -1331,7 +1346,7 @@ bool hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeniser)
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (ctag->attributes[ctag->n_attributes - 1].value.len == 0) {
-			ctag->attributes[ctag->n_attributes - 1].value.data_off =
+			ctag->attributes[ctag->n_attributes - 1].value.data.off =
 					pos;
 		}
 
@@ -1388,7 +1403,7 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (ctag->attributes[ctag->n_attributes - 1].value.len == 0) {
-			ctag->attributes[ctag->n_attributes - 1].value.data_off =
+			ctag->attributes[ctag->n_attributes - 1].value.data.off =
 					pos;
 		}
 
@@ -1421,7 +1436,7 @@ bool hubbub_tokeniser_handle_entity_in_attribute_value(
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (ctag->attributes[ctag->n_attributes - 1].value.len == 0) {
-			ctag->attributes[ctag->n_attributes - 1].value.data_off =
+			ctag->attributes[ctag->n_attributes - 1].value.data.off =
 					pos;
 		}
 
@@ -1458,7 +1473,7 @@ bool hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (tokeniser->context.current_comment.len == 0)
-			tokeniser->context.current_comment.data_off = pos;
+			tokeniser->context.current_comment.data.off = pos;
 		tokeniser->context.current_comment.len += len;
 
 		hubbub_inputstream_advance(tokeniser->input);
@@ -1495,7 +1510,7 @@ bool hubbub_tokeniser_handle_markup_declaration_open(
 		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_DOCTYPE;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
-		tokeniser->context.current_comment.data_off = 0;
+		tokeniser->context.current_comment.data.off = 0;
 		tokeniser->context.current_comment.len = 0;
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_COMMENT;
@@ -1511,7 +1526,7 @@ bool hubbub_tokeniser_handle_comment_start(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	tokeniser->context.current_comment.data_off = 0;
+	tokeniser->context.current_comment.data.off = 0;
 	tokeniser->context.current_comment.len = 0;
 
 
@@ -1553,7 +1568,7 @@ bool hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (tokeniser->context.current_comment.len == 0)
-			tokeniser->context.current_comment.data_off = pos;
+			tokeniser->context.current_comment.data.off = pos;
 		tokeniser->context.current_comment.len += len;
 
 		hubbub_inputstream_advance(tokeniser->input);
@@ -1589,11 +1604,11 @@ bool hubbub_tokeniser_handle_comment_dash(hubbub_tokeniser *tokeniser)
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (tokeniser->context.current_comment.len == 0) {
-			tokeniser->context.current_comment.data_off = pos;
+			tokeniser->context.current_comment.data.off = pos;
 		} else {
 			/* Need to do this to get length of '-' */
 			len += pos -
-				tokeniser->context.current_comment.data_off;
+				tokeniser->context.current_comment.data.off;
 		}
 
 		tokeniser->context.current_comment.len = len;
@@ -1631,12 +1646,12 @@ bool hubbub_tokeniser_handle_comment_end(hubbub_tokeniser *tokeniser)
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (tokeniser->context.current_comment.len == 0) {
-			tokeniser->context.current_comment.data_off = pos;
+			tokeniser->context.current_comment.data.off = pos;
 			tokeniser->context.current_comment.len = len;
 		} else {
 			/* Need to do this to get length of '-' */
 			len = pos -
-				tokeniser->context.current_comment.data_off;
+				tokeniser->context.current_comment.data.off;
 		}
 
 		tokeniser->context.current_comment.len = len;
@@ -1660,11 +1675,11 @@ bool hubbub_tokeniser_handle_comment_end(hubbub_tokeniser *tokeniser)
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		if (tokeniser->context.current_comment.len == 0) {
-			tokeniser->context.current_comment.data_off = pos;
+			tokeniser->context.current_comment.data.off = pos;
 		} else {
 			/* Need to do this to get length of '--' */
 			len += pos -
-				tokeniser->context.current_comment.data_off;
+				tokeniser->context.current_comment.data.off;
 		}
 
 		tokeniser->context.current_comment.len = len;
@@ -1724,7 +1739,7 @@ bool hubbub_tokeniser_handle_match_doctype(hubbub_tokeniser *tokeniser)
 		case 1: hubbub_inputstream_push_back(tokeniser->input, 'D');
 		}
 
-		tokeniser->context.current_comment.data_off = 0;
+		tokeniser->context.current_comment.data.off = 0;
 		tokeniser->context.current_comment.len = 0;
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_COMMENT;
@@ -1768,7 +1783,7 @@ bool hubbub_tokeniser_handle_before_doctype_name(
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		cdoc->name.data_off = pos;
+		cdoc->name.data.off = pos;
 		cdoc->name.len = len;
 		cdoc->correct = false;
 
@@ -1802,7 +1817,7 @@ bool hubbub_tokeniser_handle_before_doctype_name(
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		cdoc->name.data_off = pos;
+		cdoc->name.data.off = pos;
 		cdoc->name.len = len;
 		cdoc->correct = false;
 
@@ -1834,7 +1849,7 @@ bool hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 		token.data.doctype.correct =
 			(hubbub_inputstream_compare_range_ascii(
 				tokeniser->input,
-				token.data.doctype.name.data_off,
+				token.data.doctype.name.data.off,
 				token.data.doctype.name.len,
 				"HTML", SLEN("HTML")) == 0);
 
@@ -1896,7 +1911,7 @@ bool hubbub_tokeniser_handle_after_doctype_name(hubbub_tokeniser *tokeniser)
 		token.data.doctype.correct =
 			(hubbub_inputstream_compare_range_ascii(
 				tokeniser->input,
-				token.data.doctype.name.data_off,
+				token.data.doctype.name.data.off,
 				token.data.doctype.name.len,
 				"HTML", SLEN("HTML")) == 0);
 
@@ -1969,7 +1984,7 @@ bool hubbub_tokeniser_consume_entity(hubbub_tokeniser *tokeniser)
 	if (tokeniser->context.match_entity.done_setup == false) {
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		tokeniser->context.match_entity.str.data_off = pos;
+		tokeniser->context.match_entity.str.data.off = pos;
 		tokeniser->context.match_entity.str.len = len;
 		tokeniser->context.match_entity.base = 0;
 		tokeniser->context.match_entity.codepoint = 0;
@@ -2095,7 +2110,7 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 
 		/* And replace the matched range with it */
 		error = hubbub_inputstream_replace_range(tokeniser->input,
-				ctx->match_entity.str.data_off,
+				ctx->match_entity.str.data.off,
 				ctx->match_entity.str.len,
 				ctx->match_entity.codepoint);
 		if (error != HUBBUB_OK) {
@@ -2177,7 +2192,7 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 	/* Now, replace range, if we found a named entity */
 	if (ctx->match_entity.codepoint != 0) {
 		error = hubbub_inputstream_replace_range(tokeniser->input,
-				ctx->match_entity.str.data_off,
+				ctx->match_entity.str.data.off,
 				ctx->match_entity.prev_len,
 				ctx->match_entity.codepoint);
 		if (error != HUBBUB_OK) {
@@ -2249,8 +2264,8 @@ void hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 							attrs[j].name.len ||
 					hubbub_inputstream_compare_range_cs(
 						tokeniser->input,
-						attrs[i].name.data_off,
-						attrs[j].name.data_off,
+						attrs[i].name.data.off,
+						attrs[j].name.data.off,
 						attrs[i].name.len) != 0) {
 					/* Attributes don't match */
 					continue;

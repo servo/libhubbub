@@ -11,7 +11,7 @@
 
 #include "testutils.h"
 
-#define NODE_REF_CHUNK 1024
+#define NODE_REF_CHUNK 8192
 static uint16_t *node_ref;
 static uintptr_t node_ref_alloc;
 static uintptr_t node_counter;
@@ -70,6 +70,22 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	UNUSED(pw);
 
 	return realloc(ptr, len);
+}
+
+static const uint8_t *ptr_from_hubbub_string(const hubbub_string *string)
+{
+	const uint8_t *data;
+
+	switch (string->type) {
+	case HUBBUB_STRING_OFF:
+		data = pbuffer + string->data.off;
+		break;
+	case HUBBUB_STRING_PTR:
+		data = string->data.ptr;
+		break;
+	}
+
+	return data;
 }
 
 int main(int argc, char **argv)
@@ -188,7 +204,7 @@ void buffer_handler(const uint8_t *buffer, size_t len, void *pw)
 int create_comment(void *ctx, const hubbub_string *data, void **result)
 {
 	printf("Creating (%u) [comment '%.*s']\n", ++node_counter,
-			data->len, pbuffer + data->data_off);
+			data->len, ptr_from_hubbub_string(data));
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -208,7 +224,7 @@ int create_doctype(void *ctx, const hubbub_string *qname,
 	UNUSED(system_id);
 
 	printf("Creating (%u) [doctype '%.*s']\n", ++node_counter,
-			qname->len, pbuffer + qname->data_off);
+			qname->len, ptr_from_hubbub_string(qname));
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -223,7 +239,7 @@ int create_doctype(void *ctx, const hubbub_string *qname,
 int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	printf("Creating (%u) [element '%.*s']\n", ++node_counter,
-			tag->name.len, pbuffer + tag->name.data_off);
+			tag->name.len, ptr_from_hubbub_string(&tag->name));
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -254,7 +270,7 @@ int create_element_verbatim(void *ctx, const uint8_t *name, size_t len,
 int create_text(void *ctx, const hubbub_string *data, void **result)
 {
 	printf("Creating (%u) [text '%.*s']\n", ++node_counter,
-			data->len, pbuffer + data->data_off);
+			data->len, ptr_from_hubbub_string(data));
 
 	GROW_REF
 	node_ref[node_counter] = 0;
