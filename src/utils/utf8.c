@@ -47,7 +47,7 @@ static const uint8_t numContinuations[256] = {
  * \param clen  Pointer to location to receive byte length of UTF-8 sequence
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf8_to_ucs4(const uint8_t *s, size_t len,
+hubbub_error hubbub_utf8_to_ucs4(const uint8_t *s, size_t len,
 		uint32_t *ucs4, size_t *clen)
 {
 	if (s == NULL || ucs4 == NULL || clen == NULL)
@@ -146,7 +146,7 @@ inline hubbub_error hubbub_utf8_to_ucs4(const uint8_t *s, size_t len,
  * \param len   Pointer to location to receive length of multibyte sequence
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf8_from_ucs4(uint32_t ucs4, uint8_t *s,
+hubbub_error hubbub_utf8_from_ucs4(uint32_t ucs4, uint8_t *s,
 		size_t *len)
 {
 	uint32_t l = 0;
@@ -203,7 +203,7 @@ inline hubbub_error hubbub_utf8_from_ucs4(uint32_t ucs4, uint8_t *s,
  * \param len  Pointer to location to receive length of string
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf8_length(const uint8_t *s, size_t max,
+hubbub_error hubbub_utf8_length(const uint8_t *s, size_t max,
 		size_t *len)
 {
 	const uint8_t *end = s + max;
@@ -242,7 +242,7 @@ inline hubbub_error hubbub_utf8_length(const uint8_t *s, size_t max,
  * \param len  Pointer to location to receive length
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf8_char_byte_length(const uint8_t *s,
+hubbub_error hubbub_utf8_char_byte_length(const uint8_t *s,
 		size_t *len)
 {
 	if (s == NULL || len == NULL)
@@ -262,7 +262,7 @@ inline hubbub_error hubbub_utf8_char_byte_length(const uint8_t *s,
  *                 previous legal character
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf8_prev(const uint8_t *s, uint32_t off,
+hubbub_error hubbub_utf8_prev(const uint8_t *s, uint32_t off,
 		uint32_t *prevoff)
 {
 	if (s == NULL || prevoff == NULL)
@@ -286,7 +286,7 @@ inline hubbub_error hubbub_utf8_prev(const uint8_t *s, uint32_t off,
  *                 next legal character
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf8_next(const uint8_t *s, uint32_t len,
+hubbub_error hubbub_utf8_next(const uint8_t *s, uint32_t len,
 		uint32_t off, uint32_t *nextoff)
 {
 	if (s == NULL || off >= len || nextoff == NULL)
@@ -314,7 +314,7 @@ inline hubbub_error hubbub_utf8_next(const uint8_t *s, uint32_t len,
  *                 next legal character
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf8_next_paranoid(const uint8_t *s, uint32_t len,
+hubbub_error hubbub_utf8_next_paranoid(const uint8_t *s, uint32_t len,
 		uint32_t off, uint32_t *nextoff)
 {
 	bool valid;

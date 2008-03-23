@@ -24,7 +24,7 @@
  * \param clen  Pointer to location to receive byte length of UTF-16 sequence
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf16_to_ucs4(const uint8_t *s, size_t len,
+hubbub_error hubbub_utf16_to_ucs4(const uint8_t *s, size_t len,
 		uint32_t *ucs4, size_t *clen)
 {
 	const uint16_t *ss = (const uint16_t *) (const void *) s;
@@ -62,7 +62,7 @@ inline hubbub_error hubbub_utf16_to_ucs4(const uint8_t *s, size_t len,
  * \param len   Pointer to location to receive length of multibyte sequence
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf16_from_ucs4(uint32_t ucs4, uint8_t *s,
+hubbub_error hubbub_utf16_from_ucs4(uint32_t ucs4, uint8_t *s,
 		size_t *len)
 {
 	uint16_t *ss = (uint16_t *) (void *) s;
@@ -94,7 +94,7 @@ inline hubbub_error hubbub_utf16_from_ucs4(uint32_t ucs4, uint8_t *s,
  * \param len  Pointer to location to receive length of string
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf16_length(const uint8_t *s, size_t max,
+hubbub_error hubbub_utf16_length(const uint8_t *s, size_t max,
 		size_t *len)
 {
 	const uint16_t *ss = (const uint16_t *) (const void *) s;
@@ -125,7 +125,7 @@ inline hubbub_error hubbub_utf16_length(const uint8_t *s, size_t max,
  * \param len  Pointer to location to receive length
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf16_char_byte_length(const uint8_t *s,
+hubbub_error hubbub_utf16_char_byte_length(const uint8_t *s,
 		size_t *len)
 {
 	const uint16_t *ss = (const uint16_t *) (const void *) s;
@@ -150,7 +150,7 @@ inline hubbub_error hubbub_utf16_char_byte_length(const uint8_t *s,
  *                 previous legal character
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf16_prev(const uint8_t *s, uint32_t off,
+hubbub_error hubbub_utf16_prev(const uint8_t *s, uint32_t off,
 		uint32_t *prevoff)
 {
 	const uint16_t *ss = (const uint16_t *) (const void *) s;
@@ -178,7 +178,7 @@ inline hubbub_error hubbub_utf16_prev(const uint8_t *s, uint32_t off,
  *                 next legal character
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf16_next(const uint8_t *s, uint32_t len,
+hubbub_error hubbub_utf16_next(const uint8_t *s, uint32_t len,
 		uint32_t off, uint32_t *nextoff)
 {
 	const uint16_t *ss = (const uint16_t *) (const void *) s;
@@ -206,7 +206,7 @@ inline hubbub_error hubbub_utf16_next(const uint8_t *s, uint32_t len,
  *                 next legal character
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-inline hubbub_error hubbub_utf16_next_paranoid(const uint8_t *s,
+hubbub_error hubbub_utf16_next_paranoid(const uint8_t *s,
 		uint32_t len, uint32_t off, uint32_t *nextoff)
 {
 	const uint16_t *ss = (const uint16_t *) (const void *) s;
