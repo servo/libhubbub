@@ -1,53 +1,46 @@
-# Makefile for libhubbub
+# Child makefile fragment for libhubbub
 #
-# Toolchain is exported by top-level makefile
+# Toolchain is provided by top-level makefile
 #
-# Top-level makefile also exports the following variables:
+# Variables provided by top-level makefile
 #
-# COMPONENT  Name of component
-# EXPORT     Absolute path of export directory
-# TOP        Absolute path of source tree root
+# COMPONENT		The name of the component
+# EXPORT		The location of the export directory
+# TOP			The location of the source tree root
+# RELEASEDIR		The place to put release objects
+# DEBUGDIR		The place to put debug objects
 #
-# The top-level makefile requires the following targets to exist:
+# do_include		Canned command sequence to include a child makefile
 #
-# clean      Clean source tree
-# debug      Create a debug binary
-# distclean  Fully clean source tree, back to pristine condition
-# export     Export distributable components to ${EXPORT}
-# release    Create a release binary
-# setup      Perform any setup required prior to compilation
-# test       Execute any test cases
+# Variables provided by parent makefile:
+#
+# DIR			The name of the directory we're in, relative to $(TOP)
+#
+# Variables we can manipulate:
+#
+# ITEMS_CLEAN		The list of items to remove for "make clean"
+# ITEMS_DISTCLEAN	The list of items to remove for "make distclean"
+# TARGET_TESTS		The list of target names to run for "make test"
+#
+# SOURCES		The list of sources to build for $(COMPONENT)
+#
+# Plus anything from the toolchain
 
-# Manipulate include paths
-CFLAGS += -I$(CURDIR)
+# Push parent directory onto the directory stack
+sp             := $(sp).x
+dirstack_$(sp) := $(d)
+d              := $(DIR)
 
-# Objects
-OBJS = entities tokeniser
+# Sources
+SRCS_$(d) := entities.c tokeniser.c
 
-.PHONY: clean debug distclean export release setup test
+# Append to sources for component
+SOURCES += $(addprefix $(d), $(SRCS_$(d)))
 
-# Targets
-release: $(addprefix ../Release/, $(addsuffix .o, $(OBJS)))
+# Now include any children we may have
+MAKE_INCLUDES := $(wildcard $(d)*/Makefile)
+$(eval $(foreach INC, $(MAKE_INCLUDES), $(call do_include,$(INC))))
 
-debug: $(addprefix ../Debug/, $(addsuffix .o, $(OBJS)))
-
-clean:
-	-@${RM} ${RMFLAGS} $(addprefix ../Release/, $(addsuffix .o, ${OBJS}))
-	-@${RM} ${RMFLAGS} $(addprefix ../Debug/, $(addsuffix .o, ${OBJS}))  
-
-distclean:
-
-setup:
-
-export:
-
-test:
-
-# Pattern rules
-../Release/%.o: %.c
-	@${ECHO} ${ECHOFLAGS} "==> $<"
-	@${CC} -c ${CFLAGS} -DNDEBUG -o $@ $<
-
-../Debug/%.o: %.c
-	@${ECHO} ${ECHOFLAGS} "==> $<"
-	@${CC} -c -g ${CFLAGS} -o $@ $<
+# Finally, pop off the directory stack
+d  := $(dirstack_$(sp))
+sp := $(basename $(sp))

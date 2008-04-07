@@ -2,7 +2,7 @@
 #
 # Testcase runner for libhubbub
 #
-# Usage: testrunner <executable extension>
+# Usage: testrunner <directory> [<executable extension>]
 #
 # Operates upon INDEX files described in the README.
 # Locates and executes testcases, feeding data files to programs 
@@ -16,16 +16,24 @@ use strict;
 use File::Spec;
 use IPC::Open3;
 
+if (@ARGV < 1) {
+	print "Usage: testrunner.pl <directory> [<exeext>]\n";
+	exit;
+}
+
+# Get directory
+my $directory = shift @ARGV;
+
 # Get EXE extension (if any)
 my $exeext = "";
 $exeext = shift @ARGV if (@ARGV > 0);
 
 # Open log file and /dev/null
-open(LOG, ">log") or die "Failed opening test log";
+open(LOG, ">$directory/log") or die "Failed opening test log";
 open(NULL, "+<", File::Spec->devnull) or die "Failed opening /dev/null";
 
 # Open testcase index
-open(TINDEX, "<INDEX") or die "Failed opening test INDEX";
+open(TINDEX, "<$directory/INDEX") or die "Failed opening test INDEX";
 
 # Parse testcase index, looking for testcases
 while (my $line = <TINDEX>) {
@@ -50,8 +58,8 @@ while (my $line = <TINDEX>) {
 		# Testcase has external data files
 
 		# Open datafile index
-		open(DINDEX, "<./data/$data/INDEX") or 
-				die "Failed opening ./data/$data/INDEX";
+		open(DINDEX, "<$directory/data/$data/INDEX") or 
+			die "Failed opening $directory/data/$data/INDEX";
 
 		# Parse datafile index, looking for datafiles
 		while (my $dentry = <DINDEX>) {
@@ -64,8 +72,9 @@ while (my $line = <TINDEX>) {
 			$dtest =~ s/^\s+|\s+$//g;
 			$ddesc =~ s/^\s+|\s+$//g;
 
-			print LOG "Running ./$test ./data/Aliases " .
-					"./data/$data/$dtest\n";
+			print LOG "Running $directory/$test " .
+					"$directory/data/Aliases " .
+					"$directory/data/$data/$dtest\n";
 
 			# Make message fit on an 80 column terminal
 			my $msg = "    ==> $test [$data/$dtest]";
@@ -75,8 +84,9 @@ while (my $line = <TINDEX>) {
 
 			# Run testcase
 			$pid = open3("&<NULL", \*OUT, \*ERR, 
-					"./$test", "./data/Aliases", 
-					"./data/$data/$dtest");
+					"$directory/$test", 
+					"$directory/data/Aliases", 
+					"$directory/data/$data/$dtest");
 
 			my $last = "FAIL";
 
@@ -108,7 +118,7 @@ while (my $line = <TINDEX>) {
 		close(DINDEX);
 	} else {
 		# Testcase has no external data files
-		print LOG "Running ./$test ./data/Aliases\n";
+		print LOG "Running $directory/$test $directory/data/Aliases\n";
 
 		# Make message fit on an 80 column terminal
 		my $msg = "    ==> $test";
@@ -118,7 +128,7 @@ while (my $line = <TINDEX>) {
 
 		# Run testcase
 		$pid = open3("&<NULL", \*OUT, \*ERR, 
-				"./$test", "./data/Aliases");
+				"$directory/$test", "$directory/data/Aliases");
 
 		my $last = "FAIL";
 

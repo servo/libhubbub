@@ -6,5 +6,6 @@ section-tree-construction.html	HTML5 tree construction algorithm
 #web-apps.html		HTML5 specification
 initial-close-tag.html	Page with initial </html>
 #phonecalls.html	HTML document that breaks libxml's HTML parser
-misnested.html          Misnested tags
-isindex.html            Test of <isindex> parsing
+#firmaer.phtml		Large(ish) document with parse errors
+misnested.html		Misnested tags
+isindex.html		Test of <isindex> parsing

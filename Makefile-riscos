@@ -2,37 +2,43 @@
 GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
 GCCSDK_INSTALL_ENV ?= /home/riscos/env
 
-export CC = $(GCCSDK_INSTALL_CROSSBIN)/gcc
-export AR = $(GCCSDK_INSTALL_CROSSBIN)/ar
-export LD = $(GCCSDK_INSTALL_CROSSBIN)/gcc
+CC := $(GCCSDK_INSTALL_CROSSBIN)/gcc
+AR := $(GCCSDK_INSTALL_CROSSBIN)/ar
+LD := $(GCCSDK_INSTALL_CROSSBIN)/gcc
 
-export CP = cp
-export RM = rm
-export MKDIR = mkdir
-export MV = mv
-export ECHO = echo
-export MAKE = make
-export PERL = perl
-export PKGCONFIG = pkg-config
+CP := cp
+RM := rm
+MKDIR := mkdir
+MV := mv
+ECHO := echo
+MAKE := make
+PERL := perl
+PKGCONFIG := pkg-config
+INSTALL := install
+SED := sed
 
 # Toolchain flags
-WARNFLAGS = -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
+WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
 	-Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wnested-externs -Werror -pedantic
-export CFLAGS = -std=c99 -D_BSD_SOURCE -I$(TOP)/include/ $(WARNFLAGS) \
+CFLAGS += -std=c99 -D_BSD_SOURCE -I$(TOP)/include/ $(WARNFLAGS) \
 	-mpoke-function-name
-export ARFLAGS = -cru
-export LDFLAGS = -L$(TOP)/
+RELEASECFLAGS = $(CFLAGS) -DNDEBUG -O2
+DEBUGCFLAGS = $(CFLAGS) -O0 -g
+ARFLAGS := -cru
+LDFLAGS = -L$(TOP)/
 
-export CPFLAGS =
-export RMFLAGS = 
-export MKDIRFLAGS = -p
-export MVFLAGS = 
-export ECHOFLAGS = 
-export MAKEFLAGS =
-export PKGCONFIGFLAGS =
+CPFLAGS :=
+RMFLAGS := -f
+MKDIRFLAGS := -p
+MVFLAGS := 
+ECHOFLAGS := 
+MAKEFLAGS :=
+PKGCONFIGFLAGS :=
 
-export EXEEXT = ,ff8
+EXEEXT := ,ff8
 
+# Default installation prefix
+PREFIX ?= $(GCCSDK_INSTALL_ENV)
 
 include build/Makefile.common

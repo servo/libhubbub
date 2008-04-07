@@ -1,64 +1,85 @@
-# Makefile for Hubbub testcases
+# Child makefile fragment for libhubbub
 #
-# Toolchain is exported by top-level makefile
+# Toolchain is provided by top-level makefile
 #
-# Top-level makefile also exports the following variables:
+# Variables provided by top-level makefile
 #
-# COMPONENT  Name of component
-# EXPORT     Absolute path of export directory
-# TOP        Absolute path of source tree root
+# COMPONENT		The name of the component
+# EXPORT		The location of the export directory
+# TOP			The location of the source tree root
+# RELEASEDIR		The place to put release objects
+# DEBUGDIR		The place to put debug objects
 #
-# The top-level makefile requires the following targets to exist:
+# do_include		Canned command sequence to include a child makefile
 #
-# clean      Clean source tree
-# debug      Create a debug binary
-# distclean  Fully clean source tree, back to pristine condition
-# export     Export distributable components to ${EXPORT}
-# release    Create a release binary
-# setup      Perform any setup required prior to compilation
-# test       Execute any test cases
+# Variables provided by parent makefile:
+#
+# DIR			The name of the directory we're in, relative to $(TOP)
+#
+# Variables we can manipulate:
+#
+# ITEMS_CLEAN		The list of items to remove for "make clean"
+# ITEMS_DISTCLEAN	The list of items to remove for "make distclean"
+# TARGET_TESTS		The list of target names to run for "make test"
+#
+# SOURCES		The list of sources to build for $(COMPONENT)
+#
+# Plus anything from the toolchain
+
+# Push parent directory onto the directory stack
+sp             := $(sp).x
+dirstack_$(sp) := $(d)
+d              := $(DIR)
 
 # Extend toolchain settings
 # We require the presence of libjson -- http://oss.metaparadigm.com/json-c/
-CFLAGS += -I${TOP}/src/ -I$(CURDIR) \
-		`${PKGCONFIG} ${PKGCONFIGFLAGS} --cflags json`
-LDFLAGS += `${PKGCONFIG} ${PKGCONFIGFLAGS} --libs json`
+CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
+		`$(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json`
+LDFLAGS := $(LDFLAGS) `$(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json`
 
-# Release output
-RELEASE =
-
-# Debug output
-DEBUG =
-
-# Objects
-OBJS = aliases cscodec csdetect dict entities filter hubbub \
+# Tests
+TESTS_$(d) := aliases cscodec csdetect dict entities filter hubbub \
 	inputstream parser parser-utf16 tokeniser tokeniser2 \
 	tree
-OBJS += regression/cscodec-segv regression/filter-segv regression/stream-nomem
+TESTS_$(d) := $(TESTS_$(d)) regression/cscodec-segv regression/filter-segv \
+	regression/stream-nomem
 
-.PHONY: clean debug export release setup test
+# Items for top-level makefile to use
+ITEMS_CLEAN := $(ITEMS_CLEAN) \
+	$(addprefix $(d), $(addsuffix $(EXEEXT), $(TESTS_$(d)))) \
+	$(addprefix $(d), $(addsuffix .gcda, $(TESTS_$(d)))) \
+	$(addprefix $(d), $(addsuffix .gcno, $(TESTS_$(d))))
+ITEMS_DISTCLEAN := $(ITEMS_DISTCLEAN) $(d)log
 
-# Targets
-release:
+# Targets for top-level makefile to run
+TARGET_TESTS := $(TARGET_TESTS) test_$(d)
 
-debug:
+# Now we get to hack around so that we know what directory we're in.
+# $(d) no longer exists when running the commands for a target, so we can't
+# simply use it verbatim. Assigning to a variable doesn't really help, as
+# there's no guarantee that someone else hasn't overridden that variable.
+# So, what we do is make the target depend on $(d), then pick it out of the
+# dependency list when running commands. This isn't pretty, but is effective.
+test_$(d): $(d) $(addprefix $(d), $(TESTS_$(d)))
+	@$(PERL) $(TOP)/$<testrunner.pl $(TOP)/$< $(EXEEXT)
 
-clean:
-	-@${RM} ${RMFLAGS} $(addsuffix ${EXEEXT},  $(OBJS))
+# Build rules for each test binary -- they all depend on the debug library
+define compile_test
+$(2): $$(TOP)/$$(COMPONENT)-debug.a $(1)
+	@$$(ECHO) $$(ECHOFLAGS) "==> $(1)"
+	@$$(CC) -c -g $$(DEBUGCFLAGS) -o $$@.o $(1)
+	@$$(LD) -g -o $$@ $$@.o $$(LDFLAGS) -lhubbub-debug -lgcov
+	@$$(RM) $$(RMFLAGS) $$@.o
 
-distclean:
-	-@${RM} ${RMFLAGS} log
+endef
 
-setup:
+$(eval $(foreach TEST,$(addprefix $(d), $(TESTS_$(d))), \
+	$(call compile_test,$(addsuffix .c, $(TEST)),$(TEST))))
 
-export:
+# Now include any children we may have
+MAKE_INCLUDES := $(wildcard $(d)*/Makefile)
+$(eval $(foreach INC, $(MAKE_INCLUDES), $(call do_include,$(INC))))
 
-test: $(OBJS)
-	@${PERL} testrunner.pl ${EXEEXT}
-
-# Pattern rules
-%: %.c
-	@${ECHO} ${ECHOFLAGS} "==> $<"
-	@${CC} -c -g ${CFLAGS} -o $@.o $<
-	@${LD} -g -o $@ $@.o ${LDFLAGS} -lhubbub-debug
-	@${RM} ${RMFLAGS} $@.o
+# Finally, pop off the directory stack
+d  := $(dirstack_$(sp))
+sp := $(basename $(sp))

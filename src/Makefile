@@ -1,82 +1,49 @@
-# Makefile for libhubbub
+# Child makefile fragment for libhubbub
 #
-# Toolchain is exported by top-level makefile
+# Toolchain is provided by top-level makefile
 #
-# Top-level makefile also exports the following variables:
+# Variables provided by top-level makefile
 #
-# COMPONENT  Name of component
-# EXPORT     Absolute path of export directory
-# TOP        Absolute path of source tree root
+# COMPONENT		The name of the component
+# EXPORT		The location of the export directory
+# TOP			The location of the source tree root
+# RELEASEDIR		The place to put release objects
+# DEBUGDIR		The place to put debug objects
 #
-# The top-level makefile requires the following targets to exist:
+# do_include		Canned command sequence to include a child makefile
 #
-# clean      Clean source tree
-# debug      Create a debug binary
-# distclean  Fully clean source tree, back to pristine condition
-# export     Export distributable components to ${EXPORT}
-# release    Create a release binary
-# setup      Perform any setup required prior to compilation
-# test       Execute any test cases
+# Variables provided by parent makefile:
+#
+# DIR			The name of the directory we're in, relative to $(TOP)
+#
+# Variables we can manipulate:
+#
+# ITEMS_CLEAN		The list of items to remove for "make clean"
+# ITEMS_DISTCLEAN	The list of items to remove for "make distclean"
+# TARGET_TESTS		The list of target names to run for "make test"
+#
+# SOURCES		The list of sources to build for $(COMPONENT)
+#
+# Plus anything from the toolchain
+
+# Push parent directory onto the directory stack
+sp             := $(sp).x
+dirstack_$(sp) := $(d)
+d              := $(DIR)
 
 # Manipulate include paths
-CFLAGS += -I$(CURDIR)
+CFLAGS := $(CFLAGS) -I$(d)
 
-# Release output
-RELEASE = ${TOP}/${COMPONENT}.a
+# Sources
+SRCS_$(d) := hubbub.c parser.c
 
-# Debug output
-DEBUG = ${TOP}/${COMPONENT}-debug.a
+# Append to sources for component
+SOURCES += $(addprefix $(d), $(SRCS_$(d)))
 
-# Objects
-OBJS = hubbub parser
+# Now include any children we may have
+MAKE_INCLUDES := $(wildcard $(d)*/Makefile)
+$(eval $(foreach INC, $(MAKE_INCLUDES), $(call do_include,$(INC))))
 
-.PHONY: clean debug distclean export release setup test
-
-# Targets
-release: $(addprefix Release/, $(addsuffix .o, $(OBJS)))
-	@${MAKE} -C charset release
-	@${MAKE} -C input release
-	@${MAKE} -C tokeniser release
-	@${MAKE} -C treebuilder release
-	@${MAKE} -C utils release
-	@${AR} ${ARFLAGS} $(RELEASE) Release/*
-
-debug: $(addprefix Debug/, $(addsuffix .o, $(OBJS)))
-	@${MAKE} -C charset debug
-	@${MAKE} -C input debug
-	@${MAKE} -C tokeniser debug
-	@${MAKE} -C treebuilder debug
-	@${MAKE} -C utils debug
-	@${AR} ${ARFLAGS} $(DEBUG) Debug/*
-
-clean:
-	@${MAKE} -C charset clean
-	@${MAKE} -C input clean
-	@${MAKE} -C tokeniser clean
-	@${MAKE} -C treebuilder clean
-	@${MAKE} -C utils clean
-	-@${RM} ${RMFLAGS} $(addprefix Release/, $(addsuffix .o, ${OBJS}))
-	-@${RM} ${RMFLAGS} $(addprefix Debug/, $(addsuffix .o, ${OBJS}))
-	-@${RM} ${RMFLAGS} $(RELEASE) $(DEBUG)
-
-distclean:
-	-@${RM} ${RMFLAGS} -r Release
-	-@${RM} ${RMFLAGS} -r Debug
-
-setup:
-	@${MKDIR} ${MKDIRFLAGS} Release
-	@${MKDIR} ${MKDIRFLAGS} Debug
-
-export:
-	@${CP} ${CPFLAGS} $(RELEASE) ${EXPORT}/lib/
-
-test:
-
-# Pattern rules
-Release/%.o: %.c
-	@${ECHO} ${ECHOFLAGS} "==> $<"
-	@${CC} -c ${CFLAGS} -DNDEBUG -o $@ $<
-
-Debug/%.o: %.c
-	@${ECHO} ${ECHOFLAGS} "==> $<"
-	@${CC} -c -g ${CFLAGS} -o $@ $<
+# Finally, pop off the directory stack
+d  := $(dirstack_$(sp))
+sp := $(basename $(sp))
