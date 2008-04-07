@@ -9,6 +9,7 @@
 #define hubbub_functypes_h_
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <hubbub/types.h>
@@ -53,12 +54,6 @@ typedef int (*hubbub_tree_create_element)(void *ctx, const hubbub_tag *tag,
 		void **result);
 
 /**
- * Type of tree element node creation function (verbatim name)
- */
-typedef int (*hubbub_tree_create_element_verbatim)(void *ctx, 
-		const uint8_t *name, size_t name_len, void **result);
-
-/**
  * Type of tree text node creation function
  */
 typedef int (*hubbub_tree_create_text)(void *ctx, const hubbub_string *data,
@@ -97,6 +92,34 @@ typedef int (*hubbub_tree_remove_child)(void *ctx, void *parent, void *child,
  */
 typedef int (*hubbub_tree_clone_node)(void *ctx, void *node, bool deep,
 		void **result);
+
+/**
+ * Type of child reparenting function
+ */
+typedef int (*hubbub_tree_reparent_children)(void *ctx, void *node, 
+		void *new_parent);
+
+/**
+ * Type of parent node acquisition function
+ */
+typedef int (*hubbub_tree_get_parent)(void *ctx, void *node, bool element_only, 
+		void **result);
+
+/**
+ * Type of child presence query function
+ */
+typedef int (*hubbub_tree_has_children)(void *ctx, void *node, bool *result);
+
+/**
+ * Type of form association function
+ */
+typedef int (*hubbub_tree_form_associate)(void *ctx, void *form, void *node);
+
+/**
+ * Type of attribute addition function
+ */
+typedef int (*hubbub_tree_add_attributes)(void *ctx, void *node,
+		const hubbub_attribute *attributes, uint32_t n_attributes);
 
 /**
  * Type of tree quirks mode notification function

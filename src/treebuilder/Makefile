@@ -22,7 +22,7 @@
 CFLAGS += -I$(CURDIR)
 
 # Objects
-OBJS = treebuilder
+OBJS = in_body treebuilder
 
 .PHONY: clean debug distclean export release setup test
 

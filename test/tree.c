@@ -37,8 +37,6 @@ static int create_doctype(void *ctx, const hubbub_string *qname,
 		const hubbub_string *public_id, const hubbub_string *system_id,
 		void **result);
 static int create_element(void *ctx, const hubbub_tag *tag, void **result);
-static int create_element_verbatim(void *ctx, const uint8_t *name, size_t len,
-		void **result);
 static int create_text(void *ctx, const hubbub_string *data, void **result);
 static int ref_node(void *ctx, void *node);
 static int unref_node(void *ctx, void *node);
@@ -47,13 +45,18 @@ static int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 		void **result);
 static int remove_child(void *ctx, void *parent, void *child, void **result);
 static int clone_node(void *ctx, void *node, bool deep, void **result);
+static int reparent_children(void *ctx, void *node, void *new_parent);
+static int get_parent(void *ctx, void *node, bool element_only, void **result);
+static int has_children(void *ctx, void *node, bool *result);
+static int form_associate(void *ctx, void *form, void *node);
+static int add_attributes(void *ctx, void *node, 
+		const hubbub_attribute *attributes, uint32_t n_attributes);
 static int set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
 
 static hubbub_tree_handler tree_handler = {
 	create_comment,
 	create_doctype,
 	create_element,
-	create_element_verbatim,
 	create_text,
 	ref_node,
 	unref_node,
@@ -61,6 +64,11 @@ static hubbub_tree_handler tree_handler = {
 	insert_before,
 	remove_child,
 	clone_node,
+	reparent_children,
+	get_parent,
+	has_children,
+	form_associate,
+	add_attributes,
 	set_quirks_mode,
 	NULL
 };
@@ -251,22 +259,6 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 	return 0;
 }
 
-int create_element_verbatim(void *ctx, const uint8_t *name, size_t len, 
-		void **result)
-{
-	printf("Creating (%u) [element verbatim '%.*s']\n", 
-			++node_counter, len, name);
-
-	GROW_REF
-	node_ref[node_counter] = 0;
-
-	ref_node(ctx, (void *) node_counter);
-
-	*result = (void *) node_counter;
-
-	return 0;
-}
-
 int create_text(void *ctx, const hubbub_string *data, void **result)
 {
 	printf("Creating (%u) [text '%.*s']\n", ++node_counter,
@@ -345,6 +337,60 @@ int clone_node(void *ctx, void *node, bool deep, void **result)
 	ref_node(ctx, (void *) node_counter);
 
 	*result = (void *) node_counter;
+
+	return 0;
+}
+
+int reparent_children(void *ctx, void *node, void *new_parent)
+{
+	UNUSED(ctx);
+
+	printf("Reparenting children of %u to %u\n", 
+				(uintptr_t) node, (uintptr_t) new_parent);
+
+	return 0;
+}
+
+int get_parent(void *ctx, void *node, bool element_only, void **result)
+{
+	printf("Retrieving parent of %u (%s)\n", (uintptr_t) node,
+			element_only ? "element only" : "");
+
+	ref_node(ctx, (void *) 1);
+	*result = (void *) 1;
+
+	return 0;
+}
+
+int has_children(void *ctx, void *node, bool *result)
+{
+	UNUSED(ctx);
+
+	printf("Want children for %u\n", (uintptr_t) node);
+
+	*result = false;
+
+	return 0;
+}
+
+int form_associate(void *ctx, void *form, void *node)
+{
+	UNUSED(ctx);
+
+	printf("Associating %u with form %u\n", 
+			(uintptr_t) node, (uintptr_t) form);
+
+	return 0;
+}
+
+int add_attributes(void *ctx, void *node, 
+		const hubbub_attribute *attributes, uint32_t n_attributes)
+{
+	UNUSED(ctx);
+	UNUSED(attributes);
+	UNUSED(n_attributes);
+
+	printf("Adding attributes to %u\n", (uintptr_t) node);
 
 	return 0;
 }
