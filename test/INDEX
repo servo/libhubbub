@@ -15,3 +15,8 @@ parser-utf16	Public parser API (utf-16 internally)	html
 tokeniser	HTML tokeniser				html
 tokeniser2	HTML tokeniser (again)			tokeniser2
 tree		Treebuilding API			html
+
+# Regression tests
+regression/cscodec-segv	Segfault in charset codecs
+regression/filter-segv	Segfault in input filtering
+regression/stream-nomem	Inputstream buffer expansion

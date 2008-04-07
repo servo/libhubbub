@@ -195,20 +195,18 @@ hubbub_error hubbub_utf8stream_append(hubbub_inputstream *stream,
 			moved = (temp != stream->buffer);
 
 			stream->buffer = temp;
-			stream->buffer_len += stream->buffer_alloc -
-					stream->buffer_len - space;
+			stream->buffer_len = stream->buffer_alloc - space;
 			stream->buffer_alloc += BUFFER_CHUNK;
 
 			base = stream->buffer + stream->buffer_len;
-			space = stream->buffer_alloc - stream->buffer_len;
+			space += BUFFER_CHUNK;
 
 			if (moved)
 				hubbub_inputstream_buffer_moved(stream);
 		}
 
 		/* And fix up buffer length */
-		stream->buffer_len += stream->buffer_alloc -
-				stream->buffer_len - space;
+		stream->buffer_len = stream->buffer_alloc - space;
 
 		stream->had_eof = true;
 	} else {
@@ -246,21 +244,18 @@ hubbub_error hubbub_utf8stream_append(hubbub_inputstream *stream,
 			moved = (temp != stream->buffer);
 
 			stream->buffer = temp;
-			stream->buffer_len += stream->buffer_alloc -
-					stream->buffer_len - space;
+			stream->buffer_len = stream->buffer_alloc - space;
 			stream->buffer_alloc += BUFFER_CHUNK;
 
 			base = stream->buffer + stream->buffer_len;
-			space = stream->buffer_alloc - stream->buffer_len -
-					space;
+			space += BUFFER_CHUNK;
 
 			if (moved)
 				hubbub_inputstream_buffer_moved(stream);
 		}
 
 		/* And fix up buffer length */
-		stream->buffer_len += stream->buffer_alloc -
-				stream->buffer_len - space;
+		stream->buffer_len = stream->buffer_alloc - space;
 	}
 
 	return HUBBUB_OK;
