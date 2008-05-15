@@ -16,6 +16,8 @@ Requirements
     + GNU make or compatible
     + Perl (for the testcases)
     + Pkg-config (for the testcases)
+    + xsltproc (for the entity fetcher)
+    + wget (for the entity fetcher)
 
   Hubbub also requires the following libraries to be installed:
 
