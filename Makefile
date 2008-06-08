@@ -13,6 +13,8 @@ PERL := perl
 PKGCONFIG := pkg-config
 INSTALL := install
 SED := sed
+LCOV := lcov
+GENHTML := genhtml
 
 # Toolchain flags
 WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \

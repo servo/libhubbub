@@ -11,6 +11,7 @@ EXPORT := $(CURDIR)/dist
 TOP := $(CURDIR)
 RELEASEDIR := build/Release
 DEBUGDIR := build/Debug
+COVERAGEDIR := build/coverage
 
 # List of items to delete on clean
 ITEMS_CLEAN :=
@@ -48,8 +49,25 @@ debug: setup $(addprefix $(DEBUGDIR)/,$(OBJECTS))
 
 test: debug $(TARGET_TESTS)
 
+coverage: clean
+	@$(LCOV) --directory . --zerocounters
+	@$(MAKE) test CFLAGS="$(CFLAGS) -fprofile-arcs -ftest-coverage" \
+		LDFLAGS="$(LDFLAGS) -lgcov"
+	@$(LCOV) --directory $(DEBUGDIR) --base-directory $(TOP) \
+		--capture --output-file $(COVERAGEDIR)/$(COMPONENT)_tmp.info
+	@$(LCOV) --extract $(COVERAGEDIR)/$(COMPONENT)_tmp.info "$(TOP)/src*" \
+		-o $(COVERAGEDIR)/$(COMPONENT).info
+	@$(RM) $(RMFLAGS) $(COVERAGEDIR)/$(COMPONENT)_tmp.info
+	@$(GENHTML) -o $(COVERAGEDIR) --num-spaces 2 \
+		$(COVERAGEDIR)/$(COMPONENT).info
+
+profile: clean
+	@$(MAKE) test CFLAGS="$(CFLAGS) -pg" LDFLAGS="-pg $(LDFLAGS)"
+
 clean:
 	-@$(RM) $(RMFLAGS) $(ITEMS_CLEAN)
+	-@$(RM) $(RMFLAGS) gmon.out
+	-@$(RM) $(RMFLAGS) -r $(COVERAGEDIR)
 	-@$(RM) $(RMFLAGS) -r $(RELEASEDIR)
 	-@$(RM) $(RMFLAGS) -r $(DEBUGDIR)
 	-@$(RM) $(RMFLAGS) $(COMPONENT).a
@@ -63,6 +81,7 @@ distclean: clean
 setup:
 	@$(MKDIR) $(MKDIRFLAGS) $(RELEASEDIR)
 	@$(MKDIR) $(MKDIRFLAGS) $(DEBUGDIR)
+	@$(MKDIR) $(MKDIRFLAGS) $(COVERAGEDIR)
 
 export: release
 	@$(MKDIR) $(MKDIRFLAGS) $(TOP)/dist/lib

@@ -21,8 +21,13 @@ Requirements
 
   Hubbub also requires the following libraries to be installed:
 
-    +  An iconv implementation (e.g. libiconv)
-    +  JSON-C (for the testcases) -- see json/README for further information
+    + An iconv implementation (e.g. libiconv)
+    + JSON-C (for the testcases) -- see json/README for further information
+
+  Hubbub can make use of the following, for debugging and testing purposes:
+
+    + gcov and lcov, for test coverage data
+
 
 Compilation
 -----------
@@ -38,6 +43,13 @@ Verification
   different makefile target than that used for normal compilation, thus:
   
   		$ make test
+
+  If you wish to see test coverage statistics, run:
+
+  		$ make coverage
+
+  Then open the build/coverage/index.html file in a web browser.
+
 
 API documentation
 -----------------
