@@ -38,7 +38,8 @@ $(eval $(foreach INC, $(MAKE_INCLUDES), $(call do_include,$(INC))))
 # Calculate objects to build
 OBJECTS := $(subst /,_,$(subst .c,.o,$(SOURCES)))
 
-.PHONY: release debug test clean distclean setup export install uninstall
+.PHONY: release debug test coverage profile \
+	clean distclean setup export install uninstall
 
 # Rules
 release: setup $(addprefix $(RELEASEDIR)/,$(OBJECTS))
