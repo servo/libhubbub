@@ -1038,9 +1038,8 @@ bool hubbub_tokeniser_handle_close_tag_match(hubbub_tokeniser *tokeniser)
 		abort();
 
 	/* Check that following char was valid */
-	if (c != '\t' && c != '\n' && c != '\v' && c != '\f' &&
-			c != ' ' && c != '>' && c != '/' &&
-			c != HUBBUB_INPUTSTREAM_EOF) {
+	if (c != '\t' && c != '\n' && c != '\f' && c != ' ' && c != '>' &&
+			c != '/' && c != HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
 		/* Emit "</" */
@@ -1072,7 +1071,7 @@ bool hubbub_tokeniser_handle_tag_name(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		tokeniser->state =
 			HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
 		hubbub_inputstream_advance(tokeniser->input);
@@ -1135,7 +1134,7 @@ bool hubbub_tokeniser_handle_before_attribute_name(
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
 		hubbub_token token;
@@ -1235,7 +1234,7 @@ bool hubbub_tokeniser_handle_attribute_name(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		tokeniser->state =
 				HUBBUB_TOKENISER_STATE_AFTER_ATTRIBUTE_NAME;
 		hubbub_inputstream_advance(tokeniser->input);
@@ -1302,7 +1301,7 @@ bool hubbub_tokeniser_handle_after_attribute_name(
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '=') {
 		tokeniser->state =
@@ -1410,7 +1409,7 @@ bool hubbub_tokeniser_handle_before_attribute_value(
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '"') {
 		tokeniser->state = HUBBUB_TOKENISER_STATE_ATTRIBUTE_VALUE_DQ;
@@ -1560,7 +1559,7 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		tokeniser->state =
 				HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
 		hubbub_inputstream_advance(tokeniser->input);
@@ -1657,7 +1656,7 @@ bool hubbub_tokeniser_handle_after_attribute_value_q(
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		tokeniser->state =
 				HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
 		hubbub_inputstream_advance(tokeniser->input);
@@ -2156,7 +2155,7 @@ bool hubbub_tokeniser_handle_doctype(hubbub_tokeniser *tokeniser)
 	cdoc->system_missing = true;
 	cdoc->system_id.type = HUBBUB_STRING_OFF;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	}
 
@@ -2174,7 +2173,7 @@ bool hubbub_tokeniser_handle_before_doctype_name(
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
 		hubbub_token token;
@@ -2224,7 +2223,7 @@ bool hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		tokeniser->state = HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_NAME;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
@@ -2270,7 +2269,7 @@ bool hubbub_tokeniser_handle_after_doctype_name(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
 		hubbub_token token;
@@ -2366,7 +2365,7 @@ bool hubbub_tokeniser_handle_before_doctype_public(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '"') {
 		cdoc->public_missing = false;
@@ -2518,7 +2517,7 @@ bool hubbub_tokeniser_handle_after_doctype_public(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '"') {
 		cdoc->system_missing = false;
@@ -2611,7 +2610,7 @@ bool hubbub_tokeniser_handle_before_doctype_system(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '"') {
 		cdoc->system_missing = false;
@@ -2765,7 +2764,7 @@ bool hubbub_tokeniser_handle_after_doctype_system(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
 		hubbub_token token;
@@ -2972,7 +2971,7 @@ bool hubbub_tokeniser_consume_character_reference(hubbub_tokeniser *tokeniser)
 	/* Reset allowed character for future calls */
 	tokeniser->context.allowed_char = '\0';
 
-	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ' ||
+	if (c == '\t' || c == '\n' || c == '\f' || c == ' ' ||
 		c == '<' || c == '&' || c == HUBBUB_INPUTSTREAM_EOF ||
 		(allowed_char && c == allowed_char)) {
 		return true;

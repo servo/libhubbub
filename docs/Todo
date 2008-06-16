@@ -1,8 +1,6 @@
 TODO list
 =========
 
-  + Update tokeniser to comply with latest spec draft (currently complies
-    with 2007-06-12 draft)
   + Implement one or more tree builders
   + More charset convertors (or make the iconv codec significantly faster)
   + Parse error reporting from the tokeniser
