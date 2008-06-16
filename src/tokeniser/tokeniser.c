@@ -28,7 +28,7 @@ static const uint32_t cp1252Table[32] = {
  */
 typedef enum hubbub_tokeniser_state {
 	HUBBUB_TOKENISER_STATE_DATA,
-	HUBBUB_TOKENISER_STATE_ENTITY_DATA,
+	HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_DATA,
 	HUBBUB_TOKENISER_STATE_TAG_OPEN,
 	HUBBUB_TOKENISER_STATE_CLOSE_TAG_OPEN,
 	HUBBUB_TOKENISER_STATE_CLOSE_TAG_MATCH,
@@ -40,19 +40,35 @@ typedef enum hubbub_tokeniser_state {
 	HUBBUB_TOKENISER_STATE_ATTRIBUTE_VALUE_DQ,
 	HUBBUB_TOKENISER_STATE_ATTRIBUTE_VALUE_SQ,
 	HUBBUB_TOKENISER_STATE_ATTRIBUTE_VALUE_UQ,
-	HUBBUB_TOKENISER_STATE_ENTITY_IN_ATTRIBUTE_VALUE,
+	HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE,
+	HUBBUB_TOKENISER_STATE_AFTER_ATTRIBUTE_VALUE_Q,
+	HUBBUB_TOKENISER_STATE_SELF_CLOSING_START_TAG,
 	HUBBUB_TOKENISER_STATE_BOGUS_COMMENT,
 	HUBBUB_TOKENISER_STATE_MARKUP_DECLARATION_OPEN,
+	HUBBUB_TOKENISER_STATE_MATCH_COMMENT,
 	HUBBUB_TOKENISER_STATE_COMMENT_START,
+	HUBBUB_TOKENISER_STATE_COMMENT_START_DASH,
 	HUBBUB_TOKENISER_STATE_COMMENT,
-	HUBBUB_TOKENISER_STATE_COMMENT_DASH,
+	HUBBUB_TOKENISER_STATE_COMMENT_END_DASH,
 	HUBBUB_TOKENISER_STATE_COMMENT_END,
 	HUBBUB_TOKENISER_STATE_MATCH_DOCTYPE,
 	HUBBUB_TOKENISER_STATE_DOCTYPE,
 	HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_NAME,
 	HUBBUB_TOKENISER_STATE_DOCTYPE_NAME,
 	HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_NAME,
+	HUBBUB_TOKENISER_STATE_MATCH_PUBLIC,
+	HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_PUBLIC,
+	HUBBUB_TOKENISER_STATE_DOCTYPE_PUBLIC_DQ,
+	HUBBUB_TOKENISER_STATE_DOCTYPE_PUBLIC_SQ,
+	HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_PUBLIC,
+	HUBBUB_TOKENISER_STATE_MATCH_SYSTEM,
+	HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_SYSTEM,
+	HUBBUB_TOKENISER_STATE_DOCTYPE_SYSTEM_DQ,
+	HUBBUB_TOKENISER_STATE_DOCTYPE_SYSTEM_SQ,
+	HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_SYSTEM,
 	HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE,
+	HUBBUB_TOKENISER_STATE_MATCH_CDATA,
+	HUBBUB_TOKENISER_STATE_CDATA_BLOCK,
 	HUBBUB_TOKENISER_STATE_NUMBERED_ENTITY,
 	HUBBUB_TOKENISER_STATE_NAMED_ENTITY
 } hubbub_tokeniser_state;
@@ -81,6 +97,11 @@ typedef struct hubbub_tokeniser_context {
 	} match_doctype;
 
 	struct {
+		uint32_t count;			/**< Index into "[CDATA[" */
+		uint32_t end;			/**< Index into "]]>" */
+	} match_cdata;
+
+	struct {
 		hubbub_string str;		/**< Pending string */
 		uint8_t base;			/**< Base for numeric
 						 * entities */
@@ -104,6 +125,8 @@ typedef struct hubbub_tokeniser_context {
 		uint32_t col;			/**< Current character in
 						 * line */
 	} position;
+
+	uint32_t allowed_char;
 } hubbub_tokeniser_context;
 
 /**
@@ -113,6 +136,8 @@ struct hubbub_tokeniser {
 	hubbub_tokeniser_state state;	/**< Current tokeniser state */
 	hubbub_content_model content_model;	/**< Current content
 						 * model flag */
+	bool escape_flag;		/**< Escape flag **/
+	bool process_cdata_section;
 
 	hubbub_inputstream *input;	/**< Input stream */
 
@@ -135,7 +160,8 @@ struct hubbub_tokeniser {
 };
 
 static bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser);
-static bool hubbub_tokeniser_handle_entity_data(hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_character_reference_data(
+		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_close_tag_open(
 		hubbub_tokeniser *tokeniser);
@@ -156,16 +182,23 @@ static bool hubbub_tokeniser_handle_attribute_value_sq(
 		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_attribute_value_uq(
 		hubbub_tokeniser *tokeniser);
-static bool hubbub_tokeniser_handle_entity_in_attribute_value(
+static bool hubbub_tokeniser_handle_character_reference_in_attribute_value(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_after_attribute_value_q(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_self_closing_start_tag(
 		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_bogus_comment(
 		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_markup_declaration_open(
 		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_match_comment(hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_comment_start(
 		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_comment_start_dash(
+		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser);
-static bool hubbub_tokeniser_handle_comment_dash(
+static bool hubbub_tokeniser_handle_comment_end_dash(
 		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_comment_end(hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_match_doctype(
@@ -177,9 +210,30 @@ static bool hubbub_tokeniser_handle_doctype_name(
 		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_after_doctype_name(
 		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_match_public(hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_before_doctype_public(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_doctype_public_dq(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_doctype_public_sq(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_after_doctype_public(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_match_system(hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_before_doctype_system(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_doctype_system_dq(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_doctype_system_sq(
+		hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_after_doctype_system(
+		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_bogus_doctype(
 		hubbub_tokeniser *tokeniser);
-static bool hubbub_tokeniser_consume_entity(hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_match_cdata(hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_handle_cdata_block(hubbub_tokeniser *tokeniser);
+static bool hubbub_tokeniser_consume_character_reference(
+		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_numbered_entity(
 		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_named_entity(
@@ -238,7 +292,6 @@ hubbub_tokeniser *hubbub_tokeniser_create(hubbub_inputstream *input,
 	memset(&tok->context, 0, sizeof(hubbub_tokeniser_context));
 	tok->context.current_tag.name.type = HUBBUB_STRING_OFF;
 	tok->context.current_comment.type = HUBBUB_STRING_OFF;
-	tok->context.current_doctype.name.type = HUBBUB_STRING_OFF;
 	tok->context.current_chars.type = HUBBUB_STRING_OFF;
 	tok->context.close_tag_match.tag.type = HUBBUB_STRING_OFF;
 	tok->context.match_entity.str.type = HUBBUB_STRING_OFF;
@@ -324,8 +377,8 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 		case HUBBUB_TOKENISER_STATE_DATA:
 			cont = hubbub_tokeniser_handle_data(tokeniser);
 			break;
-		case HUBBUB_TOKENISER_STATE_ENTITY_DATA:
-			cont = hubbub_tokeniser_handle_entity_data(
+		case HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_DATA:
+			cont = hubbub_tokeniser_handle_character_reference_data(
 					tokeniser);
 			break;
 		case HUBBUB_TOKENISER_STATE_TAG_OPEN:
@@ -370,8 +423,16 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 			cont = hubbub_tokeniser_handle_attribute_value_uq(
 					tokeniser);
 			break;
-		case HUBBUB_TOKENISER_STATE_ENTITY_IN_ATTRIBUTE_VALUE:
-			cont = hubbub_tokeniser_handle_entity_in_attribute_value(
+		case HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE:
+			cont = hubbub_tokeniser_handle_character_reference_in_attribute_value(
+					tokeniser);
+			break;
+		case HUBBUB_TOKENISER_STATE_AFTER_ATTRIBUTE_VALUE_Q:
+			cont = hubbub_tokeniser_handle_after_attribute_value_q(
+					tokeniser);
+			break;
+		case HUBBUB_TOKENISER_STATE_SELF_CLOSING_START_TAG:
+			cont = hubbub_tokeniser_handle_self_closing_start_tag(
 					tokeniser);
 			break;
 		case HUBBUB_TOKENISER_STATE_BOGUS_COMMENT:
@@ -382,15 +443,23 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 			cont = hubbub_tokeniser_handle_markup_declaration_open(
 					tokeniser);
 			break;
+		case HUBBUB_TOKENISER_STATE_MATCH_COMMENT:
+			cont = hubbub_tokeniser_handle_match_comment(
+					tokeniser);
+			break;
 		case HUBBUB_TOKENISER_STATE_COMMENT_START:
 			cont = hubbub_tokeniser_handle_comment_start(
+					tokeniser);
+			break;
+		case HUBBUB_TOKENISER_STATE_COMMENT_START_DASH:
+			cont = hubbub_tokeniser_handle_comment_start_dash(
 					tokeniser);
 			break;
 		case HUBBUB_TOKENISER_STATE_COMMENT:
 			cont = hubbub_tokeniser_handle_comment(tokeniser);
 			break;
-		case HUBBUB_TOKENISER_STATE_COMMENT_DASH:
-			cont = hubbub_tokeniser_handle_comment_dash(
+		case HUBBUB_TOKENISER_STATE_COMMENT_END_DASH:
+			cont = hubbub_tokeniser_handle_comment_end_dash(
 					tokeniser);
 			break;
 		case HUBBUB_TOKENISER_STATE_COMMENT_END:
@@ -416,8 +485,67 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 			cont = hubbub_tokeniser_handle_after_doctype_name(
 					tokeniser);
 			break;
+
+		case HUBBUB_TOKENISER_STATE_MATCH_PUBLIC:
+			cont = hubbub_tokeniser_handle_match_public(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_PUBLIC:
+			cont = hubbub_tokeniser_handle_before_doctype_public(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_DOCTYPE_PUBLIC_DQ:
+			cont = hubbub_tokeniser_handle_doctype_public_dq(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_DOCTYPE_PUBLIC_SQ:
+			cont = hubbub_tokeniser_handle_doctype_public_sq(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_PUBLIC:
+			cont = hubbub_tokeniser_handle_after_doctype_public(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_MATCH_SYSTEM:
+			cont = hubbub_tokeniser_handle_match_system(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_SYSTEM:
+			cont = hubbub_tokeniser_handle_before_doctype_system(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_DOCTYPE_SYSTEM_DQ:
+			cont = hubbub_tokeniser_handle_doctype_system_dq(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_DOCTYPE_SYSTEM_SQ:
+			cont = hubbub_tokeniser_handle_doctype_system_sq(
+					tokeniser);
+			break;
+
+		case HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_SYSTEM:
+			cont = hubbub_tokeniser_handle_after_doctype_system(
+					tokeniser);
+			break;
+
 		case HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE:
 			cont = hubbub_tokeniser_handle_bogus_doctype(
+					tokeniser);
+			break;
+		case HUBBUB_TOKENISER_STATE_MATCH_CDATA:
+			cont = hubbub_tokeniser_handle_match_cdata(
+					tokeniser);
+			break;
+		case HUBBUB_TOKENISER_STATE_CDATA_BLOCK:
+			cont = hubbub_tokeniser_handle_cdata_block(
 					tokeniser);
 			break;
 		case HUBBUB_TOKENISER_STATE_NUMBERED_ENTITY:
@@ -446,17 +574,48 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 	while ((c = hubbub_inputstream_peek(tokeniser->input)) !=
 			HUBBUB_INPUTSTREAM_EOF &&
 			c != HUBBUB_INPUTSTREAM_OOD) {
-		if (c == '&' && (tokeniser->content_model ==
-					HUBBUB_CONTENT_MODEL_PCDATA ||
-				tokeniser->content_model ==
-					HUBBUB_CONTENT_MODEL_RCDATA)) {
+		if (c == '&' &&
+				(tokeniser->content_model == HUBBUB_CONTENT_MODEL_PCDATA ||
+				tokeniser->content_model == HUBBUB_CONTENT_MODEL_RCDATA) &&
+				tokeniser->escape_flag == false) {
 			tokeniser->state =
-					HUBBUB_TOKENISER_STATE_ENTITY_DATA;
-			/* Don't eat the '&'; it'll be handled by
-			 * entity consumption */
+					HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_DATA;
+			hubbub_inputstream_advance(tokeniser->input);
 			break;
-		} else if (c == '<' && tokeniser->content_model !=
-				HUBBUB_CONTENT_MODEL_PLAINTEXT) {
+		} else if (c == '-') {
+			size_t len;
+			uint32_t pos;
+
+			pos = hubbub_inputstream_cur_pos(tokeniser->input,
+				&len);
+
+			if (tokeniser->escape_flag == false &&
+				(tokeniser->content_model ==
+					HUBBUB_CONTENT_MODEL_RCDATA ||
+				tokeniser->content_model ==
+					HUBBUB_CONTENT_MODEL_CDATA) &&
+				pos >= 3 &&
+				hubbub_inputstream_compare_range_ascii(
+					tokeniser->input, pos - 3, 4,
+					"<!--", SLEN("<!--")) == 0)
+			{
+				tokeniser->escape_flag = true;
+			}
+
+			if (tokeniser->context.current_chars.len == 0) {
+				tokeniser->context.current_chars.data.off =
+						pos;
+			}
+			tokeniser->context.current_chars.len += len;
+
+			hubbub_inputstream_advance(tokeniser->input);
+		} else if (c == '<' && (tokeniser->content_model ==
+						HUBBUB_CONTENT_MODEL_PCDATA ||
+				((tokeniser->content_model ==
+						HUBBUB_CONTENT_MODEL_RCDATA ||
+				tokeniser->content_model ==
+						HUBBUB_CONTENT_MODEL_CDATA) &&
+				tokeniser->escape_flag == false))) {
 			if (tokeniser->context.current_chars.len > 0) {
 				/* Emit any pending characters */
 				token.type = HUBBUB_TOKEN_CHARACTER;
@@ -475,6 +634,36 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 			tokeniser->state = HUBBUB_TOKENISER_STATE_TAG_OPEN;
 			hubbub_inputstream_advance(tokeniser->input);
 			break;
+		} else if (c == '>') {
+			size_t len;
+			uint32_t pos;
+
+			pos = hubbub_inputstream_cur_pos(tokeniser->input,
+				&len);
+
+			/* no need to check that there are enough characters,
+			 * since you can only run into this if the flag is
+			 * true in the first place, which requires four
+			 * characters. */
+			if (tokeniser->escape_flag == true &&
+				(tokeniser->content_model ==
+					HUBBUB_CONTENT_MODEL_RCDATA ||
+				tokeniser->content_model ==
+					HUBBUB_CONTENT_MODEL_CDATA) &&
+				hubbub_inputstream_compare_range_ascii(
+					tokeniser->input, pos - 2, 3,
+					"-->", SLEN("-->")) == 0)
+			{
+				tokeniser->escape_flag = false;
+			}
+
+			if (tokeniser->context.current_chars.len == 0) {
+				tokeniser->context.current_chars.data.off =
+						pos;
+			}
+			tokeniser->context.current_chars.len += len;
+
+			hubbub_inputstream_advance(tokeniser->input);
 		} else {
 			uint32_t pos;
 			size_t len;
@@ -487,7 +676,7 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 				tokeniser->context.current_chars.data.off =
 						pos;
 			}
-			tokeniser->context.current_chars.len++;
+			tokeniser->context.current_chars.len += len;
 
 			hubbub_inputstream_advance(tokeniser->input);
 		}
@@ -514,10 +703,10 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 	return (c != HUBBUB_INPUTSTREAM_EOF && c != HUBBUB_INPUTSTREAM_OOD);
 }
 
-bool hubbub_tokeniser_handle_entity_data(hubbub_tokeniser *tokeniser)
+bool hubbub_tokeniser_handle_character_reference_data(hubbub_tokeniser *tokeniser)
 {
 	if (tokeniser->context.match_entity.complete == false) {
-		return hubbub_tokeniser_consume_entity(tokeniser);
+		return hubbub_tokeniser_consume_character_reference(tokeniser);
 	} else {
 		hubbub_token token;
 		uint32_t c = hubbub_inputstream_peek(tokeniser->input);
@@ -564,11 +753,11 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 		if (c == '/') {
 			pos = hubbub_inputstream_cur_pos(tokeniser->input,
 					&len);
+
 			tokeniser->context.current_chars.len += len;
 
 			tokeniser->state =
 				HUBBUB_TOKENISER_STATE_CLOSE_TAG_OPEN;
-
 			hubbub_inputstream_advance(tokeniser->input);
 		} else {
 			hubbub_token token;
@@ -676,6 +865,8 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 
 bool hubbub_tokeniser_handle_close_tag_open(hubbub_tokeniser *tokeniser)
 {
+	/**\todo Handle the fragment case here */
+
 	if (tokeniser->content_model == HUBBUB_CONTENT_MODEL_RCDATA ||
 			tokeniser->content_model ==
 					HUBBUB_CONTENT_MODEL_CDATA) {
@@ -794,6 +985,7 @@ bool hubbub_tokeniser_handle_close_tag_match(hubbub_tokeniser *tokeniser)
 			hubbub_tokeniser_emit_token(tokeniser, &token);
 
 			tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+			hubbub_inputstream_advance(tokeniser->input);
 
 			return true;
 		} else if (ctx->close_tag_match.tag.len == ctag->name.len &&
@@ -847,7 +1039,7 @@ bool hubbub_tokeniser_handle_close_tag_match(hubbub_tokeniser *tokeniser)
 
 	/* Check that following char was valid */
 	if (c != '\t' && c != '\n' && c != '\v' && c != '\f' &&
-			c != ' ' && c != '>' && c != '/' && c != '<' &&
+			c != ' ' && c != '>' && c != '/' &&
 			c != HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
@@ -858,6 +1050,7 @@ bool hubbub_tokeniser_handle_close_tag_match(hubbub_tokeniser *tokeniser)
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
 
 		return true;
 	}
@@ -905,7 +1098,7 @@ bool hubbub_tokeniser_handle_tag_name(hubbub_tokeniser *tokeniser)
 		ctag->name.len += len;
 
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (c == '<' || c == HUBBUB_INPUTSTREAM_EOF) {
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
 		/* Emit current tag */
@@ -916,9 +1109,8 @@ bool hubbub_tokeniser_handle_tag_name(hubbub_tokeniser *tokeniser)
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
 	} else if (c == '/') {
-		/** \todo permitted slash */
 		tokeniser->state =
-			HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
+			HUBBUB_TOKENISER_STATE_SELF_CLOSING_START_TAG;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
 		uint32_t pos;
@@ -988,9 +1180,10 @@ bool hubbub_tokeniser_handle_before_attribute_name(
 
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '/') {
-		/** \todo permitted slash */
+		tokeniser->state =
+			HUBBUB_TOKENISER_STATE_SELF_CLOSING_START_TAG;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (c == '<' || c == HUBBUB_INPUTSTREAM_EOF) {
+	} else if (c == '<') {
 		hubbub_token token;
 
 		/* Emit current tag */
@@ -1073,11 +1266,10 @@ bool hubbub_tokeniser_handle_attribute_name(hubbub_tokeniser *tokeniser)
 
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '/') {
-		/** \todo permitted slash */
 		tokeniser->state =
-				HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
+				HUBBUB_TOKENISER_STATE_SELF_CLOSING_START_TAG;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (c == '<' || c == HUBBUB_INPUTSTREAM_EOF) {
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
 		/* Emit current tag */
@@ -1276,13 +1468,14 @@ bool hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeniser)
 
 	if (c == '"') {
 		tokeniser->state =
-				HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
+				HUBBUB_TOKENISER_STATE_AFTER_ATTRIBUTE_VALUE_Q;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '&') {
 		tokeniser->context.prev_state = tokeniser->state;
 		tokeniser->state =
-			HUBBUB_TOKENISER_STATE_ENTITY_IN_ATTRIBUTE_VALUE;
-		/* Don't eat the '&'; entity consumption handles this */
+			HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE;
+		tokeniser->context.allowed_char = '"';
+		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
@@ -1322,13 +1515,14 @@ bool hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeniser)
 
 	if (c == '\'') {
 		tokeniser->state =
-				HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
+				HUBBUB_TOKENISER_STATE_AFTER_ATTRIBUTE_VALUE_Q;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '&') {
 		tokeniser->context.prev_state = tokeniser->state;
 		tokeniser->state =
-			HUBBUB_TOKENISER_STATE_ENTITY_IN_ATTRIBUTE_VALUE;
-		/* Don't eat the '&'; entity consumption handles this */
+			HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE;
+		tokeniser->context.allowed_char = '\'';
+		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
@@ -1373,8 +1567,9 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 	} else if (c == '&') {
 		tokeniser->context.prev_state = tokeniser->state;
 		tokeniser->state =
-			HUBBUB_TOKENISER_STATE_ENTITY_IN_ATTRIBUTE_VALUE;
-		/* Don't eat the '&'; entity consumption handles this */
+			HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE;
+		tokeniser->context.allowed_char = '\0';
+		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
 		hubbub_token token;
 
@@ -1386,7 +1581,7 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (c == '<' || c == HUBBUB_INPUTSTREAM_EOF) {
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
 		/* Emit current tag */
@@ -1415,7 +1610,7 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 	return true;
 }
 
-bool hubbub_tokeniser_handle_entity_in_attribute_value(
+bool hubbub_tokeniser_handle_character_reference_in_attribute_value(
 		hubbub_tokeniser *tokeniser)
 {
 	hubbub_tag *ctag = &tokeniser->context.current_tag;
@@ -1423,7 +1618,7 @@ bool hubbub_tokeniser_handle_entity_in_attribute_value(
 	size_t len;
 
 	if (tokeniser->context.match_entity.complete == false) {
-		return hubbub_tokeniser_consume_entity(tokeniser);
+		return hubbub_tokeniser_consume_character_reference(tokeniser);
 	} else {
 		uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
@@ -1453,6 +1648,89 @@ bool hubbub_tokeniser_handle_entity_in_attribute_value(
 
 	return true;
 }
+
+bool hubbub_tokeniser_handle_after_attribute_value_q(
+		hubbub_tokeniser *tokeniser)
+{
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+		tokeniser->state =
+				HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit current tag */
+		token.type = tokeniser->context.current_tag_type;
+		token.data.tag = tokeniser->context.current_tag;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '/') {
+		tokeniser->state =
+				HUBBUB_TOKENISER_STATE_SELF_CLOSING_START_TAG;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit current tag */
+		token.type = tokeniser->context.current_tag_type;
+		token.data.tag = tokeniser->context.current_tag;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
+	}
+
+	return true;
+}
+
+bool hubbub_tokeniser_handle_self_closing_start_tag(
+		hubbub_tokeniser *tokeniser)
+{
+	hubbub_tag *ctag = &tokeniser->context.current_tag;
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '>') {
+		hubbub_token token;
+
+		ctag->self_closing = true;
+
+		/* Emit current tag */
+		token.type = tokeniser->context.current_tag_type;
+		token.data.tag = tokeniser->context.current_tag;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit current tag */
+		token.type = tokeniser->context.current_tag_type;
+		token.data.tag = tokeniser->context.current_tag;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
+	}
+
+	return true;
+}
+
 
 bool hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 {
@@ -1496,18 +1774,27 @@ bool hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 bool hubbub_tokeniser_handle_markup_declaration_open(
 		hubbub_tokeniser *tokeniser)
 {
+	size_t len;
+	uint32_t pos;
+
 	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
+	pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
 	if (c == '-') {
-		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_START;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_COMMENT;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if ((c & ~0x20) == 'D') {
 		hubbub_inputstream_uppercase(tokeniser->input);
 		tokeniser->context.match_doctype.count = 1;
 		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_DOCTYPE;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->process_cdata_section == true && c == '[') {
+		tokeniser->context.match_cdata.count = 1;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_CDATA;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
 		tokeniser->context.current_comment.data.off = 0;
@@ -1518,6 +1805,30 @@ bool hubbub_tokeniser_handle_markup_declaration_open(
 
 	return true;
 }
+
+
+bool hubbub_tokeniser_handle_match_comment(hubbub_tokeniser *tokeniser)
+{
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '-') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_START;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else {
+		hubbub_inputstream_push_back(tokeniser->input, '-');
+
+		tokeniser->context.current_comment.data.off = 0;
+		tokeniser->context.current_comment.len = 0;
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_COMMENT;
+	}
+
+	return true;
+}
+
 
 bool hubbub_tokeniser_handle_comment_start(hubbub_tokeniser *tokeniser)
 {
@@ -1531,11 +1842,99 @@ bool hubbub_tokeniser_handle_comment_start(hubbub_tokeniser *tokeniser)
 
 
 	if (c == '-') {
-		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_START_DASH;
 		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit comment */
+		token.type = HUBBUB_TOKEN_COMMENT;
+		token.data.comment = tokeniser->context.current_comment;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit comment */
+		token.type = HUBBUB_TOKEN_COMMENT;
+		token.data.comment = tokeniser->context.current_comment;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
 	} else {
-		hubbub_inputstream_push_back(tokeniser->input, '-');
-		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_COMMENT;
+		uint32_t pos;
+		size_t len;
+
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
+		if (tokeniser->context.current_comment.len == 0)
+			tokeniser->context.current_comment.data.off = pos;
+		tokeniser->context.current_comment.len += len;
+
+		hubbub_inputstream_advance(tokeniser->input);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT;
+	}
+
+	return true;
+}
+
+bool hubbub_tokeniser_handle_comment_start_dash(hubbub_tokeniser *tokeniser)
+{
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '-') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_END;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit comment */
+		token.type = HUBBUB_TOKEN_COMMENT;
+		token.data.comment = tokeniser->context.current_comment;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit comment */
+		token.type = HUBBUB_TOKEN_COMMENT;
+		token.data.comment = tokeniser->context.current_comment;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		uint32_t pos;
+		size_t len;
+
+		/* In order to get to this state, the previous character must
+		 * be '-'.  This means we can safely rewind and add to the
+		  * comment buffer. */
+
+		hubbub_inputstream_rewind(tokeniser->input, 1);
+
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
+		tokeniser->context.current_comment.data.off = pos;
+		tokeniser->context.current_comment.len += len;
+
+		hubbub_inputstream_advance(tokeniser->input);
+
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+		tokeniser->context.current_comment.len += len;
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT;
 	}
 
 	return true;
@@ -1549,7 +1948,7 @@ bool hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 		return false;
 
 	if (c == '-') {
-		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_DASH;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_END_DASH;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
@@ -1577,7 +1976,7 @@ bool hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 	return true;
 }
 
-bool hubbub_tokeniser_handle_comment_dash(hubbub_tokeniser *tokeniser)
+bool hubbub_tokeniser_handle_comment_end_dash(hubbub_tokeniser *tokeniser)
 {
 	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
@@ -1701,32 +2100,26 @@ bool hubbub_tokeniser_handle_match_doctype(hubbub_tokeniser *tokeniser)
 
 	if (tokeniser->context.match_doctype.count == 1 &&
 			(c & ~0x20) == 'O') {
-		hubbub_inputstream_uppercase(tokeniser->input);
 		tokeniser->context.match_doctype.count++;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (tokeniser->context.match_doctype.count == 2 &&
 			(c & ~0x20) == 'C') {
-		hubbub_inputstream_uppercase(tokeniser->input);
 		tokeniser->context.match_doctype.count++;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (tokeniser->context.match_doctype.count == 3 &&
 			(c & ~0x20) == 'T') {
-		hubbub_inputstream_uppercase(tokeniser->input);
 		tokeniser->context.match_doctype.count++;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (tokeniser->context.match_doctype.count == 4 &&
 			(c & ~0x20) == 'Y') {
-		hubbub_inputstream_uppercase(tokeniser->input);
 		tokeniser->context.match_doctype.count++;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (tokeniser->context.match_doctype.count == 5 &&
 			(c & ~0x20) == 'P') {
-		hubbub_inputstream_uppercase(tokeniser->input);
 		tokeniser->context.match_doctype.count++;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (tokeniser->context.match_doctype.count == 6 &&
 			(c & ~0x20) == 'E') {
-		hubbub_inputstream_uppercase(tokeniser->input);
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
@@ -1750,10 +2143,18 @@ bool hubbub_tokeniser_handle_match_doctype(hubbub_tokeniser *tokeniser)
 
 bool hubbub_tokeniser_handle_doctype(hubbub_tokeniser *tokeniser)
 {
+	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
 	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
+
+	memset(cdoc, 0, sizeof *cdoc);
+	cdoc->name.type = HUBBUB_STRING_OFF;
+	cdoc->public_missing = true;
+	cdoc->public_id.type = HUBBUB_STRING_OFF;
+	cdoc->system_missing = true;
+	cdoc->system_id.type = HUBBUB_STRING_OFF;
 
 	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
@@ -1775,27 +2176,13 @@ bool hubbub_tokeniser_handle_before_doctype_name(
 
 	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if ('a' <= c && c <= 'z') {
-		uint32_t pos;
-		size_t len;
-
-		hubbub_inputstream_uppercase(tokeniser->input);
-
-		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
-
-		cdoc->name.data.off = pos;
-		cdoc->name.len = len;
-		cdoc->correct = false;
-
-		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE_NAME;
-
-		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
 		hubbub_token token;
 
 		/* Emit doctype */
 		token.type = HUBBUB_TOKEN_DOCTYPE;
 		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
 
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
@@ -1807,6 +2194,7 @@ bool hubbub_tokeniser_handle_before_doctype_name(
 		/* Emit doctype */
 		token.type = HUBBUB_TOKEN_DOCTYPE;
 		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
 
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
@@ -1819,7 +2207,6 @@ bool hubbub_tokeniser_handle_before_doctype_name(
 
 		cdoc->name.data.off = pos;
 		cdoc->name.len = len;
-		cdoc->correct = false;
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE_NAME;
 
@@ -1846,27 +2233,10 @@ bool hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 		/* Emit doctype */
 		token.type = HUBBUB_TOKEN_DOCTYPE;
 		token.data.doctype = tokeniser->context.current_doctype;
-		token.data.doctype.correct =
-			(hubbub_inputstream_compare_range_ascii(
-				tokeniser->input,
-				token.data.doctype.name.data.off,
-				token.data.doctype.name.len,
-				"HTML", SLEN("HTML")) == 0);
 
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
-		hubbub_inputstream_advance(tokeniser->input);
-	} else if ('a' <= c && c <= 'z') {
-		uint32_t pos;
-		size_t len;
-
-		hubbub_inputstream_uppercase(tokeniser->input);
-
-		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
-
-		cdoc->name.len += len;
-
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
@@ -1874,6 +2244,7 @@ bool hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 		/* Emit doctype */
 		token.type = HUBBUB_TOKEN_DOCTYPE;
 		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
 
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
@@ -1894,7 +2265,6 @@ bool hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 
 bool hubbub_tokeniser_handle_after_doctype_name(hubbub_tokeniser *tokeniser)
 {
-	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
 	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
 	if (c == HUBBUB_INPUTSTREAM_OOD)
@@ -1908,12 +2278,6 @@ bool hubbub_tokeniser_handle_after_doctype_name(hubbub_tokeniser *tokeniser)
 		/* Emit doctype */
 		token.type = HUBBUB_TOKEN_DOCTYPE;
 		token.data.doctype = tokeniser->context.current_doctype;
-		token.data.doctype.correct =
-			(hubbub_inputstream_compare_range_ascii(
-				tokeniser->input,
-				token.data.doctype.name.data.off,
-				token.data.doctype.name.len,
-				"HTML", SLEN("HTML")) == 0);
 
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
@@ -1925,20 +2289,514 @@ bool hubbub_tokeniser_handle_after_doctype_name(hubbub_tokeniser *tokeniser)
 		/* Emit doctype */
 		token.type = HUBBUB_TOKEN_DOCTYPE;
 		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
 
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else if (c == 'P') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_PUBLIC;
+		tokeniser->context.match_doctype.count = 1;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == 'S') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_SYSTEM;
+		tokeniser->context.match_doctype.count = 1;
+		hubbub_inputstream_advance(tokeniser->input);
 	} else {
-		cdoc->correct = false;
-
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+		tokeniser->context.current_doctype.force_quirks = true;
 
 		hubbub_inputstream_advance(tokeniser->input);
 	}
 
 	return true;
 }
+
+
+bool hubbub_tokeniser_handle_match_public(hubbub_tokeniser *tokeniser)
+{
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (tokeniser->context.match_doctype.count == 1 &&
+			(c & ~0x20) == 'U') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 2 &&
+			(c & ~0x20) == 'B') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 3 &&
+			(c & ~0x20) == 'L') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 4 &&
+			(c & ~0x20) == 'I') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 5 &&
+			(c & ~0x20) == 'C') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_PUBLIC;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else {
+		switch (tokeniser->context.match_doctype.count) {
+		case 5: hubbub_inputstream_push_back(tokeniser->input, 'I');
+		case 4: hubbub_inputstream_push_back(tokeniser->input, 'L');
+		case 3: hubbub_inputstream_push_back(tokeniser->input, 'B');
+		case 2: hubbub_inputstream_push_back(tokeniser->input, 'U');
+		case 1: hubbub_inputstream_push_back(tokeniser->input, 'P');
+		}
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+	}
+
+	return true;
+}
+
+
+
+
+bool hubbub_tokeniser_handle_before_doctype_public(hubbub_tokeniser *tokeniser)
+{
+	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '"') {
+		cdoc->public_missing = false;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE_PUBLIC_DQ;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '\'') {
+		cdoc->public_missing = false;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE_PUBLIC_SQ;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		cdoc->force_quirks = true;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
+bool hubbub_tokeniser_handle_doctype_public_dq(hubbub_tokeniser *tokeniser)
+{
+	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '"') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_PUBLIC;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		uint32_t pos;
+		size_t len;
+
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
+		if (cdoc->public_id.len == 0)
+			cdoc->public_id.data.off = pos;
+
+		cdoc->public_id.len += len;
+
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
+bool hubbub_tokeniser_handle_doctype_public_sq(hubbub_tokeniser *tokeniser)
+{
+	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '\'') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_PUBLIC;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		uint32_t pos;
+		size_t len;
+
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
+		if (cdoc->public_id.len == 0)
+			cdoc->public_id.data.off = pos;
+
+		cdoc->public_id.len += len;
+
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
+
+bool hubbub_tokeniser_handle_after_doctype_public(hubbub_tokeniser *tokeniser)
+{
+	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '"') {
+		cdoc->system_missing = false;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE_SYSTEM_DQ;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '\'') {
+		cdoc->system_missing = false;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE_SYSTEM_SQ;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		cdoc->force_quirks = true;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
+
+bool hubbub_tokeniser_handle_match_system(hubbub_tokeniser *tokeniser)
+{
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (tokeniser->context.match_doctype.count == 1 &&
+			(c & ~0x20) == 'Y') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 2 &&
+			(c & ~0x20) == 'S') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 3 &&
+			(c & ~0x20) == 'T') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 4 &&
+			(c & ~0x20) == 'E') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 5 &&
+			(c & ~0x20) == 'M') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_SYSTEM;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else {
+		switch (tokeniser->context.match_doctype.count) {
+		case 5: hubbub_inputstream_push_back(tokeniser->input, 'E');
+		case 4: hubbub_inputstream_push_back(tokeniser->input, 'T');
+		case 3: hubbub_inputstream_push_back(tokeniser->input, 'S');
+		case 2: hubbub_inputstream_push_back(tokeniser->input, 'Y');
+		case 1: hubbub_inputstream_push_back(tokeniser->input, 'S');
+		}
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+	}
+
+	return true;
+}
+
+
+bool hubbub_tokeniser_handle_before_doctype_system(hubbub_tokeniser *tokeniser)
+{
+	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '"') {
+		cdoc->system_missing = false;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE_SYSTEM_DQ;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '\'') {
+		cdoc->system_missing = false;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE_SYSTEM_SQ;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		cdoc->force_quirks = true;
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
+
+
+bool hubbub_tokeniser_handle_doctype_system_dq(hubbub_tokeniser *tokeniser)
+{
+	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '"') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_SYSTEM;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		uint32_t pos;
+		size_t len;
+
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
+		if (cdoc->system_id.len == 0)
+			cdoc->system_id.data.off = pos;
+
+		cdoc->system_id.len += len;
+
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
+bool hubbub_tokeniser_handle_doctype_system_sq(hubbub_tokeniser *tokeniser)
+{
+	hubbub_doctype *cdoc = &tokeniser->context.current_doctype;
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '"') {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_SYSTEM;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		uint32_t pos;
+		size_t len;
+
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
+		if (cdoc->system_id.len == 0)
+			cdoc->system_id.data.off = pos;
+
+		cdoc->system_id.len += len;
+
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
+
+bool hubbub_tokeniser_handle_after_doctype_system(hubbub_tokeniser *tokeniser)
+{
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ') {
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>') {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit doctype */
+		token.type = HUBBUB_TOKEN_DOCTYPE;
+		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
 
 bool hubbub_tokeniser_handle_bogus_doctype(hubbub_tokeniser *tokeniser)
 {
@@ -1975,8 +2833,115 @@ bool hubbub_tokeniser_handle_bogus_doctype(hubbub_tokeniser *tokeniser)
 	return true;
 }
 
-bool hubbub_tokeniser_consume_entity(hubbub_tokeniser *tokeniser)
+
+bool hubbub_tokeniser_handle_match_cdata(hubbub_tokeniser *tokeniser)
 {
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (tokeniser->context.match_doctype.count == 1 && c == 'C') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 2 && c == 'D') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 3 && c == 'A') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 4 && c == 'T') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 5 && c == 'A') {
+		tokeniser->context.match_doctype.count++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (tokeniser->context.match_doctype.count == 6 && c == '[') {
+		tokeniser->context.current_chars.data.off = 0;
+		tokeniser->context.current_chars.len = 0;
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_CDATA_BLOCK;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else {
+		switch (tokeniser->context.match_doctype.count) {
+		case 6: hubbub_inputstream_push_back(tokeniser->input, 'A');
+		case 5: hubbub_inputstream_push_back(tokeniser->input, 'T');
+		case 4: hubbub_inputstream_push_back(tokeniser->input, 'A');
+		case 3: hubbub_inputstream_push_back(tokeniser->input, 'D');
+		case 2: hubbub_inputstream_push_back(tokeniser->input, 'C');
+		case 1: hubbub_inputstream_push_back(tokeniser->input, '[');
+		}
+
+		tokeniser->context.current_comment.data.off = 0;
+		tokeniser->context.current_comment.len = 0;
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_COMMENT;
+	}
+
+	return true;
+}
+
+bool hubbub_tokeniser_handle_cdata_block(hubbub_tokeniser *tokeniser)
+{
+	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (c == HUBBUB_INPUTSTREAM_OOD)
+		return false;
+
+	if (c == ']' && (tokeniser->context.match_cdata.end == 0 ||
+			tokeniser->context.match_cdata.end == 1)) {
+		tokeniser->context.match_cdata.end++;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == '>' && tokeniser->context.match_cdata.end == 2) {
+		hubbub_token token;
+
+		/* Emit any pending characters */
+		token.type = HUBBUB_TOKEN_CHARACTER;
+		token.data.character = tokeniser->context.current_chars;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
+		hubbub_token token;
+
+		/* Emit any pending characters */
+		token.type = HUBBUB_TOKEN_CHARACTER;
+		token.data.character = tokeniser->context.current_chars;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
+		uint32_t pos;
+		size_t len;
+
+		if (tokeniser->context.match_cdata.end) {
+			hubbub_inputstream_rewind(tokeniser->input,
+					tokeniser->context.match_cdata.end);
+			tokeniser->context.match_cdata.end = 0;
+		}
+
+		/* Accumulate characters into buffer */
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
+		if (tokeniser->context.current_chars.len == 0)
+			tokeniser->context.current_chars.data.off = pos;
+
+		tokeniser->context.current_chars.len += len;
+
+		hubbub_inputstream_advance(tokeniser->input);
+	}
+
+	return true;
+}
+
+
+bool hubbub_tokeniser_consume_character_reference(hubbub_tokeniser *tokeniser)
+{
+	uint32_t allowed_char = tokeniser->context.allowed_char;
+
 	uint32_t c;
 	uint32_t pos;
 	size_t len;
@@ -2004,7 +2969,14 @@ bool hubbub_tokeniser_consume_entity(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '#') {
+	/* Reset allowed character for future calls */
+	tokeniser->context.allowed_char = '\0';
+
+	if (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == ' ' ||
+		c == '<' || c == '&' || c == HUBBUB_INPUTSTREAM_EOF ||
+		(allowed_char && c == allowed_char)) {
+		return true;
+	} else if (c == '#') {
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 		tokeniser->context.match_entity.str.len += len;
@@ -2017,6 +2989,7 @@ bool hubbub_tokeniser_consume_entity(hubbub_tokeniser *tokeniser)
 
 	return true;
 }
+
 
 bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 {
@@ -2106,6 +3079,8 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 		} else if (ctx->match_entity.codepoint == 0 ||
 				ctx->match_entity.codepoint > 0x10FFFF) {
 			ctx->match_entity.codepoint = 0xFFFD;
+		} else if (ctx->match_entity.codepoint == 0x0D) {
+			ctx->match_entity.codepoint = 0x000A;
 		}
 
 		/* And replace the matched range with it */
@@ -2177,13 +3152,15 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	/* Eat trailing semicolon, if any */
-	if (ctx->match_entity.codepoint != 0 && c == ';' &&
-			ctx->match_entity.prev_len ==
-				ctx->match_entity.str.len) {
-		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
-		ctx->match_entity.prev_len += len;
+	c = hubbub_inputstream_peek(tokeniser->input);
+
+	if (ctx->match_entity.codepoint != 0 && c != ';' &&
+			((0x0030 <= c && c <= 0x0039) ||
+			(0x0041 <= c && c <= 0x005A) ||
+			(0x0061 <= c && c <= 0x007A))) {
+		ctx->match_entity.codepoint = 0;
 	}
+
 
 	/* Rewind the inputstream to start of processed sequence */
 	hubbub_inputstream_rewind(tokeniser->input,
