@@ -14,6 +14,7 @@
 use warnings;
 use strict;
 use File::Spec;
+use IO::Select;
 use IPC::Open3;
 
 if (@ARGV < 1) {
@@ -52,8 +53,6 @@ while (my $line = <TINDEX>) {
 
 	print "Test: $desc\n";
 
-	my $pid;
-
 	if ($data) {
 		# Testcase has external data files
 
@@ -83,36 +82,8 @@ while (my $line = <TINDEX>) {
 			print $msg;
 
 			# Run testcase
-			$pid = open3("&<NULL", \*OUT, \*ERR, 
-					"$directory/$test", 
-					"$directory/data/Aliases", 
+			run_test("$directory/$test", "$directory/data/Aliases", 
 					"$directory/data/$data/$dtest");
-
-			my $last = "FAIL";
-
-			# Marshal testcase output to log file
-			while (my $output = <OUT>) {
-				print LOG "    $output";
-				$last = $output;
-			}
-
-			# Wait for child to finish
-			waitpid($pid, 0);
-
-			print substr($last, 0, 4) . "\n";
-
-			# Bail, noisily, on failure
-			if (substr($last, 0, 4) eq "FAIL") {
-				# Write any stderr output to the log
-				while (my $errors = <ERR>) {
-					print LOG "    $errors";
-				}
-
-				print "\n\nFailure detected: " .
-						"consult log file\n\n\n";
-
-				exit(1);
-			}
                 }
 
 		close(DINDEX);
@@ -127,34 +98,7 @@ while (my $line = <TINDEX>) {
 		print $msg;
 
 		# Run testcase
-		$pid = open3("&<NULL", \*OUT, \*ERR, 
-				"$directory/$test", "$directory/data/Aliases");
-
-		my $last = "FAIL";
-
-		# Marshal testcase output to log file
-		while (my $output = <OUT>) {
-			print LOG "    $output";
-			$last = $output;
-		}
-
-		# Wait for child to finish
-		waitpid($pid, 0);
-
-		print substr($last, 0, 4) . "\n";
-
-		# Bail, noisily, on failure
-		if (substr($last, 0, 4) eq "FAIL") {
-			# Write any stderr output to the log
-			while (my $errors = <ERR>) {
-				print LOG "    $errors";
-			}
-
-			print "\n\nFailure detected: " . 
-					"consult log file\n\n\n";
-
-			exit(1);
-		}
+		run_test("$directory/$test", "$directory/data/Aliases");
 	}
 
 	print "\n";
@@ -165,3 +109,52 @@ close(TINDEX);
 
 close(NULL);
 close(LOG);
+
+sub run_test
+{
+	my @errors;
+
+	my $pid = open3("&<NULL", \*OUT, \*ERR, @_);
+
+	$SIG{CHLD} = sub { waitpid($pid, 0); };
+
+	my $selector = IO::Select->new();
+	$selector->add(*OUT, *ERR);
+
+	my $last = "FAIL";
+
+	# Marshal testcase output to log file
+	while (my @ready = $selector->can_read) {
+		foreach my $fh (@ready) {
+			if (fileno($fh) == fileno(OUT)) {
+				while (my $output = <OUT>) {
+					print LOG "    $output";
+					$last = $output;
+				}
+			} else {
+				my @tmp = <ERR>;
+				push(@errors, @tmp);
+			}
+
+			$selector->remove($fh) if eof($fh);
+		}
+	}
+
+	print substr($last, 0, 4) . "\n";
+
+	# Bail, noisily, on failure
+	if (substr($last, 0, 4) eq "FAIL") {
+		# Write any stderr output to the log
+		foreach my $error (@errors) {
+			print LOG "    $error";
+		}
+
+		print "\n\nFailure detected: consult log file\n\n\n";
+
+		exit(1);
+	}
+
+	close(OUT);
+	close(ERR);
+}
+
