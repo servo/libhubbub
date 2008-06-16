@@ -1772,15 +1772,10 @@ bool hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 bool hubbub_tokeniser_handle_markup_declaration_open(
 		hubbub_tokeniser *tokeniser)
 {
-	size_t len;
-	uint32_t pos;
-
 	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
-
-	pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 	if (c == '-') {
 		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_COMMENT;
