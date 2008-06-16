@@ -1817,7 +1817,8 @@ bool hubbub_tokeniser_handle_match_comment(hubbub_tokeniser *tokeniser)
 		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_START;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
-		hubbub_inputstream_push_back(tokeniser->input, '-');
+		/* Rewind to the first '-' */
+		hubbub_inputstream_rewind(tokeniser->input, 1);
 
 		tokeniser->context.current_comment.data.off = 0;
 		tokeniser->context.current_comment.len = 0;
@@ -2122,14 +2123,9 @@ bool hubbub_tokeniser_handle_match_doctype(hubbub_tokeniser *tokeniser)
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DOCTYPE;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
-		switch (tokeniser->context.match_doctype.count) {
-		case 6: hubbub_inputstream_push_back(tokeniser->input, 'P');
-		case 5: hubbub_inputstream_push_back(tokeniser->input, 'Y');
-		case 4: hubbub_inputstream_push_back(tokeniser->input, 'T');
-		case 3: hubbub_inputstream_push_back(tokeniser->input, 'C');
-		case 2: hubbub_inputstream_push_back(tokeniser->input, 'O');
-		case 1: hubbub_inputstream_push_back(tokeniser->input, 'D');
-		}
+		/* Rewind as many characters as have been matched */
+		hubbub_inputstream_rewind(tokeniser->input,
+			tokeniser->context.match_doctype.count);
 
 		tokeniser->context.current_comment.data.off = 0;
 		tokeniser->context.current_comment.len = 0;
@@ -2340,13 +2336,9 @@ bool hubbub_tokeniser_handle_match_public(hubbub_tokeniser *tokeniser)
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_PUBLIC;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
-		switch (tokeniser->context.match_doctype.count) {
-		case 5: hubbub_inputstream_push_back(tokeniser->input, 'I');
-		case 4: hubbub_inputstream_push_back(tokeniser->input, 'L');
-		case 3: hubbub_inputstream_push_back(tokeniser->input, 'B');
-		case 2: hubbub_inputstream_push_back(tokeniser->input, 'U');
-		case 1: hubbub_inputstream_push_back(tokeniser->input, 'P');
-		}
+		/* Rewind as many characters as have been matched */
+		hubbub_inputstream_rewind(tokeniser->input,
+				tokeniser->context.match_doctype.count);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
 	}
@@ -2587,13 +2579,9 @@ bool hubbub_tokeniser_handle_match_system(hubbub_tokeniser *tokeniser)
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BEFORE_DOCTYPE_SYSTEM;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
-		switch (tokeniser->context.match_doctype.count) {
-		case 5: hubbub_inputstream_push_back(tokeniser->input, 'E');
-		case 4: hubbub_inputstream_push_back(tokeniser->input, 'T');
-		case 3: hubbub_inputstream_push_back(tokeniser->input, 'S');
-		case 2: hubbub_inputstream_push_back(tokeniser->input, 'Y');
-		case 1: hubbub_inputstream_push_back(tokeniser->input, 'S');
-		}
+		/* Rewind as many characters as have been matched */
+		hubbub_inputstream_rewind(tokeniser->input,
+				tokeniser->context.match_doctype.count);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
 	}
@@ -2840,36 +2828,31 @@ bool hubbub_tokeniser_handle_match_cdata(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (tokeniser->context.match_doctype.count == 1 && c == 'C') {
-		tokeniser->context.match_doctype.count++;
+	if (tokeniser->context.match_cdata.count == 1 && c == 'C') {
+		tokeniser->context.match_cdata.count++;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (tokeniser->context.match_doctype.count == 2 && c == 'D') {
-		tokeniser->context.match_doctype.count++;
+	} else if (tokeniser->context.match_cdata.count == 2 && c == 'D') {
+		tokeniser->context.match_cdata.count++;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (tokeniser->context.match_doctype.count == 3 && c == 'A') {
-		tokeniser->context.match_doctype.count++;
+	} else if (tokeniser->context.match_cdata.count == 3 && c == 'A') {
+		tokeniser->context.match_cdata.count++;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (tokeniser->context.match_doctype.count == 4 && c == 'T') {
-		tokeniser->context.match_doctype.count++;
+	} else if (tokeniser->context.match_cdata.count == 4 && c == 'T') {
+		tokeniser->context.match_cdata.count++;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (tokeniser->context.match_doctype.count == 5 && c == 'A') {
-		tokeniser->context.match_doctype.count++;
+	} else if (tokeniser->context.match_cdata.count == 5 && c == 'A') {
+		tokeniser->context.match_cdata.count++;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (tokeniser->context.match_doctype.count == 6 && c == '[') {
+	} else if (tokeniser->context.match_cdata.count == 6 && c == '[') {
 		tokeniser->context.current_chars.data.off = 0;
 		tokeniser->context.current_chars.len = 0;
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_CDATA_BLOCK;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
-		switch (tokeniser->context.match_doctype.count) {
-		case 6: hubbub_inputstream_push_back(tokeniser->input, 'A');
-		case 5: hubbub_inputstream_push_back(tokeniser->input, 'T');
-		case 4: hubbub_inputstream_push_back(tokeniser->input, 'A');
-		case 3: hubbub_inputstream_push_back(tokeniser->input, 'D');
-		case 2: hubbub_inputstream_push_back(tokeniser->input, 'C');
-		case 1: hubbub_inputstream_push_back(tokeniser->input, '[');
-		}
+		/* Rewind as many characters as we matched */
+		hubbub_inputstream_rewind(tokeniser->input,
+				tokeniser->context.match_cdata.count);
 
 		tokeniser->context.current_comment.data.off = 0;
 		tokeniser->context.current_comment.len = 0;
