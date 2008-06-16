@@ -2951,6 +2951,9 @@ bool hubbub_tokeniser_consume_character_reference(hubbub_tokeniser *tokeniser)
 	if (c == '\t' || c == '\n' || c == '\f' || c == ' ' ||
 		c == '<' || c == '&' || c == HUBBUB_INPUTSTREAM_EOF ||
 		(allowed_char && c == allowed_char)) {
+		tokeniser->context.match_entity.complete = true;
+		/* rewind to the '&' (de-consume) */
+		hubbub_inputstream_rewind(tokeniser->input, 1);
 		return true;
 	} else if (c == '#') {
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
