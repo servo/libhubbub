@@ -83,7 +83,14 @@ typedef struct hubbub_attribute {
  */
 typedef struct hubbub_doctype {
 	hubbub_string name;		/**< Doctype name */
-	bool correct;			/**< Doctype validity flag */
+
+	bool public_missing;		/**< Whether the public id is missing */
+	hubbub_string public_id;	/**< Doctype public identifier */
+
+	bool system_missing;		/**< Whether the system id is missing */
+	hubbub_string system_id;	/**< Doctype system identifier */
+
+	bool force_quirks;		/**< Doctype force-quirks flag */
 } hubbub_doctype;
 
 /**
@@ -93,6 +100,7 @@ typedef struct hubbub_tag {
 	hubbub_string name;		/**< Tag name */
 	uint32_t n_attributes;		/**< Count of attributes */
 	hubbub_attribute *attributes;	/**< Array of attribute data */
+	bool self_closing;		/**< Whether the tag can have children */
 } hubbub_tag;
 
 /**
