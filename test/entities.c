@@ -19,16 +19,16 @@ int main(int argc, char **argv)
 
 	assert(hubbub_entities_create(myrealloc, NULL) == HUBBUB_OK);
 
+	assert(hubbub_entities_search_step('n', &result, &context) ==
+			HUBBUB_NEEDDATA);
+
 	assert(hubbub_entities_search_step('o', &result, &context) ==
 			HUBBUB_NEEDDATA);
 
-	assert(hubbub_entities_search_step('r', &result, &context) ==
-			HUBBUB_OK);
-
-	assert(hubbub_entities_search_step('d', &result, &context) ==
+	assert(hubbub_entities_search_step('t', &result, &context) ==
 			HUBBUB_NEEDDATA);
 
-	assert(hubbub_entities_search_step('f', &result, &context) ==
+	assert(hubbub_entities_search_step(';', &result, &context) ==
 			HUBBUB_OK);
 
 	assert(hubbub_entities_search_step('z', &result, &context) ==

@@ -277,21 +277,60 @@ void token_handler(const hubbub_token *token, void *pw)
 	{
 		char *expname = json_object_get_string((struct json_object *)
 				array_list_get_idx(items, 1));
-		bool expvalid = json_object_get_boolean((struct json_object *)
+		char *exppub = json_object_get_string((struct json_object *)
 				array_list_get_idx(items, 2));
+		char *expsys = json_object_get_string((struct json_object *)
+				array_list_get_idx(items, 3));
+		bool expquirks = !json_object_get_boolean((struct json_object *)
+				array_list_get_idx(items, 4));
 		char *gotname = (char *) (ctx->pbuffer +
 				token->data.doctype.name.data.off);
+		char *gotpub, *gotsys;
 
-		printf("'%.*s' (%svalid)\n",
+		printf("'%.*s' %sids:\n",
 				(int) token->data.doctype.name.len,
 				gotname,
-				token->data.doctype.correct ? "" : "in");
+				token->data.doctype.force_quirks ?
+						"(force-quirks) " : "");
+
+		if (token->data.doctype.public_missing) {
+			gotpub = NULL;
+			printf("\tpublic: missing\n");
+		} else {
+			gotpub = (char *) (ctx->pbuffer +
+				token->data.doctype.public_id.data.off);
+			printf("\tpublic: '%.*s'\n",
+				(int) token->data.doctype.public_id.len,
+				gotpub);
+		}
+
+		if (token->data.doctype.system_missing) {
+			gotsys = NULL;
+			printf("\tsystem: missing\n");
+		} else {
+			gotsys = (char *) (ctx->pbuffer +
+				token->data.doctype.system_id.data.off);
+			printf("\tsystem: '%.*s'\n",
+				(int) token->data.doctype.system_id.len,
+				gotsys);
+		}
 
 		assert(token->data.doctype.name.len == strlen(expname));
 		assert(strncmp(gotname, expname, strlen(expname)) == 0);
-		/* For some reason, html5lib's doctype validity indicator
-		 * is inverted */
-		assert(expvalid == !token->data.doctype.correct);
+
+		assert((exppub == NULL) == (gotpub == NULL));
+		if (exppub) {
+			assert(token->data.doctype.public_id.len == strlen(exppub));
+			assert(strncmp(gotpub, exppub, strlen(exppub)) == 0);
+		}
+
+		assert((expsys == NULL) == (gotsys == NULL));
+		if (gotsys) {
+			assert(token->data.doctype.system_id.len == strlen(expsys));
+			assert(strncmp(gotsys, expsys, strlen(expsys)) == 0);
+		}
+
+		assert(expquirks == token->data.doctype.force_quirks);
 	}
 		break;
 	case HUBBUB_TOKEN_START_TAG:
@@ -301,17 +340,24 @@ void token_handler(const hubbub_token *token, void *pw)
 		struct lh_entry *expattrs = json_object_get_object(
 			(struct json_object *)
 					array_list_get_idx(items, 2))->head;
+		bool self_closing = json_object_get_boolean((struct json_object *)
+				array_list_get_idx(items, 3));
+
 		char *tagname = (char *) (ctx->pbuffer +
 				token->data.tag.name.data.off);
 
-		printf("'%.*s' %s\n",
+		printf("'%.*s' %s%s\n",
 				(int) token->data.tag.name.len,
 				tagname,
+				(token->data.tag.self_closing) ?
+						"(self-closing) " : "",
 				(token->data.tag.n_attributes > 0) ?
 						"attributes:" : "");
 
 		assert(token->data.tag.name.len == strlen(expname));
 		assert(strncmp(tagname, expname, strlen(expname)) == 0);
+
+		assert(self_closing == token->data.tag.self_closing);
 
 		for (i = 0; i < token->data.tag.n_attributes; i++) {
 			char *expname = (char *) expattrs->k;

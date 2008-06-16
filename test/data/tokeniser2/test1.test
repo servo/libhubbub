@@ -2,15 +2,15 @@
 
 {"description":"Correct Doctype lowercase",
 "input":"<!DOCTYPE html>",
-"output":[["DOCTYPE", "HTML", false]]},
+"output":[["DOCTYPE", "html", null, null, true]]},
 
 {"description":"Correct Doctype uppercase",
-"input":"<!DOCTYPE HTML>", 
-"output":[["DOCTYPE", "HTML", false]]},
+"input":"<!DOCTYPE HTML>",
+"output":[["DOCTYPE", "HTML", null, null, true]]},
 
 {"description":"Correct Doctype mixed case",
 "input":"<!DOCTYPE HtMl>", 
-"output":[["DOCTYPE", "HTML", false]]},
+"output":[["DOCTYPE", "HtMl", null, null, true]]},
 
 {"description":"Truncated doctype start",
 "input":"<!DOC>", 
@@ -18,7 +18,7 @@
 
 {"description":"Doctype in error",
 "input":"<!DOCTYPE foo>", 
-"output":[["DOCTYPE", "FOO", true]]},
+"output":[["DOCTYPE", "foo", null, null, true]]},
 
 {"description":"Single Start Tag",
 "input":"<h>",
@@ -58,7 +58,7 @@
 
 {"description":"Multiple atts no space",
 "input":"<h a='b'c='d'>",
-"output":[["StartTag", "h", {"a":"b", "c":"d"}]]},
+"output":["ParseError", ["StartTag", "h", {"a":"b", "c":"d"}]]},
 
 {"description":"Repeated attr",
  "input":"<h a='b' a='d'>",
@@ -84,17 +84,38 @@
 "input":"<!-",
 "output":["ParseError", ["Comment", "-"]]},
 
-{"description":"Ampersand only",
+{"description":"Short comment",
+ "input":"<!-->",
+ "output":["ParseError", ["Comment", ""]]},
+
+{"description":"Short comment two",
+ "input":"<!--->",
+ "output":["ParseError", ["Comment", ""]]},
+
+{"description":"Short comment three",
+ "input":"<!---->",
+ "output":[["Comment", ""]]},
+
+
+{"description":"Ampersand EOF",
 "input":"&",
-"output":["ParseError", ["Character", "&"]]},
+"output":[["Character", "&"]]},
+
+{"description":"Ampersand ampersand EOF",
+"input":"&&",
+"output":[["Character", "&&"]]},
+
+{"description":"Ampersand space EOF",
+"input":"& ",
+"output":[["Character", "& "]]},
 
 {"description":"Unfinished entity",
 "input":"&f",
-"output":["ParseError", ["Character", "&"], ["Character", "f"]]},
+"output":["ParseError", ["Character", "&f"]]},
 
 {"description":"Ampersand, number sign",
 "input":"&#",
-"output":["ParseError", ["Character", "&"], ["Character", "#"]]},
+"output":["ParseError", ["Character", "&#"]]},
 
 {"description":"Unfinished numeric entity",
 "input":"&#x",
@@ -102,20 +123,19 @@
 
 {"description":"Entity with trailing semicolon (1)",
 "input":"I'm &not;it",
-"output":[["Character","I'm ¬it"]]},
+"output":[["Character","I'm \u00ACit"]]},
 
 {"description":"Entity with trailing semicolon (2)",
 "input":"I'm &notin;",
-"output":[["Character","I'm ∉"]]},
+"output":[["Character","I'm \u2209"]]},
 
 {"description":"Entity without trailing semicolon (1)",
 "input":"I'm &notit",
-"output":[["Character","I'm "], "ParseError", ["Character", "¬"],
-["Character", "it"]]},
+"output":[["Character","I'm "], "ParseError", ["Character", "\u00ACit"]]},
 
 {"description":"Entity without trailing semicolon (2)",
 "input":"I'm &notin",
-"output":[["Character","I'm "], "ParseError", ["Character", "∉"]]},
+"output":[["Character","I'm "], "ParseError", ["Character", "\u00ACin"]]},
 
 {"description":"Partial entity match at end of file",
 "input":"I'm &no",
@@ -131,6 +151,22 @@
 
 {"description":"Hexadecimal entity in attribute",
 "input":"<h a='&#x3f;'></h>",
-"output":[["StartTag", "h", {"a":"?"}], ["EndTag", "h"]]}
+"output":[["StartTag", "h", {"a":"?"}], ["EndTag", "h"]]},
+
+{"description":"Entity in attribute without semicolon ending in x",
+"input":"<h a='&notx'>",
+"output":["ParseError", ["StartTag", "h", {"a":"&notx"}]]},
+
+{"description":"Entity in attribute without semicolon ending in 1",
+"input":"<h a='&not1'>",
+"output":["ParseError", ["StartTag", "h", {"a":"&not1"}]]},
+
+{"description":"Entity in attribute without semicolon ending in i",
+"input":"<h a='&noti'>",
+"output":["ParseError", ["StartTag", "h", {"a":"&noti"}]]},
+
+{"description":"Entity in attribute without semicolon",
+"input":"<h a='&COPY'>",
+"output":["ParseError", ["StartTag", "h", {"a":"\u00A9"}]]}
 
 ]}

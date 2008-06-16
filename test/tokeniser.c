@@ -126,15 +126,33 @@ void token_handler(const hubbub_token *token, void *pw)
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_DOCTYPE:
-		printf("'%.*s' (%svalid)\n",
+		printf("'%.*s' %sids:\n",
 				(int) token->data.doctype.name.len,
 				pbuffer + token->data.doctype.name.data.off,
-				token->data.doctype.correct ? "" : "in");
+				token->data.doctype.force_quirks ?
+						"(force-quirks) " : "");
+
+		if (token->data.doctype.public_missing)
+			printf("\tpublic: missing\n");
+		else
+			printf("\tpublic: '%.*s'\n",
+				(int) token->data.doctype.public_id.len,
+				pbuffer + token->data.doctype.public_id.data.off);
+
+		if (token->data.doctype.system_missing)
+			printf("\tsystem: missing\n");
+		else
+			printf("\tsystem: '%.*s'\n",
+				(int) token->data.doctype.system_id.len,
+				pbuffer + token->data.doctype.system_id.data.off);
+
 		break;
 	case HUBBUB_TOKEN_START_TAG:
-		printf("'%.*s' %s\n",
+		printf("'%.*s' %s%s\n",
 				(int) token->data.tag.name.len,
 				pbuffer + token->data.tag.name.data.off,
+				(token->data.tag.self_closing) ?
+						"(self-closing) " : "",
 				(token->data.tag.n_attributes > 0) ?
 						"attributes:" : "");
 		for (i = 0; i < token->data.tag.n_attributes; i++) {
@@ -146,9 +164,11 @@ void token_handler(const hubbub_token *token, void *pw)
 		}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
-		printf("'%.*s' %s\n",
+		printf("'%.*s' %s%s\n",
 				(int) token->data.tag.name.len,
 				pbuffer + token->data.tag.name.data.off,
+				(token->data.tag.self_closing) ?
+						"(self-closing) " : "",
 				(token->data.tag.n_attributes > 0) ?
 						"attributes:" : "");
 		for (i = 0; i < token->data.tag.n_attributes; i++) {

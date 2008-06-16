@@ -4,4 +4,8 @@
 
 test1.test		html5lib tests (part 1)
 test2.test		html5lib tests (part 2)
+test3.test		html5lib tests (part 3)
+test4.test		html5lib tests (part 4)
 contentModelFlags.test	html5lib content model tests
+entities.test		html5lib entity tests
+escapeFlag.test		html5lib escape flag tests
