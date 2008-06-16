@@ -3161,6 +3161,7 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 
 	/* Reset for next time */
 	ctx->match_entity.done_setup = false;
+	ctx->allowed_char = '\0';
 
 	/* Flag completion */
 	ctx->match_entity.complete = true;
