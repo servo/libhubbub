@@ -1567,7 +1567,6 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 		tokeniser->context.prev_state = tokeniser->state;
 		tokeniser->state =
 			HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE;
-		tokeniser->context.allowed_char = '\0';
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
 		hubbub_token token;
@@ -3161,7 +3160,6 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 
 	/* Reset for next time */
 	ctx->match_entity.done_setup = false;
-	ctx->allowed_char = '\0';
 
 	/* Flag completion */
 	ctx->match_entity.complete = true;
