@@ -3070,8 +3070,6 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 			cp = 0xFFFD;
 		}
 
-		printf("%x\n", cp);
-
 		/* And replace the matched range with it */
 		error = hubbub_inputstream_replace_range(tokeniser->input,
 				ctx->match_entity.str.data.off,
