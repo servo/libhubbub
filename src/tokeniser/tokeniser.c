@@ -4,7 +4,6 @@
  *                http://www.opensource.org/licenses/mit-license.php
  * Copyright 2007 John-Mark Bell <jmb@netsurf-browser.org>
  */
-
 #include <stdbool.h>
 #include <string.h>
 
@@ -1812,15 +1811,15 @@ bool hubbub_tokeniser_handle_match_comment(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
+	tokeniser->context.current_comment.data.off = 0;
+	tokeniser->context.current_comment.len = 0;
+
 	if (c == '-') {
 		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_START;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else {
 		/* Rewind to the first '-' */
 		hubbub_inputstream_rewind(tokeniser->input, 1);
-
-		tokeniser->context.current_comment.data.off = 0;
-		tokeniser->context.current_comment.len = 0;
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_COMMENT;
 	}
@@ -1835,10 +1834,6 @@ bool hubbub_tokeniser_handle_comment_start(hubbub_tokeniser *tokeniser)
 
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
-
-	tokeniser->context.current_comment.data.off = 0;
-	tokeniser->context.current_comment.len = 0;
-
 
 	if (c == '-') {
 		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT_START_DASH;
@@ -1870,12 +1865,12 @@ bool hubbub_tokeniser_handle_comment_start(hubbub_tokeniser *tokeniser)
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		tokeniser->context.current_comment.data.off = pos;
-		tokeniser->context.current_comment.len = len;
-
-		hubbub_inputstream_advance(tokeniser->input);
+		if (tokeniser->context.current_comment.len == 0)
+			tokeniser->context.current_comment.data.off = pos;
+		tokeniser->context.current_comment.len += len;
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT;
+		hubbub_inputstream_advance(tokeniser->input);
 	}
 
 	return true;
@@ -1924,7 +1919,9 @@ bool hubbub_tokeniser_handle_comment_start_dash(hubbub_tokeniser *tokeniser)
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		tokeniser->context.current_comment.data.off = pos;
+		if (tokeniser->context.current_comment.len == 0)
+			tokeniser->context.current_comment.data.off = pos;
+
 		tokeniser->context.current_comment.len += len;
 		hubbub_inputstream_advance(tokeniser->input);
 
@@ -1995,21 +1992,24 @@ bool hubbub_tokeniser_handle_comment_end_dash(hubbub_tokeniser *tokeniser)
 		uint32_t pos;
 		size_t len;
 
+		/* In order to get to this state, the previous character must
+		 * be '-'.  This means we can safely rewind and add to the
+		 * comment buffer. */
+
+		hubbub_inputstream_rewind(tokeniser->input, 1);
+
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		if (tokeniser->context.current_comment.len == 0) {
+		if (tokeniser->context.current_comment.len == 0)
 			tokeniser->context.current_comment.data.off = pos;
-		} else {
-			/* Need to do this to get length of '-' */
-			len += pos -
-				tokeniser->context.current_comment.data.off;
-		}
+		tokeniser->context.current_comment.len += len;
+		hubbub_inputstream_advance(tokeniser->input);
 
-		tokeniser->context.current_comment.len = len;
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+		tokeniser->context.current_comment.len += len;
+		hubbub_inputstream_advance(tokeniser->input);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT;
-
-		hubbub_inputstream_advance(tokeniser->input);
 	}
 
 	return true;
@@ -2066,21 +2066,29 @@ bool hubbub_tokeniser_handle_comment_end(hubbub_tokeniser *tokeniser)
 		uint32_t pos;
 		size_t len;
 
+		/* In order to have got here, the previous two characters
+		 * must be '--', so rewind two characters */
+		hubbub_inputstream_rewind(tokeniser->input, 2);
+
+		/* Add first '-' */
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		if (tokeniser->context.current_comment.len == 0) {
+		if (tokeniser->context.current_comment.len == 0)
 			tokeniser->context.current_comment.data.off = pos;
-		} else {
-			/* Need to do this to get length of '--' */
-			len += pos -
-				tokeniser->context.current_comment.data.off;
-		}
+		tokeniser->context.current_comment.len += len;
+		hubbub_inputstream_advance(tokeniser->input);
 
-		tokeniser->context.current_comment.len = len;
+		/* Add second '-' */
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+		tokeniser->context.current_comment.len += len;
+		hubbub_inputstream_advance(tokeniser->input);
+
+		/* Add input character */
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+		tokeniser->context.current_comment.len += len;
+		hubbub_inputstream_advance(tokeniser->input);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT;
-
-		hubbub_inputstream_advance(tokeniser->input);
 	}
 
 	return true;
