@@ -1358,7 +1358,7 @@ bool hubbub_tokeniser_handle_after_attribute_name(
 		tokeniser->state =
 				HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (c == '<' || c == HUBBUB_INPUTSTREAM_EOF) {
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
 		/* Emit current tag */
@@ -1434,7 +1434,7 @@ bool hubbub_tokeniser_handle_before_attribute_value(
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (c == '<' || c == HUBBUB_INPUTSTREAM_EOF) {
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
 		/* Emit current tag */
