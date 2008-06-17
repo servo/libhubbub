@@ -14,12 +14,11 @@ typedef struct hubbub_dict_node {
 	uint8_t split;			/**< Data to split on */
 	struct hubbub_dict_node *lt;	/**< Subtree for data less than
 					 * split */
-	struct hubbub_dict_node *eq;	/**< Subtree for data equal to split
-					 * If split == '\0', this stores the
-					 * pointer to the actual data, not a
-					 * subtree */
+	struct hubbub_dict_node *eq;	/**< Subtree for data equal to split */
 	struct hubbub_dict_node *gt;	/**< Subtree for data greater than
 					 * split */
+
+	const void *value;			/**< Data for this node */
 } hubbub_dict_node;
 
 /** Dictionary object */
@@ -143,10 +142,14 @@ hubbub_dict_node *hubbub_dict_insert_internal(hubbub_dict *dict,
 				parent->lt, key, value);
 	} else if ((uint8_t) key[0] == parent->split) {
 		if (key[0] == '\0') {
-			parent->eq = (hubbub_dict_node *) value;
+			parent->value = value;
+		} else if (key[1] == '\0') {
+			parent->value = value;
+			parent->eq = hubbub_dict_insert_internal(dict,
+					parent->eq, key + 1, value);
 		} else {
 			parent->eq = hubbub_dict_insert_internal(dict,
-					parent->eq, ++key, value);
+					parent->eq, key + 1, value);
 		}
 	} else  {
 		parent->gt = hubbub_dict_insert_internal(dict,
@@ -200,7 +203,11 @@ hubbub_error hubbub_dict_search_step(hubbub_dict *dict, uint8_t c,
 				p = NULL;
 			} else if (p->eq != NULL && p->eq->split == '\0') {
 				match = true;
-				*result = (const void *) p->eq->eq;
+				*result = p->eq->value;
+				p = p->eq;
+			} else if (p->value) {
+				match = true;
+				*result = p->value;
 				p = p->eq;
 			} else {
 				p = p->eq;

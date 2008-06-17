@@ -103,6 +103,7 @@ typedef struct hubbub_tokeniser_context {
 
 	struct {
 		hubbub_string str;		/**< Pending string */
+		uint32_t poss_len;
 		uint8_t base;			/**< Base for numeric
 						 * entities */
 		uint32_t codepoint;		/**< UCS4 codepoint */
@@ -265,6 +266,9 @@ hubbub_tokeniser *hubbub_tokeniser_create(hubbub_inputstream *input,
 
 	tok->state = HUBBUB_TOKENISER_STATE_DATA;
 	tok->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
+
+	tok->escape_flag = false;
+	tok->process_cdata_section = false;
 
 	tok->input = input;
 	tok->input_buffer = NULL;
@@ -580,7 +584,8 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 				tokeniser->escape_flag == false) {
 			tokeniser->state =
 					HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_DATA;
-			hubbub_inputstream_advance(tokeniser->input);
+			/* Don't eat the '&'; it'll be handled by entity
+			 * consumption */
 			break;
 		} else if (c == '-') {
 			size_t len;
@@ -1474,7 +1479,7 @@ bool hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeniser)
 		tokeniser->state =
 			HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE;
 		tokeniser->context.allowed_char = '"';
-		hubbub_inputstream_advance(tokeniser->input);
+		/* Don't eat the '&'; it'll be handled by entity consumption */
 	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
@@ -1521,7 +1526,7 @@ bool hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeniser)
 		tokeniser->state =
 			HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE;
 		tokeniser->context.allowed_char = '\'';
-		hubbub_inputstream_advance(tokeniser->input);
+		/* Don't eat the '&'; it'll be handled by entity consumption */
 	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
@@ -1567,7 +1572,7 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 		tokeniser->context.prev_state = tokeniser->state;
 		tokeniser->state =
 			HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE;
-		hubbub_inputstream_advance(tokeniser->input);
+		/* Don't eat the '&'; it'll be handled by entity consumption */
 	} else if (c == '>') {
 		hubbub_token token;
 
@@ -2922,23 +2927,22 @@ bool hubbub_tokeniser_consume_character_reference(hubbub_tokeniser *tokeniser)
 	uint32_t pos;
 	size_t len;
 
-	if (tokeniser->context.match_entity.done_setup == false) {
-		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+	pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		tokeniser->context.match_entity.str.data.off = pos;
-		tokeniser->context.match_entity.str.len = len;
-		tokeniser->context.match_entity.base = 0;
-		tokeniser->context.match_entity.codepoint = 0;
-		tokeniser->context.match_entity.had_data = false;
-		tokeniser->context.match_entity.return_state =
-				tokeniser->state;
-		tokeniser->context.match_entity.complete = false;
-		tokeniser->context.match_entity.done_setup = true;
-		tokeniser->context.match_entity.context = NULL;
-		tokeniser->context.match_entity.prev_len = len;
+	/* Set things up */
+	tokeniser->context.match_entity.str.data.off = pos;
+	tokeniser->context.match_entity.str.len = len;
+	tokeniser->context.match_entity.poss_len = 0;
+	tokeniser->context.match_entity.base = 0;
+	tokeniser->context.match_entity.codepoint = 0;
+	tokeniser->context.match_entity.had_data = false;
+	tokeniser->context.match_entity.return_state = tokeniser->state;
+	tokeniser->context.match_entity.complete = false;
+	tokeniser->context.match_entity.done_setup = true;
+	tokeniser->context.match_entity.context = NULL;
+	tokeniser->context.match_entity.prev_len = len;
 
-		hubbub_inputstream_advance(tokeniser->input);
-	}
+	hubbub_inputstream_advance(tokeniser->input);
 
 	c = hubbub_inputstream_peek(tokeniser->input);
 
@@ -3048,25 +3052,31 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 	hubbub_inputstream_rewind(tokeniser->input,
 			ctx->match_entity.str.len);
 
+	/* Had data, so calculate final codepoint */
 	if (ctx->match_entity.had_data) {
-		/* Had data, so calculate final codepoint */
-		if (0x80 <= ctx->match_entity.codepoint &&
-				ctx->match_entity.codepoint <= 0x9F) {
-			ctx->match_entity.codepoint =
-				cp1252Table[ctx->match_entity.codepoint -
-						0x80];
-		} else if (ctx->match_entity.codepoint == 0 ||
-				ctx->match_entity.codepoint > 0x10FFFF) {
-			ctx->match_entity.codepoint = 0xFFFD;
-		} else if (ctx->match_entity.codepoint == 0x0D) {
-			ctx->match_entity.codepoint = 0x000A;
+		uint32_t cp = ctx->match_entity.codepoint;
+
+		if (0x80 <= cp && cp <= 0x9F) {
+			cp = cp1252Table[cp - 0x80];
+		} else if (cp == 0x0D) {
+			cp = 0x000A;
+		} else if (cp <= 0x0008 ||
+				(0x000E <= cp && cp <= 0x001F) ||
+				(0x007F <= cp && cp <= 0x009F) ||
+				(0xD800 <= cp && cp <= 0xDFFF) ||
+				(0xFDD0 <= cp && cp <= 0xFDDF) ||
+				(cp & 0xFFFE) == 0xFFFE ||
+				cp > 0x10FFFF) {
+			cp = 0xFFFD;
 		}
+
+		printf("%x\n", cp);
 
 		/* And replace the matched range with it */
 		error = hubbub_inputstream_replace_range(tokeniser->input,
 				ctx->match_entity.str.data.off,
 				ctx->match_entity.str.len,
-				ctx->match_entity.codepoint);
+				cp);
 		if (error != HUBBUB_OK) {
 			/** \todo handle memory exhaustion */
 		}
@@ -3112,6 +3122,8 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 			pos = hubbub_inputstream_cur_pos(tokeniser->input,
 					&len);
 			ctx->match_entity.str.len += len;
+			ctx->match_entity.str.len += ctx->match_entity.poss_len;
+			ctx->match_entity.poss_len = 0;
 
 			/* And cache length, for replacement */
 			ctx->match_entity.prev_len =
@@ -3122,28 +3134,35 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 		} else {
 			pos = hubbub_inputstream_cur_pos(tokeniser->input,
 					&len);
-			ctx->match_entity.str.len += len;
+			ctx->match_entity.poss_len += len;
 		}
 
 		hubbub_inputstream_advance(tokeniser->input);
 	}
+
+	/* Rewind back possible matches, if any */
+	hubbub_inputstream_rewind(tokeniser->input,
+			ctx->match_entity.poss_len);
 
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
 	c = hubbub_inputstream_peek(tokeniser->input);
 
-	if (ctx->match_entity.codepoint != 0 && c != ';' &&
+	if ((tokeniser->context.match_entity.return_state ==
+			HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE) &&
+			(c != ';') &&
 			((0x0030 <= c && c <= 0x0039) ||
 			(0x0041 <= c && c <= 0x005A) ||
 			(0x0061 <= c && c <= 0x007A))) {
 		ctx->match_entity.codepoint = 0;
 	}
 
-
 	/* Rewind the inputstream to start of processed sequence */
 	hubbub_inputstream_rewind(tokeniser->input,
-			ctx->match_entity.str.len);
+		ctx->match_entity.str.len);
+
+	pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
 	/* Now, replace range, if we found a named entity */
 	if (ctx->match_entity.codepoint != 0) {
