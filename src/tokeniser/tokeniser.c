@@ -1716,6 +1716,7 @@ bool hubbub_tokeniser_handle_self_closing_start_tag(
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
