@@ -1186,7 +1186,7 @@ bool hubbub_tokeniser_handle_before_attribute_name(
 		tokeniser->state =
 			HUBBUB_TOKENISER_STATE_SELF_CLOSING_START_TAG;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (c == '<') {
+	} else if (c == HUBBUB_INPUTSTREAM_EOF) {
 		hubbub_token token;
 
 		/* Emit current tag */
