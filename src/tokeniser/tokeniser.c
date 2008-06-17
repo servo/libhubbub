@@ -1870,9 +1870,8 @@ bool hubbub_tokeniser_handle_comment_start(hubbub_tokeniser *tokeniser)
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
-		if (tokeniser->context.current_comment.len == 0)
-			tokeniser->context.current_comment.data.off = pos;
-		tokeniser->context.current_comment.len += len;
+		tokeniser->context.current_comment.data.off = pos;
+		tokeniser->context.current_comment.len = len;
 
 		hubbub_inputstream_advance(tokeniser->input);
 
@@ -1919,7 +1918,7 @@ bool hubbub_tokeniser_handle_comment_start_dash(hubbub_tokeniser *tokeniser)
 
 		/* In order to get to this state, the previous character must
 		 * be '-'.  This means we can safely rewind and add to the
-		  * comment buffer. */
+		 * comment buffer. */
 
 		hubbub_inputstream_rewind(tokeniser->input, 1);
 
@@ -1927,11 +1926,11 @@ bool hubbub_tokeniser_handle_comment_start_dash(hubbub_tokeniser *tokeniser)
 
 		tokeniser->context.current_comment.data.off = pos;
 		tokeniser->context.current_comment.len += len;
-
 		hubbub_inputstream_advance(tokeniser->input);
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 		tokeniser->context.current_comment.len += len;
+		hubbub_inputstream_advance(tokeniser->input);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_COMMENT;
 	}
@@ -1964,9 +1963,6 @@ bool hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 		size_t len;
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
-
-		if (tokeniser->context.current_comment.len == 0)
-			tokeniser->context.current_comment.data.off = pos;
 		tokeniser->context.current_comment.len += len;
 
 		hubbub_inputstream_advance(tokeniser->input);
