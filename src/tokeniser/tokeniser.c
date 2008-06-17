@@ -2292,11 +2292,11 @@ bool hubbub_tokeniser_handle_after_doctype_name(hubbub_tokeniser *tokeniser)
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
-	} else if (c == 'P') {
+	} else if ((c & ~0x20) == 'P') {
 		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_PUBLIC;
 		tokeniser->context.match_doctype.count = 1;
 		hubbub_inputstream_advance(tokeniser->input);
-	} else if (c == 'S') {
+	} else if ((c & ~0x20) == 'S') {
 		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_SYSTEM;
 		tokeniser->context.match_doctype.count = 1;
 		hubbub_inputstream_advance(tokeniser->input);
@@ -2376,6 +2376,7 @@ bool hubbub_tokeniser_handle_before_doctype_public(hubbub_tokeniser *tokeniser)
 		/* Emit doctype */
 		token.type = HUBBUB_TOKEN_DOCTYPE;
 		token.data.doctype = tokeniser->context.current_doctype;
+		token.data.doctype.force_quirks = true;
 
 		hubbub_tokeniser_emit_token(tokeniser, &token);
 
@@ -2704,7 +2705,7 @@ bool hubbub_tokeniser_handle_doctype_system_sq(hubbub_tokeniser *tokeniser)
 	if (c == HUBBUB_INPUTSTREAM_OOD)
 		return false;
 
-	if (c == '"') {
+	if (c == '\'') {
 		tokeniser->state = HUBBUB_TOKENISER_STATE_AFTER_DOCTYPE_SYSTEM;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if (c == '>') {
