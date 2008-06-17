@@ -248,8 +248,9 @@ void token_handler(const hubbub_token *token, void *pw)
 	/* If we've run off the end, this is an error -- the tokeniser has
 	 * produced more tokens than expected. We allow for the generation
 	 * of a terminating EOF token, however. */
-	assert(ctx->output_index < array_list_length(ctx->output) ||
-			token->type == HUBBUB_TOKEN_EOF);
+	assert("too many tokens" &&
+			(ctx->output_index < array_list_length(ctx->output) ||
+			token->type == HUBBUB_TOKEN_EOF));
 
 	/* Got a terminating EOF -- no error */
 	if (ctx->output_index >= array_list_length(ctx->output))
@@ -275,13 +276,13 @@ void token_handler(const hubbub_token *token, void *pw)
 	switch (token->type) {
 	case HUBBUB_TOKEN_DOCTYPE:
 	{
-		char *expname = json_object_get_string((struct json_object *)
+		char *expname = json_object_get_string(
 				array_list_get_idx(items, 1));
-		char *exppub = json_object_get_string((struct json_object *)
+		char *exppub = json_object_get_string(
 				array_list_get_idx(items, 2));
-		char *expsys = json_object_get_string((struct json_object *)
+		char *expsys = json_object_get_string(
 				array_list_get_idx(items, 3));
-		bool expquirks = !json_object_get_boolean((struct json_object *)
+		bool expquirks = !json_object_get_boolean(
 				array_list_get_idx(items, 4));
 		char *gotname = (char *) (ctx->pbuffer +
 				token->data.doctype.name.data.off);
@@ -335,12 +336,11 @@ void token_handler(const hubbub_token *token, void *pw)
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 	{
-		char *expname = json_object_get_string((struct json_object *)
+		char *expname = json_object_get_string(
 				array_list_get_idx(items, 1));
 		struct lh_entry *expattrs = json_object_get_object(
-			(struct json_object *)
-					array_list_get_idx(items, 2))->head;
-		bool self_closing = json_object_get_boolean((struct json_object *)
+				array_list_get_idx(items, 2))->head;
+		bool self_closing = json_object_get_boolean(
 				array_list_get_idx(items, 3));
 
 		char *tagname = (char *) (ctx->pbuffer +
@@ -356,6 +356,9 @@ void token_handler(const hubbub_token *token, void *pw)
 
 		assert(token->data.tag.name.len == strlen(expname));
 		assert(strncmp(tagname, expname, strlen(expname)) == 0);
+
+		assert((token->data.tag.n_attributes == 0) ==
+				(expattrs == NULL));
 
 		assert(self_closing == token->data.tag.self_closing);
 
@@ -390,7 +393,7 @@ void token_handler(const hubbub_token *token, void *pw)
 		break;
 	case HUBBUB_TOKEN_END_TAG:
 	{
-		char *expname = json_object_get_string((struct json_object *)
+		char *expname = json_object_get_string(
 				array_list_get_idx(items, 1));
 		char *tagname = (char *) (ctx->pbuffer +
 				token->data.tag.name.data.off);
@@ -407,7 +410,7 @@ void token_handler(const hubbub_token *token, void *pw)
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 	{
-		char *expstr = json_object_get_string((struct json_object *)
+		char *expstr = json_object_get_string(
 				array_list_get_idx(items, 1));
 		char *gotstr = (char *) (ctx->pbuffer +
 				token->data.comment.data.off);
@@ -420,7 +423,7 @@ void token_handler(const hubbub_token *token, void *pw)
 		break;
 	case HUBBUB_TOKEN_CHARACTER:
 	{
-		char *expstr = json_object_get_string((struct json_object *)
+		char *expstr = json_object_get_string(
 				array_list_get_idx(items, 1));
 		char *gotstr = (char *) (ctx->pbuffer +
 				token->data.character.data.off);
