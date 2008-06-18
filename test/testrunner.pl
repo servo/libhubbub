@@ -116,7 +116,7 @@ sub run_test
 
 	my $pid = open3("&<NULL", \*OUT, \*ERR, @_);
 
-	$SIG{CHLD} = sub { waitpid($pid, 0); };
+	$SIG{CHLD} = sub { };
 
 	my $selector = IO::Select->new();
 	$selector->add(*OUT, *ERR);
@@ -138,6 +138,18 @@ sub run_test
 
 			$selector->remove($fh) if eof($fh);
 		}
+	}
+
+	waitpid($pid, 0);
+
+	# Catch non-zero exit status and turn it into failure
+	if ($? != 0) {
+		my $status = $? & 127;
+
+		if ($status != 0) {
+			print LOG "    FAIL: Exit status $status\n";
+		}
+		$last = "FAIL";
 	}
 
 	print substr($last, 0, 4) . "\n";
