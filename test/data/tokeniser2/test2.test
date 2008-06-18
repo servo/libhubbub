@@ -142,7 +142,7 @@
 
 {"description":"Entity + newline",
 "input":"\nx\n&gt;\n",
-"output":[["Character","\nx\n>\n"]]}
+"output":[["Character","\nx\n>\n"]]},
 
 {"description":"Empty attribute followed by uppercase attribute",
 "input":"<h a B=''>",
