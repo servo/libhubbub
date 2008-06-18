@@ -116,6 +116,9 @@ typedef struct hubbub_tokeniser_context {
 						 * matching completed */
 		bool done_setup;		/**< Flag that match setup
 						 * has completed */
+		bool overflow;			/**< Whether this entity has
+						 * has overflowed the maximum
+						 * numeric entity value */
 		void *context;			/**< Context for named
 						 * entity search */
 		size_t prev_len;		/**< Previous byte length
@@ -2881,6 +2884,7 @@ bool hubbub_tokeniser_consume_character_reference(hubbub_tokeniser *tokeniser)
 	tokeniser->context.match_entity.return_state = tokeniser->state;
 	tokeniser->context.match_entity.complete = false;
 	tokeniser->context.match_entity.done_setup = true;
+	tokeniser->context.match_entity.overflow = false;
 	tokeniser->context.match_entity.context = NULL;
 	tokeniser->context.match_entity.prev_len = len;
 
@@ -2888,8 +2892,11 @@ bool hubbub_tokeniser_consume_character_reference(hubbub_tokeniser *tokeniser)
 
 	c = hubbub_inputstream_peek(tokeniser->input);
 
-	if (c == HUBBUB_INPUTSTREAM_OOD)
+	if (c == HUBBUB_INPUTSTREAM_OOD) {
+		/* rewind because we need more data */
+		hubbub_inputstream_rewind(tokeniser->input, 1);
 		return false;
+	}
 
 	/* Reset allowed character for future calls */
 	tokeniser->context.allowed_char = '\0';
@@ -2922,7 +2929,6 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 	uint32_t pos;
 	size_t len;
-	bool overflow = false;
 	hubbub_error error;
 
 	if (c == HUBBUB_INPUTSTREAM_OOD)
@@ -2978,7 +2984,7 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 		}
 
 		if (ctx->match_entity.codepoint >= 0x10FFFF) {
-			overflow = true;
+			ctx->match_entity.overflow = true;
 		}
 
 		hubbub_inputstream_advance(tokeniser->input);
@@ -3007,7 +3013,7 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 			cp = cp1252Table[cp - 0x80];
 		} else if (cp == 0x0D) {
 			cp = 0x000A;
-		} else if (overflow || cp <= 0x0008 ||
+		} else if (ctx->match_entity.overflow || cp <= 0x0008 ||
 				(0x000E <= cp && cp <= 0x001F) ||
 				(0x007F <= cp && cp <= 0x009F) ||
 				(0xD800 <= cp && cp <= 0xDFFF) ||
@@ -3086,12 +3092,13 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 		hubbub_inputstream_advance(tokeniser->input);
 	}
 
+	if (c == HUBBUB_INPUTSTREAM_OOD) {
+		return false;
+	}
+
 	/* Rewind back possible matches, if any */
 	hubbub_inputstream_rewind(tokeniser->input,
 			ctx->match_entity.poss_len);
-
-	if (c == HUBBUB_INPUTSTREAM_OOD)
-		return false;
 
 	c = hubbub_inputstream_peek(tokeniser->input);
 
