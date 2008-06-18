@@ -85,9 +85,8 @@ int main(int argc, char **argv)
 					json_object_get_string(val));
 			} else if (strcmp(key, "input") == 0) {
 				ctx.input = (const uint8_t *)
-						json_object_get_string(val);
-				ctx.input_len =
-					strlen((const char *) ctx.input);
+						json_object_get_string_len(val,
+						(int *) &ctx.input_len);
 			} else if (strcmp(key, "output") == 0) {
 				ctx.output = json_object_get_array(val);
 				ctx.output_index = 0;
@@ -198,8 +197,8 @@ void run_test(context *ctx)
 		assert(hubbub_inputstream_append(stream, NULL, 0) ==
 				HUBBUB_OK);
 
-		printf("Input: '%.*s'\n", (int) ctx->input_len,
-				(const char *) ctx->input);
+		printf("Input: '%.*s' (%d)\n", (int) ctx->input_len,
+				(const char *) ctx->input, ctx->input_len);
 
 		assert(hubbub_tokeniser_run(tok) == HUBBUB_OK);
 
@@ -423,18 +422,19 @@ void token_handler(const hubbub_token *token, void *pw)
 		break;
 	case HUBBUB_TOKEN_CHARACTER:
 	{
-		char *expstr = json_object_get_string(
-				array_list_get_idx(items, 1));
+		int expstrlen;
+		char *expstr = json_object_get_string_len(
+				array_list_get_idx(items, 1), &expstrlen);
 		char *gotstr = (char *) (ctx->pbuffer +
 				token->data.character.data.off);
-		size_t len = min(token->data.character.len,
-				strlen(expstr + ctx->char_off));
+		size_t len = min(token->data.character.len, 
+				expstrlen - ctx->char_off);
 
-		printf("expected: '%s'\n", expstr + ctx->char_off);
+		printf("expected: '%.*s'\n", (int) len, expstr + ctx->char_off);
 		printf("     got: '%.*s'\n", 
 				(int) token->data.character.len, gotstr);
 
-		assert(strncmp(gotstr, expstr + ctx->char_off, len) == 0);
+		assert(memcmp(gotstr, expstr + ctx->char_off, len) == 0);
 
 		if (len < token->data.character.len) {
 			/* Expected token only contained part of the data
