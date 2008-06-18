@@ -135,6 +135,7 @@ hubbub_dict_node *hubbub_dict_insert_internal(hubbub_dict *dict,
 			return NULL;
 		parent->split = (uint8_t) key[0];
 		parent->lt = parent->eq = parent->gt = NULL;
+		parent->value = NULL;
 	}
 
 	if ((uint8_t) key[0] < parent->split) {
