@@ -430,7 +430,9 @@ void token_handler(const hubbub_token *token, void *pw)
 		size_t len = min(token->data.character.len,
 				strlen(expstr + ctx->char_off));
 
-		printf("'%.*s'\n", (int) token->data.character.len, gotstr);
+		printf("expected: '%s'\n", expstr + ctx->char_off);
+		printf("     got: '%.*s'\n", 
+				(int) token->data.character.len, gotstr);
 
 		assert(strncmp(gotstr, expstr + ctx->char_off, len) == 0);
 
