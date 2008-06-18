@@ -4,6 +4,7 @@
  *                http://www.opensource.org/licenses/mit-license.php
  * Copyright 2007 John-Mark Bell <jmb@netsurf-browser.org>
  */
+#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -87,8 +88,12 @@ typedef struct hubbub_tokeniser_context {
 
 	hubbub_tokeniser_state prev_state;	/**< Previous state */
 
+
+	hubbub_string last_start_tag_name;	/**< Name of the last start tag
+						 * emitted */
 	struct {
 		hubbub_string tag;		/**< Pending close tag */
+		uint32_t count;
 	} close_tag_match;
 
 	struct {
@@ -869,14 +874,84 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 
 bool hubbub_tokeniser_handle_close_tag_open(hubbub_tokeniser *tokeniser)
 {
+	bool match = false;
+
 	/**\todo Handle the fragment case here */
 
 	if (tokeniser->content_model == HUBBUB_CONTENT_MODEL_RCDATA ||
 			tokeniser->content_model ==
 					HUBBUB_CONTENT_MODEL_CDATA) {
-		tokeniser->context.close_tag_match.tag.len = 0;
-		tokeniser->state = HUBBUB_TOKENISER_STATE_CLOSE_TAG_MATCH;
-	} else if (tokeniser->content_model == HUBBUB_CONTENT_MODEL_PCDATA) {
+		uint32_t c;
+		hubbub_string start_tag =
+			tokeniser->context.last_start_tag_name;
+
+		while ((c = hubbub_inputstream_peek(tokeniser->input)) !=
+				HUBBUB_INPUTSTREAM_EOF &&
+				c != HUBBUB_INPUTSTREAM_OOD &&
+				match != true) {
+			uint32_t pos;
+			size_t len;
+
+			pos = hubbub_inputstream_cur_pos(tokeniser->input,
+					&len);
+
+			if (tokeniser->context.close_tag_match.count+1 ==
+					start_tag.len) {
+				match = true;
+			} else if (hubbub_inputstream_compare_range_ci(
+					tokeniser->input, pos,
+					start_tag.data.off +
+						tokeniser->context.close_tag_match.count,
+					len) != 0) {
+				break;
+			}
+
+			hubbub_inputstream_advance(tokeniser->input);
+			tokeniser->context.close_tag_match.count += len;
+		}
+
+		if (c == HUBBUB_INPUTSTREAM_OOD)
+			return false;
+
+		if (match) {
+			c = hubbub_inputstream_peek(tokeniser->input);
+			if (c != '\t' && c != '\n' && c != '\f' &&
+					c != ' ' && c != '>' && c != '/' &&
+					c != HUBBUB_INPUTSTREAM_EOF) {
+				match = false;
+			}
+		}
+
+		/* After a match (or not), rewind */
+		hubbub_inputstream_rewind(tokeniser->input,
+				tokeniser->context.close_tag_match.count);
+		tokeniser->context.close_tag_match.count = 0;
+	}
+
+	if (match == false && tokeniser->content_model !=
+		HUBBUB_CONTENT_MODEL_PCDATA) {
+		hubbub_token token;
+
+		uint32_t pos;
+		size_t len;
+
+		/* emit a '</' character token -- by rewinding */
+		hubbub_inputstream_rewind(tokeniser->input, 2);
+
+		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
+
+		token.type = HUBBUB_TOKEN_CHARACTER;
+		token.data.character.type = HUBBUB_STRING_OFF;
+		token.data.character.data.off = pos;
+		token.data.character.len = 2;
+
+		hubbub_tokeniser_emit_token(tokeniser, &token);
+
+		hubbub_inputstream_advance(tokeniser->input);
+		hubbub_inputstream_advance(tokeniser->input);
+
+		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
+	} else {
 		hubbub_tag *ctag = &tokeniser->context.current_tag;
 		uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 		uint32_t pos;
@@ -1786,7 +1861,6 @@ bool hubbub_tokeniser_handle_markup_declaration_open(
 		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_COMMENT;
 		hubbub_inputstream_advance(tokeniser->input);
 	} else if ((c & ~0x20) == 'D') {
-		hubbub_inputstream_uppercase(tokeniser->input);
 		tokeniser->context.match_doctype.count = 1;
 		tokeniser->state = HUBBUB_TOKENISER_STATE_MATCH_DOCTYPE;
 		hubbub_inputstream_advance(tokeniser->input);
@@ -2345,6 +2419,7 @@ bool hubbub_tokeniser_handle_match_public(hubbub_tokeniser *tokeniser)
 				tokeniser->context.match_doctype.count);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+		tokeniser->context.current_doctype.force_quirks = true;
 	}
 
 	return true;
@@ -2589,6 +2664,7 @@ bool hubbub_tokeniser_handle_match_system(hubbub_tokeniser *tokeniser)
 				tokeniser->context.match_doctype.count);
 
 		tokeniser->state = HUBBUB_TOKENISER_STATE_BOGUS_DOCTYPE;
+		tokeniser->context.current_doctype.force_quirks = true;
 	}
 
 	return true;
@@ -2986,6 +3062,7 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 	uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 	uint32_t pos;
 	size_t len;
+	bool overflow = false;
 	hubbub_error error;
 
 	if (c == HUBBUB_INPUTSTREAM_OOD)
@@ -3040,6 +3117,10 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 			break;
 		}
 
+		if (ctx->match_entity.codepoint >= 0x10FFFF) {
+			overflow = true;
+		}
+
 		hubbub_inputstream_advance(tokeniser->input);
 	}
 
@@ -3066,13 +3147,14 @@ bool hubbub_tokeniser_handle_numbered_entity(hubbub_tokeniser *tokeniser)
 			cp = cp1252Table[cp - 0x80];
 		} else if (cp == 0x0D) {
 			cp = 0x000A;
-		} else if (cp <= 0x0008 ||
+		} else if (overflow || cp <= 0x0008 ||
 				(0x000E <= cp && cp <= 0x001F) ||
 				(0x007F <= cp && cp <= 0x009F) ||
 				(0xD800 <= cp && cp <= 0xDFFF) ||
 				(0xFDD0 <= cp && cp <= 0xFDDF) ||
-				(cp & 0xFFFE) == 0xFFFE ||
-				cp > 0x10FFFF) {
+				(cp & 0xFFFE) == 0xFFFE) {
+			/* the check for cp > 0x10FFFF per spec is performed
+			 * in the loop above to avoid overflow */
 			cp = 0xFFFD;
 		}
 
@@ -3221,6 +3303,13 @@ void hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 {
 	if (tokeniser == NULL || token == NULL)
 		return;
+
+	if (token->type == HUBBUB_TOKEN_START_TAG) {
+		tokeniser->context.last_start_tag_name = token->data.tag.name;
+	} else if (token->type == HUBBUB_TOKEN_END_TAG) {
+		tokeniser->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
+	}
+
 
 	/* Nothing to do if there's no registered handler */
 	if (tokeniser->token_handler == NULL)
