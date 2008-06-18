@@ -132,12 +132,9 @@
 "input":"foo < bar",
 "output":[["Character", "foo "], "ParseError", ["Character", "< bar"]]},
 
-/* jmb -- libjson uses C strings internally, thus the input gets truncated before the 	 
-	  * data is fed to the input stream (and thus the tokeniser)
 {"description":"Null Byte Replacement",
 "input":"\u0000",
 "output":["ParseError", ["Character", "\ufffd"]]},
-*/
 
 {"description":"Comment with dash",
 "input":"<!---x",
@@ -146,6 +143,10 @@
 {"description":"Entity + newline",
 "input":"\nx\n&gt;\n",
 "output":[["Character","\nx\n>\n"]]}
+
+{"description":"Empty attribute followed by uppercase attribute",
+"input":"<h a B=''>",
+"output":[["StartTag", "h", {"a":"", "b":""}]]},
 
 ]}
 

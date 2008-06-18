@@ -348,23 +348,23 @@ hubbub_error read_character_filter(uint32_t c, uint32_t **output,
 #define LF  (0x0000000A)
 #define REP (0x0000FFFD)
 
-	if (c == NUL) {
-		/* Replace NUL (U+0000) characters in input with U+FFFD */
-		input->filter_output[0] = REP;
-		len = 1;
-	} else if (c == CR) {
-		/* Trap CR characters */
-		len = 0;
-	} else if (input->last_filter_char == CR && c != LF) {
-		/* Last char was CR and this isn't LF => CR -> LF */
+	/* Replace NUL (U+0000) characters in input with U+FFFD */
+	if (c == NUL)
+		c = REP;
+
+	if (c == CR) {
+		/* Convert CRs to LFs straight away */
 		input->filter_output[0] = LF;
-		input->filter_output[1] = c;
-		len = 2;
+		len = 1;
+	} else if (input->last_filter_char == CR && c == LF) {
+		/* Trap this LF */
+		len = 0;
 	} else {
 		/* Let character through unchanged */
 		input->filter_output[0] = c;
 		len = 1;
 	}
+
 
 #undef NUL
 #undef CR

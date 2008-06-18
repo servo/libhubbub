@@ -4,7 +4,6 @@
  *                http://www.opensource.org/licenses/mit-license.php
  * Copyright 2007 John-Mark Bell <jmb@netsurf-browser.org>
  */
-#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -31,7 +30,6 @@ typedef enum hubbub_tokeniser_state {
 	HUBBUB_TOKENISER_STATE_CHARACTER_REFERENCE_DATA,
 	HUBBUB_TOKENISER_STATE_TAG_OPEN,
 	HUBBUB_TOKENISER_STATE_CLOSE_TAG_OPEN,
-	HUBBUB_TOKENISER_STATE_CLOSE_TAG_MATCH,
 	HUBBUB_TOKENISER_STATE_TAG_NAME,
 	HUBBUB_TOKENISER_STATE_BEFORE_ATTRIBUTE_NAME,
 	HUBBUB_TOKENISER_STATE_ATTRIBUTE_NAME,
@@ -92,7 +90,6 @@ typedef struct hubbub_tokeniser_context {
 	hubbub_string last_start_tag_name;	/**< Name of the last start tag
 						 * emitted */
 	struct {
-		hubbub_string tag;		/**< Pending close tag */
 		uint32_t count;
 	} close_tag_match;
 
@@ -169,8 +166,6 @@ static bool hubbub_tokeniser_handle_character_reference_data(
 		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_close_tag_open(
-		hubbub_tokeniser *tokeniser);
-static bool hubbub_tokeniser_handle_close_tag_match(
 		hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_tag_name(hubbub_tokeniser *tokeniser);
 static bool hubbub_tokeniser_handle_before_attribute_name(
@@ -301,7 +296,6 @@ hubbub_tokeniser *hubbub_tokeniser_create(hubbub_inputstream *input,
 	tok->context.current_tag.name.type = HUBBUB_STRING_OFF;
 	tok->context.current_comment.type = HUBBUB_STRING_OFF;
 	tok->context.current_chars.type = HUBBUB_STRING_OFF;
-	tok->context.close_tag_match.tag.type = HUBBUB_STRING_OFF;
 	tok->context.match_entity.str.type = HUBBUB_STRING_OFF;
 
 	return tok;
@@ -394,10 +388,6 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 			break;
 		case HUBBUB_TOKENISER_STATE_CLOSE_TAG_OPEN:
 			cont = hubbub_tokeniser_handle_close_tag_open(
-					tokeniser);
-			break;
-		case HUBBUB_TOKENISER_STATE_CLOSE_TAG_MATCH:
-			cont = hubbub_tokeniser_handle_close_tag_match(
 					tokeniser);
 			break;
 		case HUBBUB_TOKENISER_STATE_TAG_NAME:
@@ -1016,132 +1006,6 @@ bool hubbub_tokeniser_handle_close_tag_open(hubbub_tokeniser *tokeniser)
 	return true;
 }
 
-bool hubbub_tokeniser_handle_close_tag_match(hubbub_tokeniser *tokeniser)
-{
-	hubbub_tokeniser_context *ctx = &tokeniser->context;
-	hubbub_tag *ctag = &tokeniser->context.current_tag;
-	uint32_t c = 0;
-
-	while (ctx->close_tag_match.tag.len < ctag->name.len &&
-			(c = hubbub_inputstream_peek(tokeniser->input)) !=
-			HUBBUB_INPUTSTREAM_EOF &&
-			c != HUBBUB_INPUTSTREAM_OOD) {
-		/* Match last open tag */
-		uint32_t off;
-		size_t len;
-
-		off = hubbub_inputstream_cur_pos(tokeniser->input, &len);
-
-		if (ctx->close_tag_match.tag.len == 0) {
-			ctx->close_tag_match.tag.data.off = off;
-			ctx->close_tag_match.tag.len = len;
-		} else {
-			ctx->close_tag_match.tag.len += len;
-		}
-
-		hubbub_inputstream_advance(tokeniser->input);
-
-		if (ctx->close_tag_match.tag.len > ctag->name.len ||
-			(ctx->close_tag_match.tag.len == ctag->name.len &&
-				hubbub_inputstream_compare_range_ci(
-					tokeniser->input,
-					ctag->name.data.off,
-					ctx->close_tag_match.tag.data.off,
-					ctag->name.len) != 0)) {
-			hubbub_token token;
-
-			/* Rewind input stream to start of tag name */
-			if (hubbub_inputstream_rewind(tokeniser->input,
-					ctx->close_tag_match.tag.len) !=
-					HUBBUB_OK)
-				abort();
-
-			/* Emit "</" */
-			token.type = HUBBUB_TOKEN_CHARACTER;
-			token.data.character =
-					tokeniser->context.current_chars;
-
-			hubbub_tokeniser_emit_token(tokeniser, &token);
-
-			tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
-			hubbub_inputstream_advance(tokeniser->input);
-
-			return true;
-		} else if (ctx->close_tag_match.tag.len == ctag->name.len &&
-				hubbub_inputstream_compare_range_ci(
-					tokeniser->input,
-					ctag->name.data.off,
-					ctx->close_tag_match.tag.data.off,
-					ctag->name.len) == 0) {
-			/* Matched => stop searching */
-			break;
-		}
-	}
-
-	if (c == HUBBUB_INPUTSTREAM_OOD) {
-		/* Need more data */
-		return false;
-	}
-
-	if (c == HUBBUB_INPUTSTREAM_EOF) {
-		/* Ran out of data - parse error */
-		hubbub_token token;
-
-		/* Rewind input stream to start of tag name */
-		if (hubbub_inputstream_rewind(tokeniser->input,
-				ctx->close_tag_match.tag.len) != HUBBUB_OK)
-			abort();
-
-		/* Emit "</" */
-		token.type = HUBBUB_TOKEN_CHARACTER;
-		token.data.character = tokeniser->context.current_chars;
-
-		hubbub_tokeniser_emit_token(tokeniser, &token);
-
-		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
-
-		return true;
-	}
-
-	/* Match following char */
-	c = hubbub_inputstream_peek(tokeniser->input);
-
-	if (c == HUBBUB_INPUTSTREAM_OOD) {
-		/* Need more data */
-		return false;
-	}
-
-	/* Rewind input stream to start of tag name */
-	if (hubbub_inputstream_rewind(tokeniser->input,
-			ctx->close_tag_match.tag.len) != HUBBUB_OK)
-		abort();
-
-	/* Check that following char was valid */
-	if (c != '\t' && c != '\n' && c != '\f' && c != ' ' && c != '>' &&
-			c != '/' && c != HUBBUB_INPUTSTREAM_EOF) {
-		hubbub_token token;
-
-		/* Emit "</" */
-		token.type = HUBBUB_TOKEN_CHARACTER;
-		token.data.character = tokeniser->context.current_chars;
-
-		hubbub_tokeniser_emit_token(tokeniser, &token);
-
-		tokeniser->state = HUBBUB_TOKENISER_STATE_DATA;
-		hubbub_inputstream_advance(tokeniser->input);
-
-		return true;
-	}
-
-	/* Switch the content model back to PCDATA */
-	tokeniser->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
-
-	/* Finally, transition back to close tag open state */
-	tokeniser->state = HUBBUB_TOKENISER_STATE_CLOSE_TAG_OPEN;
-
-	return true;
-}
-
 bool hubbub_tokeniser_handle_tag_name(hubbub_tokeniser *tokeniser)
 {
 	hubbub_tag *ctag = &tokeniser->context.current_tag;
@@ -1673,12 +1537,8 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 		size_t len;
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
-
-		if (ctag->attributes[ctag->n_attributes - 1].value.len == 0) {
-			ctag->attributes[ctag->n_attributes - 1].value.data.off =
-					pos;
-		}
-
+		/* don't worry about setting the offset -- this is
+		 * always done before this state is reached */
 		ctag->attributes[ctag->n_attributes - 1].value.len += len;
 
 		hubbub_inputstream_advance(tokeniser->input);
