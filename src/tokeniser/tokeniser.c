@@ -4,6 +4,7 @@
  *                http://www.opensource.org/licenses/mit-license.php
  * Copyright 2007 John-Mark Bell <jmb@netsurf-browser.org>
  */
+#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -714,11 +715,8 @@ bool hubbub_tokeniser_handle_character_reference_data(hubbub_tokeniser *tokenise
 		hubbub_token token;
 		uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
-		if (c == HUBBUB_INPUTSTREAM_OOD ||
-				c == HUBBUB_INPUTSTREAM_EOF) {
-			/* Should never happen */
-			abort();
-		}
+		assert(c != HUBBUB_INPUTSTREAM_OOD ||
+				c == HUBBUB_INPUTSTREAM_EOF);
 
 		/* Emit character */
 		token.type = HUBBUB_TOKEN_CHARACTER;
@@ -1569,11 +1567,8 @@ bool hubbub_tokeniser_handle_character_reference_in_attribute_value(
 	} else {
 		uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
-		if (c == HUBBUB_INPUTSTREAM_OOD ||
-				c == HUBBUB_INPUTSTREAM_EOF) {
-			/* Should never happen */
-			abort();
-		}
+		assert(c != HUBBUB_INPUTSTREAM_OOD ||
+				c == HUBBUB_INPUTSTREAM_EOF);
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
@@ -1938,18 +1933,14 @@ bool hubbub_tokeniser_handle_comment_end_dash(hubbub_tokeniser *tokeniser)
 		size_t len;
 
 		/* In order to get to this state, the previous character must
-		 * be '-'.  This means we can safely rewind and add to the
+		 * be '-'.  This means we can safely rewind and add 1 to the
 		 * comment buffer. */
 
 		hubbub_inputstream_rewind(tokeniser->input, 1);
+		tokeniser->context.current_comment.len += 1;
 
-		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
-
-		if (tokeniser->context.current_comment.len == 0)
-			tokeniser->context.current_comment.data.off = pos;
-		tokeniser->context.current_comment.len += len;
+		/* Now add the input char */
 		hubbub_inputstream_advance(tokeniser->input);
-
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 		tokeniser->context.current_comment.len += len;
 		hubbub_inputstream_advance(tokeniser->input);
@@ -1986,11 +1977,6 @@ bool hubbub_tokeniser_handle_comment_end(hubbub_tokeniser *tokeniser)
 
 		if (tokeniser->context.current_comment.len == 0) {
 			tokeniser->context.current_comment.data.off = pos;
-			tokeniser->context.current_comment.len = len;
-		} else {
-			/* Need to do this to get length of '-' */
-			len = pos -
-				tokeniser->context.current_comment.data.off;
 		}
 
 		tokeniser->context.current_comment.len = len;
@@ -3175,8 +3161,8 @@ void hubbub_tokeniser_buffer_moved_handler(const uint8_t *buffer,
 void hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 		hubbub_token *token)
 {
-	if (tokeniser == NULL || token == NULL)
-		return;
+	assert(tokeniser != NULL);
+	assert(token != NULL);
 
 	if (token->type == HUBBUB_TOKEN_START_TAG) {
 		tokeniser->context.last_start_tag_name = token->data.tag.name;
