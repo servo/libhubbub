@@ -361,6 +361,9 @@ hubbub_error hubbub_tokeniser_setopt(hubbub_tokeniser *tokeniser,
 	case HUBBUB_TOKENISER_CONTENT_MODEL:
 		tokeniser->content_model = params->content_model.model;
 		break;
+	case HUBBUB_TOKENISER_PROCESS_CDATA:
+		tokeniser->process_cdata_section = params->process_cdata;
+		break;
 	}
 
 	return HUBBUB_OK;

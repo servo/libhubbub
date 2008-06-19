@@ -25,6 +25,7 @@ typedef struct context {
 
 	const char *last_start_tag;
 	struct array_list *content_model;
+	bool process_cdata;
 } context;
 
 static void run_test(context *ctx);
@@ -97,6 +98,9 @@ int main(int argc, char **argv)
 			} else if (strcmp(key, "contentModelFlags") == 0) {
 				ctx.content_model =
 						json_object_get_array(val);
+			} else if (strcmp(key, "processCDATA") == 0) {
+				ctx.process_cdata =
+					json_object_get_boolean(val);
 			}
 		}
 
@@ -151,6 +155,13 @@ void run_test(context *ctx)
 				HUBBUB_OK);
 
 			assert(hubbub_tokeniser_run(tok) == HUBBUB_OK);
+		}
+
+		if (ctx->process_cdata) {
+			params.process_cdata = ctx->process_cdata;
+			assert(hubbub_tokeniser_setopt(tok,
+					HUBBUB_TOKENISER_PROCESS_CDATA,
+					&params) == HUBBUB_OK);
 		}
 
 		params.buffer_handler.handler = buffer_handler;

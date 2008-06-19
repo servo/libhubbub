@@ -9,3 +9,4 @@ test4.test		html5lib tests (part 4)
 contentModelFlags.test	html5lib content model tests
 entities.test		html5lib entity tests
 escapeFlag.test		html5lib escape flag tests
+cdata.test		CDATA section tests

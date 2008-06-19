@@ -27,6 +27,7 @@ typedef enum hubbub_tokeniser_opttype {
 	HUBBUB_TOKENISER_BUFFER_HANDLER,
 	HUBBUB_TOKENISER_ERROR_HANDLER,
 	HUBBUB_TOKENISER_CONTENT_MODEL,
+	HUBBUB_TOKENISER_PROCESS_CDATA
 } hubbub_tokeniser_opttype;
 
 /**
@@ -51,6 +52,8 @@ typedef union hubbub_tokeniser_optparams {
 	struct {
 		hubbub_content_model model;
 	} content_model;
+
+	bool process_cdata;
 } hubbub_tokeniser_optparams;
 
 /* Create a hubbub tokeniser */
