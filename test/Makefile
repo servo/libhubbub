@@ -39,7 +39,7 @@ LDFLAGS := $(LDFLAGS) `$(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json`
 
 # Tests
 TESTS_$(d) := aliases cscodec csdetect dict entities filter hubbub \
-	inputstream parser parser-utf16 tokeniser tokeniser2 \
+	inputstream parser parser-utf16 tokeniser tokeniser2 tokeniser3 \
 	tree
 TESTS_$(d) := $(TESTS_$(d)) regression/cscodec-segv regression/filter-segv \
 	regression/stream-nomem
