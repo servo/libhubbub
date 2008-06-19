@@ -713,10 +713,12 @@ bool hubbub_tokeniser_handle_character_reference_data(hubbub_tokeniser *tokenise
 		return hubbub_tokeniser_consume_character_reference(tokeniser);
 	} else {
 		hubbub_token token;
+#ifndef NDEBUG
 		uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
-		assert(c != HUBBUB_INPUTSTREAM_OOD ||
-				c == HUBBUB_INPUTSTREAM_EOF);
+		assert(c != HUBBUB_INPUTSTREAM_OOD &&
+				c != HUBBUB_INPUTSTREAM_EOF);
+#endif
 
 		/* Emit character */
 		token.type = HUBBUB_TOKEN_CHARACTER;
@@ -1565,10 +1567,12 @@ bool hubbub_tokeniser_handle_character_reference_in_attribute_value(
 	if (tokeniser->context.match_entity.complete == false) {
 		return hubbub_tokeniser_consume_character_reference(tokeniser);
 	} else {
+#ifndef NDEBUG
 		uint32_t c = hubbub_inputstream_peek(tokeniser->input);
 
-		assert(c != HUBBUB_INPUTSTREAM_OOD ||
-				c == HUBBUB_INPUTSTREAM_EOF);
+		assert(c != HUBBUB_INPUTSTREAM_OOD &&
+				c != HUBBUB_INPUTSTREAM_EOF);
+#endif
 
 		pos = hubbub_inputstream_cur_pos(tokeniser->input, &len);
 
