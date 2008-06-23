@@ -150,7 +150,7 @@
 
 {"description":"Empty attribute followed by uppercase attribute",
 "input":"<h a B=''>",
-"output":[["StartTag", "h", {"a":"", "b":""}]]},
+"output":[["StartTag", "h", {"a":"", "b":""}]]}
 
 ]}
 
