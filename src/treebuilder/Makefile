@@ -32,7 +32,10 @@ dirstack_$(sp) := $(d)
 d              := $(DIR)
 
 # Sources
-SRCS_$(d) := in_body.c treebuilder.c
+SRCS_$(d) := treebuilder.c \
+		initial.c before_html.c before_head.c in_head.c \
+		in_head_noscript.c after_head.c in_body.c \
+		generic_rcdata.c script_collect.c
 
 # Append to sources for component
 SOURCES += $(addprefix $(d), $(SRCS_$(d)))
