@@ -390,12 +390,12 @@ bool handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 			treebuilder->tree_handler->set_quirks_mode(
 					treebuilder->tree_handler->ctx,
 					HUBBUB_QUIRKS_MODE_FULL);
-
+			treebuilder->context.mode = BEFORE_HTML;
 			reprocess = true;
 		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token, 
+		process_comment_append(treebuilder, token,
 				treebuilder->context.document);
 		break;
 	case HUBBUB_TOKEN_DOCTYPE:
@@ -403,11 +403,14 @@ bool handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 		int success;
 		void *doctype, *appended;
 
+		/** \todo parse error */
+
 		/** \todo need public and system ids from tokeniser */
 		success = treebuilder->tree_handler->create_doctype(
 				treebuilder->tree_handler->ctx,
 				&token->data.doctype.name,
-				NULL, NULL, &doctype);
+				&token->data.doctype.public_id,
+				&token->data.doctype.system_id, &doctype);
 		if (success != 0) {
 			/** \todo errors */
 		}
@@ -424,7 +427,7 @@ bool handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 					doctype);
 		}
 
-		/** \todo doctype processing */
+		/* \todo look up the doctype in a catalog */
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, appended);
@@ -474,7 +477,7 @@ bool handle_before_html(hubbub_treebuilder *treebuilder,
 				treebuilder->context.document);
 		break;
 	case HUBBUB_TOKEN_CHARACTER:
-		reprocess = process_characters_expect_whitespace(treebuilder, 
+		reprocess = process_characters_expect_whitespace(treebuilder,
 				token, false);
 		break;
 	case HUBBUB_TOKEN_START_TAG:
@@ -608,8 +611,7 @@ bool handle_before_head(hubbub_treebuilder *treebuilder,
 		element_type type = element_type_from_name(treebuilder,
 				&token->data.tag.name);
 
-		if (type == HEAD || type == BODY || type == HTML || 
-				type == P || type == BR) {
+		if (type == HEAD || type == BR) {
 			reprocess = true;
 		} else {
 			/** \todo parse error */
@@ -687,11 +689,23 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 		if (type == HTML) {
 			/* Process as if "in body" */
 			process_tag_in_body(treebuilder, token);
-		} else if (type == BASE || type == LINK || type == META) {
-			process_base_link_meta_in_head(treebuilder, 
+		} else if (type == BASE || type == COMMAND ||
+				type == EVENT_SOURCE || type == LINK) {
+			process_base_link_meta_in_head(treebuilder,
 					token, type);
+
+			/** \todo ack sc flag */
+		} else if (type == META) {
+			process_base_link_meta_in_head(treebuilder,
+					token, type);
+
+			/** \todo ack sc flag */
+
+			/** \todo detect charset */
 		} else if (type == TITLE) {
 			parse_generic_rcdata(treebuilder, token, true);
+		} else if (type == NOFRAMES || type == STYLE) {
+			parse_generic_rcdata(treebuilder, token, false);
 		} else if (type == NOSCRIPT) {
 			/** \todo determine if scripting is enabled */
 			if (false /*scripting_is_enabled*/) {
@@ -700,8 +714,6 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 				insert_element(treebuilder, &token->data.tag);
 				treebuilder->context.mode = IN_HEAD_NOSCRIPT;
 			}
-		} else if (type == STYLE) {
-			parse_generic_rcdata(treebuilder, token, false);
 		} else if (type == SCRIPT) {
 			process_script_in_head(treebuilder, token);
 		} else if (type == HEAD) {
@@ -718,10 +730,9 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 
 		if (type == HEAD) {
 			handled = true;
-		} else if (type == BODY || type == HTML || 
-				type == P || type == BR) {
+		} else if (type == BR) {
 			reprocess = true;
-		}
+		} /** \todo parse error */
 	}
 		break;
 	case HUBBUB_TOKEN_EOF:
@@ -762,10 +773,12 @@ bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
+		/* This should be equivalent to "in head" processing */
 		reprocess = process_characters_expect_whitespace(treebuilder,
 				token, true);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
+		/* This should be equivalent to "in head" processing */
 		process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
@@ -781,10 +794,27 @@ bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 		if (type == HTML) {
 			/* Process as "in body" */
 			process_tag_in_body(treebuilder, token);
-		} else if (type == LINK || type == META) {
-			process_base_link_meta_in_head(treebuilder, 
+		} else if (type == NOSCRIPT) {
+			handled = true;
+		} else if (type == LINK) {
+			/* This should be equivalent to "in head" processing */
+			process_base_link_meta_in_head(treebuilder,
 					token, type);
+
+			/** \todo ack sc flag */
+		} else if (type == META) {
+			/* This should be equivalent to "in head" processing */
+			process_base_link_meta_in_head(treebuilder,
+					token, type);
+
+			/** \todo ack sc flag */
+
+			/** \todo detect charset */
+		} else if (type == NOFRAMES) {
+			/* This should be equivalent to "in head" processing */
+			parse_generic_rcdata(treebuilder, token, true);
 		} else if (type == STYLE) {
+			/* This should be equivalent to "in head" processing */
 			parse_generic_rcdata(treebuilder, token, false);
 		} else if (type == HEAD || type == NOSCRIPT) {
 			/** \todo parse error */
@@ -801,7 +831,7 @@ bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 
 		if (type == NOSCRIPT) {
 			handled = true;
-		} else if (type == P || type == BR) {
+		} else if (type == BR) {
 			/** \todo parse error */
 			reprocess = true;
 		} else {
@@ -848,8 +878,7 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		reprocess = process_characters_expect_whitespace(treebuilder,
-				token, true);
+		append_text(treebuilder, &token->data.character);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		process_comment_append(treebuilder, token,
@@ -873,8 +902,8 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 			insert_element(treebuilder, &token->data.tag);
 			treebuilder->context.mode = IN_FRAMESET;
 		} else if (type == BASE || type == LINK || type == META ||
-				type == SCRIPT || type == STYLE || 
-				type == TITLE) {
+				type == NOFRAMES || type == SCRIPT ||
+				type == STYLE || type == TITLE) {
 			element_type otype;
 			void *node;
 
@@ -886,12 +915,16 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 				/** \todo errors */
 			}
 
+
+			/* This should be identical to handling "in head" */
 			if (type == BASE || type == LINK || type == META) {
+				/** \todo ack sc flag */
+
 				process_base_link_meta_in_head(treebuilder, 
 						token, type);
 			} else if (type == SCRIPT) {
 				process_script_in_head(treebuilder, token);
-			} else if (type == STYLE) {
+			} else if (type == STYLE || type == NOFRAMES) {
 				parse_generic_rcdata(treebuilder, token, false);
 			} else if (type == TITLE) {
 				parse_generic_rcdata(treebuilder, token, true);
@@ -903,12 +936,16 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 
 			/* No need to unref node as we never increased 
 			 * its reference count when pushing it on the stack */
+		} else if (type == HEAD) {
+			/** \todo parse error */
 		} else {
 			reprocess = true;
 		}
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
+		/** \parse error */
+		break;
 	case HUBBUB_TOKEN_EOF:
 		reprocess = true;
 		break;
@@ -1093,8 +1130,6 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 		int success;
 		void *text, *appended;
 
-		/** \todo fragment case -- skip this lot entirely */
-
 		success = treebuilder->tree_handler->create_text(
 				treebuilder->tree_handler->ctx,
 				&treebuilder->context.collect.string,
@@ -1102,6 +1137,8 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 		if (success != 0) {
 			/** \todo errors */
 		}
+
+		/** \todo fragment case -- skip this lot entirely */
 
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
@@ -2093,7 +2130,7 @@ void formatting_list_dump(hubbub_treebuilder *treebuilder, FILE *fp)
  */
 const char *element_type_to_name(element_type type)
 {
-	for (uint32_t i = 0; 
+	for (size_t i = 0; 
 			i < sizeof(name_type_map) / sizeof(name_type_map[0]);
 			i++) {
 		if (name_type_map[i].type == type)

@@ -247,24 +247,35 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 
 	if (type == HTML) {
 		process_html_in_body(treebuilder, token);
-	} else if (type == BASE || type == LINK || type == META) {
-		process_base_link_meta_in_head(treebuilder, 
-				token, type);
+	} else if (type == BASE || type == COMMAND ||
+			type == EVENT_SOURCE || type == LINK) {
+		process_base_link_meta_in_head(treebuilder, token, type);
+
+		/** \todo ack sc flag */
+	} else if (type == META) {
+		process_base_link_meta_in_head(treebuilder, token, type);
+
+		/** \todo ack sc flag */
+		/** \todo detect charset */
 	} else if (type == SCRIPT) {
 		process_script_in_head(treebuilder, token);
-	} else if (type == STYLE) {
+	} else if (type == NOFRAMES || type == STYLE) {
 		parse_generic_rcdata(treebuilder, token, false);
 	} else if (type == TITLE) {
 		parse_generic_rcdata(treebuilder, token, true);
 	} else if (type == BODY) {
 		process_body_in_body(treebuilder, token);
-	} else if (type == ADDRESS || type == BLOCKQUOTE || 
-			type == CENTER || type == DIR ||
-			type == DIV || type == DL || 
-			type == FIELDSET || type == H1 || type == H2 ||
-			type == H3 || type == H4 || type == H5 ||
-			type == H6 || type == MENU || type == OL ||
-			type == P || type == UL) {
+	} else if (type == ADDRESS || type == ARTICLE || type == ASIDE ||
+			type == BLOCKQUOTE || type == CENTER ||
+			type == DATAGRID || type == DETAILS ||
+			type == DIALOG || type == DIR ||
+			type == DIV || type == DL || type == FIELDSET ||
+			type == FIGURE || type == FOOTER ||
+			type == H1 || type == H2 || type == H3 ||
+			type == H4 || type == H5 || type == H6 ||
+			type == HEADER || type == MENU || type == NAV ||
+			type == OL || type == P || type == SECTION ||
+			type == UL) {
 		process_container_in_body(treebuilder, token);
 	} else if (type == PRE || type == LISTING) {
 		process_container_in_body(treebuilder, token);
@@ -334,19 +345,25 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 				treebuilder->context.mode == IN_CELL) {
 			treebuilder->context.mode = IN_SELECT_IN_TABLE;
 		}
+	} else if (type == RP || type == RT) {
+		/** \todo ruby */
+	} else if (type == MATH) {
+		reconstruct_active_formatting_list(treebuilder);
+		/** \todo adjust foreign attributes */
+		/** \todo insert foreign element */
+		if (token->data.tag.self_closing) {
+			/** \todo pop off the stack of open elements */
+			/** \todo ack sc flag */
+		} else {
+			/** \todo set to "in foreign content" */
+		}
 	} else if (type == CAPTION || type == COL || type == COLGROUP ||
-			type == FRAME || type == FRAMESET || 
-			type == HEAD || type == OPTION || 
-			type == OPTGROUP || type == TBODY || 
+			type == FRAME || type == FRAMESET ||
+			type == HEAD || type == TBODY ||
 			type == TD || type == TFOOT || type == TH ||
 			type == THEAD || type == TR) {
 		/** \todo parse error */
-/*	} else if (type == EVENT_SOURCE || type == SECTION ||
-			type == NAV || type == ARTICLE || 
-			type == ASIDE || type == HEADER ||
-			type == FOOTER || type == DATAGRID ||
-			type == COMMAND) {
-*/	} else {
+	} else {
 		process_phrasing_in_body(treebuilder, token);
 	}
 
