@@ -352,6 +352,7 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 		case IN_CELL:
 		case IN_SELECT:
 		case IN_SELECT_IN_TABLE:
+		case IN_FOREIGN_CONTENT:
 		case AFTER_BODY:
 		case IN_FRAMESET:
 		case AFTER_FRAMESET:
