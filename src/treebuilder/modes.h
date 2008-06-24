@@ -60,6 +60,8 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 
+bool process_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 bool process_tag_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 

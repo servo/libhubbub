@@ -8,7 +8,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "treebuilder/in_body.h"
+#include "treebuilder/modes.h"
+#include "treebuilder/internal.h"
+#include "treebuilder/treebuilder.h"
 #include "utils/utils.h"
 
 #undef DEBUG_IN_BODY
@@ -248,21 +250,11 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 	if (type == HTML) {
 		process_html_in_body(treebuilder, token);
 	} else if (type == BASE || type == COMMAND ||
-			type == EVENT_SOURCE || type == LINK) {
-		process_base_link_meta_in_head(treebuilder, token, type);
-
-		/** \todo ack sc flag */
-	} else if (type == META) {
-		process_base_link_meta_in_head(treebuilder, token, type);
-
-		/** \todo ack sc flag */
-		/** \todo detect charset */
-	} else if (type == SCRIPT) {
-		process_script_in_head(treebuilder, token);
-	} else if (type == NOFRAMES || type == STYLE) {
-		parse_generic_rcdata(treebuilder, token, false);
-	} else if (type == TITLE) {
-		parse_generic_rcdata(treebuilder, token, true);
+			type == EVENT_SOURCE || type == LINK ||
+			type == META || type == NOFRAMES || type == SCRIPT ||
+			type == STYLE || type == TITLE) {
+		/* Process as "in head" */
+		process_in_head(treebuilder, token);
 	} else if (type == BODY) {
 		process_body_in_body(treebuilder, token);
 	} else if (type == ADDRESS || type == ARTICLE || type == ASIDE ||

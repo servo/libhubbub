@@ -67,19 +67,9 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 			}
 
 
-			/* This should be identical to handling "in head" */
-			if (type == BASE || type == LINK || type == META) {
-				/** \todo ack sc flag */
 
-				process_base_link_meta_in_head(treebuilder, 
-						token, type);
-			} else if (type == SCRIPT) {
-				process_script_in_head(treebuilder, token);
-			} else if (type == STYLE || type == NOFRAMES) {
-				parse_generic_rcdata(treebuilder, token, false);
-			} else if (type == TITLE) {
-				parse_generic_rcdata(treebuilder, token, true);
-			}
+			/* Process as "in head" */
+			reprocess = process_in_head(treebuilder, token);
 
 			if (!element_stack_pop(treebuilder, &otype, &node)) {
 				/** \todo errors */

@@ -29,15 +29,10 @@ bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		/* This should be equivalent to "in head" processing */
-		reprocess = process_characters_expect_whitespace(treebuilder,
-				token, true);
+		reprocess = process_in_head(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		/* This should be equivalent to "in head" processing */
-		process_comment_append(treebuilder, token,
-				treebuilder->context.element_stack[
-				treebuilder->context.current_node].node);
+		reprocess = process_in_head(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_DOCTYPE:
 		/** \todo parse error */
@@ -52,26 +47,10 @@ bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 			process_tag_in_body(treebuilder, token);
 		} else if (type == NOSCRIPT) {
 			handled = true;
-		} else if (type == LINK) {
-			/* This should be equivalent to "in head" processing */
-			process_base_link_meta_in_head(treebuilder,
-					token, type);
-
-			/** \todo ack sc flag */
-		} else if (type == META) {
-			/* This should be equivalent to "in head" processing */
-			process_base_link_meta_in_head(treebuilder,
-					token, type);
-
-			/** \todo ack sc flag */
-
-			/** \todo detect charset */
-		} else if (type == NOFRAMES) {
-			/* This should be equivalent to "in head" processing */
-			parse_generic_rcdata(treebuilder, token, true);
-		} else if (type == STYLE) {
-			/* This should be equivalent to "in head" processing */
-			parse_generic_rcdata(treebuilder, token, false);
+		} else if (type == LINK || type == META || type == NOFRAMES ||
+				type == STYLE) {
+			/* Process as "in head" */
+			reprocess = process_in_head(treebuilder, token);
 		} else if (type == HEAD || type == NOSCRIPT) {
 			/** \todo parse error */
 		} else {
