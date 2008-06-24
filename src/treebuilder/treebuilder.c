@@ -795,18 +795,20 @@ void insert_element_no_push(hubbub_treebuilder *treebuilder,
  * Close implied end tags
  *
  * \param treebuilder  The treebuilder instance
- * \param except       Tag type to exclude from processing [DD,DT,LI,P], 
- *                     or UNKNOWN to exclude nothing
+ * \param except       Tag type to exclude from processing [DD,DT,LI,OPTION,
+ *                     OPTGROUP,P,RP,RT], UNKNOWN to exclude nothing
  */
-void close_implied_end_tags(hubbub_treebuilder *treebuilder, 
+void close_implied_end_tags(hubbub_treebuilder *treebuilder,
 		element_type except)
 {
 	element_type type;
 
 	type = treebuilder->context.element_stack[
 			treebuilder->context.current_node].type;
-	
-	while (type == DD || type == DT || type == LI || type == P) {
+
+	while (type == DD || type == DT || type == LI || type == OPTION ||
+			type == OPTGROUP || type == P || type == RP ||
+			type == RT) {
 		element_type otype;
 		void *node;
 
