@@ -35,6 +35,7 @@ d              := $(DIR)
 SRCS_$(d) := treebuilder.c \
 		initial.c before_html.c before_head.c in_head.c \
 		in_head_noscript.c after_head.c in_body.c \
+		in_caption.c \
 		generic_rcdata.c script_collect.c
 
 # Append to sources for component
