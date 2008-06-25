@@ -1101,6 +1101,27 @@ bool element_stack_pop(hubbub_treebuilder *treebuilder,
 }
 
 /**
+ * Pop elements until an element of type "element" has been popped.
+ *
+ * \return True on success, false on memory exhaustion.
+ */
+bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
+		element_type type)
+{
+	element_type otype = UNKNOWN;
+	void *node;
+
+	while (otype != type) {
+		if (!element_stack_pop(treebuilder, &otype, &node)) {
+			/** \todo error -- never happens */
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
  * Peek at the top element of the element stack.
  *
  * \param treebuilder  Treebuilder instance
@@ -1110,6 +1131,21 @@ element_type current_node(hubbub_treebuilder *treebuilder)
 {
 	return treebuilder->context.element_stack
 			[treebuilder->context.current_node].type;
+}
+
+/**
+ * Peek at the element below the top of the element stack.
+ *
+ * \param treebuilder  Treebuilder instance
+ * \return Element type of the element one below the top of the stack
+ */
+element_type prev_node(hubbub_treebuilder *treebuilder)
+{
+	if (treebuilder->context.current_node == 0)
+		return UNKNOWN;
+
+	return treebuilder->context.element_stack
+			[treebuilder->context.current_node - 1].type;
 }
 
 
