@@ -57,6 +57,8 @@ bool handle_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_in_caption(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+bool handle_in_column_group(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
