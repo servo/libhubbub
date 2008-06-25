@@ -141,6 +141,7 @@ bool element_stack_push(hubbub_treebuilder *treebuilder,
 		element_type type, void *node);
 bool element_stack_pop(hubbub_treebuilder *treebuilder,
 		element_type *type, void **node);
+element_type current_node(hubbub_treebuilder *treebuilder);
 
 bool formatting_list_append(hubbub_treebuilder *treebuilder,
 		element_type type, void *node, uint32_t stack_index);
