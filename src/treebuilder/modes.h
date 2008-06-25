@@ -65,6 +65,8 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_in_select(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+bool handle_in_select_in_table(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
@@ -73,6 +75,8 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 bool process_in_head(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool process_in_table(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
+bool process_in_select(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool process_tag_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
