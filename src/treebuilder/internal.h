@@ -155,6 +155,9 @@ bool formatting_list_replace(hubbub_treebuilder *treebuilder,
 		element_type type, void *node, uint32_t stack_index,
 		element_type *otype, void **onode, uint32_t *ostack_index);
 
+void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
+		hubbub_tag *tag);
+
 #ifndef NDEBUG
 #include <stdio.h>
 
