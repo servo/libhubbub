@@ -21,9 +21,11 @@
  */
 static inline void close_cell(hubbub_treebuilder *treebuilder)
 {
-	void *node;
-	element_type type;
+	hubbub_ns ns;
 	element_type otype = UNKNOWN;
+	void *node;
+
+	element_type type;
 
 	if (element_in_scope(treebuilder, TD, true)) {
 		type = TD;
@@ -37,7 +39,7 @@ static inline void close_cell(hubbub_treebuilder *treebuilder)
 	/** \todo parse error */
 
 	while (otype != type) {
-		if (!element_stack_pop(treebuilder, &otype, &node)) {
+		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 			/** \todo errors */
 		}
 	}
@@ -87,6 +89,7 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 
 		if (type == TH || TD) {
 			if (element_in_scope(treebuilder, type, true)) {
+				hubbub_ns ns;
 				element_type otype = UNKNOWN;
 				void *node;
 
@@ -95,7 +98,7 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 
 				while (otype != type) {
 					if (!element_stack_pop(treebuilder,
-							&otype, &node)) {
+							&ns, &otype, &node)) {
 						/** \todo errors */
 					}
 				}

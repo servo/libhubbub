@@ -164,10 +164,11 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 	}
 
 	if (handled || reprocess) {
+		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
-		if (!element_stack_pop(treebuilder, &otype, &node)) {
+		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 			/** \todo errors */
 		}
 

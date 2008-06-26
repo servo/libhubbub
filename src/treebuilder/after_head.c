@@ -55,27 +55,28 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 		} else if (type == BASE || type == LINK || type == META ||
 				type == NOFRAMES || type == SCRIPT ||
 				type == STYLE || type == TITLE) {
+			hubbub_ns ns;
 			element_type otype;
 			void *node;
 
 			/** \todo parse error */
 
-			if (!element_stack_push(treebuilder, 
-					HEAD, 
+			if (!element_stack_push(treebuilder,
+					HUBBUB_NS_HTML,
+					HEAD,
 					treebuilder->context.head_element)) {
 				/** \todo errors */
 			}
 
-
-
 			/* Process as "in head" */
 			reprocess = process_in_head(treebuilder, token);
 
-			if (!element_stack_pop(treebuilder, &otype, &node)) {
+			if (!element_stack_pop(treebuilder, &ns, &otype,
+					&node)) {
 				/** \todo errors */
 			}
 
-			/* No need to unref node as we never increased 
+			/* No need to unref node as we never increased
 			 * its reference count when pushing it on the stack */
 		} else if (type == HEAD) {
 			/** \todo parse error */

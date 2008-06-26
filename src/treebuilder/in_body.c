@@ -571,10 +571,12 @@ void process_dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 		}
 
 		do {
+			hubbub_ns ns;
 			element_type otype;
 			void *node;
 
-			if (!element_stack_pop(treebuilder, &otype, &node)) {
+			if (!element_stack_pop(treebuilder, &ns,
+					&otype, &node)) {
 				/** \todo errors */
 			}
 
@@ -846,6 +848,7 @@ void process_image_in_body(hubbub_treebuilder *treebuilder,
 void process_input_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
+	hubbub_ns ns;
 	element_type otype;
 	void *node;
 
@@ -861,7 +864,7 @@ void process_input_in_body(hubbub_treebuilder *treebuilder,
 				treebuilder->context.current_node].node);
 	}
 
-	if (!element_stack_pop(treebuilder, &otype, &node)) {
+	if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 		/** \todo errors */
 	}
 
@@ -1111,9 +1114,11 @@ void process_0container_in_body(hubbub_treebuilder *treebuilder,
 		close_implied_end_tags(treebuilder, UNKNOWN);
 
 		do {
+			hubbub_ns ns;
 			void *node;
 
-			if (!element_stack_pop(treebuilder, &otype, &node)) {
+			if (!element_stack_pop(treebuilder, &ns, &otype,
+					&node)) {
 				/** \todo errors */
 			}
 
@@ -1144,11 +1149,12 @@ void process_0p_in_body(hubbub_treebuilder *treebuilder)
 		/** \todo parse error */
 	}
 
-	while(element_in_scope(treebuilder, P, false)) {
+	while (element_in_scope(treebuilder, P, false)) {
+		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		if (!element_stack_pop(treebuilder, &type, &node)) {
+		if (!element_stack_pop(treebuilder, &ns, &type, &node)) {
 			/** \todo errors */
 		}
 
@@ -1195,9 +1201,10 @@ void process_0dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 		close_implied_end_tags(treebuilder, type);
 
 		do {
+			hubbub_ns ns;
 			void *node;
 
-			if (!element_stack_pop(treebuilder, &otype, &node)) {
+			if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 				/** \todo errors */
 			}
 
@@ -1239,9 +1246,11 @@ void process_0h_in_body(hubbub_treebuilder *treebuilder,
 		close_implied_end_tags(treebuilder, UNKNOWN);
 
 		do {
+			hubbub_ns ns;
 			void *node;
 
-			if (!element_stack_pop(treebuilder, &otype, &node)) {
+			if (!element_stack_pop(treebuilder, &ns, &otype,
+					&node)) {
 				/** \todo errors */
 			}
 
@@ -1482,14 +1491,15 @@ bool aa_find_furthest_block(hubbub_treebuilder *treebuilder,
 	}
 
 	if (fb > treebuilder->context.current_node) {
+		hubbub_ns ns;
 		element_type type;
 		void *node;
 		uint32_t index;
 
-		/* Pop all elements off the stack up to, 
+		/* Pop all elements off the stack up to,
 		 * and including, the formatting element */
 		do {
-			if (!element_stack_pop(treebuilder, &type, &node)) {
+			if (!element_stack_pop(treebuilder, &ns, &type, &node)) {
 				/** \todo errors */
 			}
 
@@ -1811,9 +1821,11 @@ void process_0applet_button_marquee_object_in_body(
 		close_implied_end_tags(treebuilder, UNKNOWN);
 
 		do {
+			hubbub_ns ns;
 			void *node;
 
-			if (!element_stack_pop(treebuilder, &otype, &node)) {
+			if (!element_stack_pop(treebuilder, &ns, &otype,
+					&node)) {
 				/** \todo errors */
 			}
 
@@ -1878,10 +1890,11 @@ void process_0generic_in_body(hubbub_treebuilder *treebuilder,
 			close_implied_end_tags(treebuilder, UNKNOWN);
 
 			do {
+				hubbub_ns ns;
 				void *node;
 
 				if (!element_stack_pop(treebuilder,
-						&otype, &node)) {
+						&ns, &otype, &node)) {
 					/** \todo errors */
 				}
 

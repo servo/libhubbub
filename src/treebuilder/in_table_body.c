@@ -26,10 +26,11 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 
 	while (cur_node != TBODY && cur_node != TFOOT &&
 			cur_node != THEAD && cur_node != HTML) {
+		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		if (!element_stack_pop(treebuilder, &type, &node)) {
+		if (!element_stack_pop(treebuilder, &ns, &type, &node)) {
 			/** \todo errors */
 		}
 
@@ -51,6 +52,7 @@ static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
 	if (element_in_scope(treebuilder, TBODY, true) ||
 			element_in_scope(treebuilder, THEAD, true) ||
 			element_in_scope(treebuilder, TFOOT, true)) {
+		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
@@ -59,7 +61,7 @@ static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
 		/* "Act as if an end tag with the same name as the current
 		 * node had been seen" -- this behaviour should be identical
 		 * to handling for (tbody/tfoot/thead) end tags in this mode */
-		if (!element_stack_pop(treebuilder, &otype, &node)) {
+		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 			/** \todo errors */
 		}
 
@@ -134,12 +136,13 @@ bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 				/** \todo parse error */
 				/* Ignore the token */
 			} else {
+				hubbub_ns ns;
 				element_type otype;
 				void *node;
 
 				table_clear_stack(treebuilder);
-				if (!element_stack_pop(treebuilder, &otype,
-						&node)) {
+				if (!element_stack_pop(treebuilder, &ns,
+						&otype, &node)) {
 					/** \todo errors */
 				}
 

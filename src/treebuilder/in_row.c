@@ -25,10 +25,11 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 			treebuilder->context.current_node].type;
 
 	while (cur_node != TR && cur_node != HTML) {
+		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		if (!element_stack_pop(treebuilder, &type, &node)) {
+		if (!element_stack_pop(treebuilder, &ns, &type, &node)) {
 			/** \todo errors */
 		}
 
@@ -48,13 +49,14 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
  */
 static inline bool act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
 {
+	hubbub_ns ns;
 	element_type otype;
 	void *node;
 
 	/** \todo fragment case */
 
 	table_clear_stack(treebuilder);
-	if (!element_stack_pop(treebuilder, &otype, &node)) {
+	if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 		/** \todo errors */
 	}
 

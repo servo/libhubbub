@@ -33,6 +33,7 @@ typedef enum
 
 typedef struct element_context
 {
+	hubbub_ns ns;
 	element_type type;
 	void *node;
 } element_context;
@@ -50,6 +51,7 @@ typedef struct formatting_list_entry
 typedef struct hubbub_treebuilder_context
 {
 	insertion_mode mode;		/**< The current insertion mode */
+	insertion_mode second_mode;	/**< The secondary insertion mode */
 
 #define ELEMENT_STACK_CHUNK 128
 	element_context *element_stack;	/**< Stack of open elements */
@@ -134,9 +136,9 @@ bool is_formatting_element(element_type type);
 bool is_phrasing_element(element_type type);
 
 bool element_stack_push(hubbub_treebuilder *treebuilder,
-		element_type type, void *node);
+		hubbub_ns ns, element_type type, void *node);
 bool element_stack_pop(hubbub_treebuilder *treebuilder,
-		element_type *type, void **node);
+		hubbub_ns *ns, element_type *type, void **node);
 bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 		element_type type);
 element_type current_node(hubbub_treebuilder *treebuilder);

@@ -26,6 +26,7 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 {
 	bool reprocess = false;
 
+	hubbub_ns ns;
 	element_type otype;
 	void *node;
 
@@ -51,7 +52,7 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 			process_tag_in_body(treebuilder, token);
 		} else if (type == OPTION) {
 			if (current_node(treebuilder) == OPTION) {
-				if (!element_stack_pop(treebuilder, &otype,
+				if (!element_stack_pop(treebuilder, &ns, &otype,
 						&node)) {
 					/** \todo errors */
 				}
@@ -60,14 +61,14 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 			insert_element(treebuilder, &token->data.tag);
 		} else if (type == OPTGROUP) {
 			if (current_node(treebuilder) == OPTION) {
-				if (!element_stack_pop(treebuilder, &otype,
+				if (!element_stack_pop(treebuilder, &ns, &otype,
 						&node)) {
 					/** \todo errors */
 				}
 			}
 
 			if (current_node(treebuilder) == OPTGROUP) {
-				if (!element_stack_pop(treebuilder, &otype,
+				if (!element_stack_pop(treebuilder, &ns, &otype,
 						&node)) {
 					/** \todo errors */
 				}
@@ -99,14 +100,14 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 		if (type == OPTGROUP) {
 			if (current_node(treebuilder) == OPTION &&
 					prev_node(treebuilder) == OPTGROUP) {
-				if (!element_stack_pop(treebuilder, &otype,
+				if (!element_stack_pop(treebuilder, &ns, &otype,
 						&node)) {
 					/** \todo errors */
 				}
 			}
 
 			if (current_node(treebuilder) == OPTGROUP) {
-				if (!element_stack_pop(treebuilder, &otype,
+				if (!element_stack_pop(treebuilder, &ns, &otype,
 						&node)) {
 					/** \todo errors */
 				}
@@ -115,7 +116,7 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 			}
 		} else if (type == OPTION) {
 			if (current_node(treebuilder) == OPTION) {
-				if (!element_stack_pop(treebuilder, &otype,
+				if (!element_stack_pop(treebuilder, &ns, &otype,
 						&node)) {
 					/** \todo errors */
 				}

@@ -74,6 +74,7 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 	}
 
 	if (handled || reprocess) {
+		hubbub_ns ns;
 		element_type otype = UNKNOWN;
 		void *node;
 
@@ -85,7 +86,8 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 		while (otype != CAPTION) {
 			/** \todo parse error */
 
-			if (!element_stack_pop(treebuilder, &otype, &node)) {
+			if (!element_stack_pop(treebuilder, &ns, &otype,
+					&node)) {
 				/** \todo errors */
 			}
 		}

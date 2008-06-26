@@ -601,8 +601,9 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 			return;
 		}
 
-		if (!element_stack_push(treebuilder, 
-				entry->details.type, appended)) {
+		if (!element_stack_push(treebuilder,
+				entry->details.ns, entry->details.type,
+				appended)) {
 			/** \todo handle memory exhaustion */
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -612,10 +613,10 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 					clone);
 		}
 
-		if (!formatting_list_replace(treebuilder, entry, 
-				entry->details.type, clone, 
+		if (!formatting_list_replace(treebuilder, entry,
+				entry->details.type, clone,
 				treebuilder->context.current_node,
-				&prev_type, &prev_node, 
+				&prev_type, &prev_node,
 				&prev_stack_index)) {
 			/** \todo handle errors */
 			treebuilder->tree_handler->unref_node(
@@ -692,8 +693,9 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
 			appended);
 
-	if (!element_stack_push(treebuilder, 
-			element_type_from_name(treebuilder, &tag->name), 
+	if (!element_stack_push(treebuilder,
+			tag->ns,
+			element_type_from_name(treebuilder, &tag->name),
 			node)) {
 		/** \todo errors */
 	}
@@ -750,13 +752,14 @@ void close_implied_end_tags(hubbub_treebuilder *treebuilder,
 	while (type == DD || type == DT || type == LI || type == OPTION ||
 			type == OPTGROUP || type == P || type == RP ||
 			type == RT) {
+		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
 		if (except != UNKNOWN && type == except)
 			break;
 
-		if (!element_stack_pop(treebuilder, &otype, &node)) {
+		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 			/** \todo errors */
 		}
 
@@ -953,12 +956,13 @@ bool is_phrasing_element(element_type type)
  * Push an element onto the stack of open elements
  *
  * \param treebuilder  The treebuilder instance containing the stack
+ * \param ns           The namespace of element being pushed
  * \param type         The type of element being pushed
  * \param node         The node to push
  * \return True on success, false on memory exhaustion
  */
 bool element_stack_push(hubbub_treebuilder *treebuilder,
-		element_type type, void *node)
+		hubbub_ns ns, element_type type, void *node)
 {
 	uint32_t slot = treebuilder->context.current_node + 1;
 
@@ -977,6 +981,7 @@ bool element_stack_push(hubbub_treebuilder *treebuilder,
 		treebuilder->context.stack_alloc += ELEMENT_STACK_CHUNK;
 	}
 
+	treebuilder->context.element_stack[slot].ns = ns;
 	treebuilder->context.element_stack[slot].type = type;
 	treebuilder->context.element_stack[slot].node = node;
 
@@ -998,7 +1003,7 @@ bool element_stack_push(hubbub_treebuilder *treebuilder,
  * \return True on success, false on memory exhaustion.
  */
 bool element_stack_pop(hubbub_treebuilder *treebuilder,
-		element_type *type, void **node)
+		hubbub_ns *ns, element_type *type, void **node)
 {
 	element_context *stack = treebuilder->context.element_stack;
 	uint32_t slot = treebuilder->context.current_node;
@@ -1031,6 +1036,7 @@ bool element_stack_pop(hubbub_treebuilder *treebuilder,
 		}
 	}
 
+	*ns = stack[slot].ns;
 	*type = stack[slot].type;
 	*node = stack[slot].node;
 
@@ -1051,9 +1057,10 @@ bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 {
 	element_type otype = UNKNOWN;
 	void *node;
+	hubbub_ns ns;
 
 	while (otype != type) {
-		if (!element_stack_pop(treebuilder, &otype, &node)) {
+		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 			/** \todo error -- never happens */
 			return false;
 		}
