@@ -109,10 +109,6 @@ void process_comment_append(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, void *parent);
 void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool rcdata);
-void process_base_link_meta_in_head(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token, element_type type);
-void process_script_in_head(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token);
 
 uint32_t element_in_scope(hubbub_treebuilder *treebuilder,
 		element_type type, bool in_table);

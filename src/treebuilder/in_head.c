@@ -15,6 +15,70 @@
 
 
 /**
+ * Process a <base>, <link>, or <meta> start tag as if in "in head"
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ * \param type         The type of element (BASE, LINK, or META)
+ */
+static void process_base_link_meta_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token, element_type type)
+{
+	insert_element_no_push(treebuilder, &token->data.tag);
+
+	if (type == META) {
+		/** \todo charset extraction */
+	}
+}
+
+
+/**
+ * Process a <script> start tag as if in "in head"
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ */
+static void process_script_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	int success;
+	void *script;
+	hubbub_tokeniser_optparams params;
+
+	success = treebuilder->tree_handler->create_element(
+			treebuilder->tree_handler->ctx,
+			&token->data.tag, &script);
+	if (success != 0) {
+		/** \todo errors */
+	}
+
+	/** \todo mark script as parser-inserted */
+
+	/* It would be nice to be able to re-use the generic
+	 * rcdata character collector here. Unfortunately, we
+	 * can't as we need to do special processing after the
+	 * script data has been collected, so we use an almost
+	 * identical insertion mode which does the right magic
+	 * at the end. */
+	params.content_model.model = HUBBUB_CONTENT_MODEL_CDATA;
+	hubbub_tokeniser_setopt(treebuilder->tokeniser,
+			HUBBUB_TOKENISER_CONTENT_MODEL, 
+			&params);
+
+	treebuilder->context.collect.mode = treebuilder->context.mode;
+	treebuilder->context.collect.node = script;
+	treebuilder->context.collect.type = SCRIPT;
+	treebuilder->context.collect.string.data.off = 0;
+	treebuilder->context.collect.string.len = 0;
+
+	treebuilder->context.mode = SCRIPT_COLLECT_CHARACTERS;
+}
+
+
+
+
+
+/**
  * Handle token in "in head" insertion mode
  *
  * \param treebuilder  The treebuilder instance
