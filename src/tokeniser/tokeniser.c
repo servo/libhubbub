@@ -3173,6 +3173,7 @@ void hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 
 	if (token->type == HUBBUB_TOKEN_START_TAG) {
 		tokeniser->context.last_start_tag_name = token->data.tag.name;
+		token->data.tag.ns = HUBBUB_NS_HTML;
 	} else if (token->type == HUBBUB_TOKEN_END_TAG) {
 		tokeniser->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
 	}

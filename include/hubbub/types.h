@@ -94,9 +94,22 @@ typedef struct hubbub_doctype {
 } hubbub_doctype;
 
 /**
+ * Possible namespaces
+ */
+typedef enum hubbub_ns {
+	HUBBUB_NS_HTML,
+	HUBBUB_NS_MATHML,
+	HUBBUB_NS_SVG,
+	HUBBUB_NS_XLINK,
+	HUBBUB_NS_XML,
+	HUBBUB_NS_XMLNS
+} hubbub_ns;
+
+/**
  * Data for a tag
  */
 typedef struct hubbub_tag {
+	hubbub_ns ns;			/**< Tag namespace */
 	hubbub_string name;		/**< Tag name */
 	uint32_t n_attributes;		/**< Count of attributes */
 	hubbub_attribute *attributes;	/**< Array of attribute data */
