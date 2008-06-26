@@ -54,6 +54,18 @@ typedef enum hubbub_token_type {
 } hubbub_token_type;
 
 /**
+ * Possible namespaces
+ */
+typedef enum hubbub_ns {
+	HUBBUB_NS_HTML,
+	HUBBUB_NS_MATHML,
+	HUBBUB_NS_SVG,
+	HUBBUB_NS_XLINK,
+	HUBBUB_NS_XML,
+	HUBBUB_NS_XMLNS
+} hubbub_ns;
+
+/**
  * Tokeniser string type
  */
 typedef struct hubbub_string {
@@ -74,6 +86,7 @@ typedef struct hubbub_string {
  * Tag attribute data
  */
 typedef struct hubbub_attribute {
+	hubbub_ns ns;			/**< Attribute namespace */
 	hubbub_string name;		/**< Attribute name */
 	hubbub_string value;		/**< Attribute value */
 } hubbub_attribute;
@@ -92,18 +105,6 @@ typedef struct hubbub_doctype {
 
 	bool force_quirks;		/**< Doctype force-quirks flag */
 } hubbub_doctype;
-
-/**
- * Possible namespaces
- */
-typedef enum hubbub_ns {
-	HUBBUB_NS_HTML,
-	HUBBUB_NS_MATHML,
-	HUBBUB_NS_SVG,
-	HUBBUB_NS_XLINK,
-	HUBBUB_NS_XML,
-	HUBBUB_NS_XMLNS
-} hubbub_ns;
 
 /**
  * Data for a tag
