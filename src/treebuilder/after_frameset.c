@@ -2,7 +2,7 @@
  * This file is part of Hubbub.
  * Licensed under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
- * Copyright 2008 Andrew Sidwell
+ * Copyright 2008 Andrew Sidwell <takkaria@netsurf-browser.org>
  */
 
 #include <assert.h>
