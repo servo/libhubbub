@@ -37,7 +37,7 @@ SRCS_$(d) := treebuilder.c \
 		in_head_noscript.c after_head.c in_body.c \
 		in_caption.c in_column_group.c in_table_body.c in_row.c \
 		in_cell.c in_select.c in_select_in_table.c \
-		in_foreign_content.c after_body.c \
+		in_foreign_content.c after_body.c after_after_body.c \
 		generic_rcdata.c script_collect.c
 
 # Append to sources for component

@@ -77,6 +77,8 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_after_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+bool handle_after_after_body(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 
 bool process_in_head(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
