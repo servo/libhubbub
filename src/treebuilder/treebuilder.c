@@ -66,12 +66,10 @@ static const struct {
 
 static void hubbub_treebuilder_buffer_handler(const uint8_t *data,
 		size_t len, void *pw);
-static void hubbub_treebuilder_token_handler(const hubbub_token *token, 
-		void *pw);
 
 
 /**
- * Create a hubbub treebuilder 
+ * Create a hubbub treebuilder
  *
  * \param tokeniser  Underlying tokeniser instance
  * \param alloc      Memory (de)allocation function
@@ -109,7 +107,7 @@ hubbub_treebuilder *hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 		return NULL;
 	}
 	tb->context.stack_alloc = ELEMENT_STACK_CHUNK;
-	/* We rely on HTML not being equal to zero to determine 
+	/* We rely on HTML not being equal to zero to determine
 	 * if the first item in the stack is in use. Assert this here. */
 	assert(HTML != 0);
 	tb->context.element_stack[0].type = 0;

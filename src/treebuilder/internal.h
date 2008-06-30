@@ -27,7 +27,9 @@ typedef enum
 	A, B, BIG, EM, FONT, I, NOBR, S, SMALL, STRIKE, STRONG, TT, U,
 /* Phrasing */
 	/**< \todo Enumerate phrasing elements */
-	LABEL, MATH, RP, RT, XMP,
+	CODE, LABEL, RP, RT, RUBY, SPAN, SUB, SUP, VAR, XMP,
+/* MathML */
+	MATH, MGLYPH, MALIGNMARK, MI, MO, MN, MS, MTEXT,
 	UNKNOWN,
 } element_type;
 
@@ -104,6 +106,8 @@ struct hubbub_treebuilder
 	void *alloc_pw;			/**< Client private data */
 };
 
+void hubbub_treebuilder_token_handler(const hubbub_token *token, void *pw);
+
 bool process_characters_expect_whitespace(
 		hubbub_treebuilder *treebuilder, const hubbub_token *token,
 		bool insert_into_current_node);
@@ -142,6 +146,7 @@ bool element_stack_pop(hubbub_treebuilder *treebuilder,
 bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 		element_type type);
 element_type current_node(hubbub_treebuilder *treebuilder);
+hubbub_ns current_node_ns(hubbub_treebuilder *treebuilder);
 element_type prev_node(hubbub_treebuilder *treebuilder);
 
 bool formatting_list_append(hubbub_treebuilder *treebuilder,

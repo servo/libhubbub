@@ -59,6 +59,8 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+bool handle_in_table_body(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 bool handle_in_row(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_in_cell(hubbub_treebuilder *treebuilder,
@@ -70,6 +72,8 @@ bool handle_in_select_in_table(hubbub_treebuilder *treebuilder,
 bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
+bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 
 bool process_in_head(hubbub_treebuilder *treebuilder,
