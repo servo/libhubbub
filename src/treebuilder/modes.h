@@ -79,6 +79,8 @@ bool handle_after_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+bool handle_after_frameset(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 bool handle_after_after_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 
