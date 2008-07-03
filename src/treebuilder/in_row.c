@@ -101,7 +101,7 @@ bool handle_in_row(hubbub_treebuilder *treebuilder,
 				type == TFOOT || type == THEAD || type == TR) {
 			reprocess = act_as_if_end_tag_tr(treebuilder);
 		} else {
-			reprocess = process_in_table(treebuilder, token);
+			reprocess = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -120,7 +120,7 @@ bool handle_in_row(hubbub_treebuilder *treebuilder,
 			/** \todo parse error */
 			/* Ignore the token */
 		} else {
-			reprocess = process_in_table(treebuilder, token);
+			reprocess = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -128,7 +128,7 @@ bool handle_in_row(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
-		reprocess = process_in_table(treebuilder, token);
+		reprocess = handle_in_table(treebuilder, token);
 		break;
 	}
 

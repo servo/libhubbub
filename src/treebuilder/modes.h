@@ -33,8 +33,8 @@ typedef enum
 	IN_FRAMESET,
 	AFTER_FRAMESET,
 	AFTER_AFTER_BODY,
-
 	AFTER_AFTER_FRAMESET,
+
 	GENERIC_RCDATA,
 	SCRIPT_COLLECT_CHARACTERS,
 } insertion_mode;
@@ -84,6 +84,8 @@ bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 bool handle_after_frameset(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_after_after_body(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
+bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 
 bool process_in_head(hubbub_treebuilder *treebuilder,

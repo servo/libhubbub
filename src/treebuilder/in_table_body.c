@@ -77,7 +77,7 @@ static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
 
 
 /**
- * Handle tokens in "in column group" insertion mode
+ * Handle tokens in "in table body" insertion mode
  *
  * Up to date with the spec as of 25 June 2008
  *
@@ -85,7 +85,7 @@ static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_in_column_group(hubbub_treebuilder *treebuilder,
+bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
 	bool reprocess = false;
@@ -156,7 +156,7 @@ bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 			/** \todo parse error */
 			/* Ignore the token */
 		} else {
-			reprocess = process_in_table(treebuilder, token);
+			reprocess = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -164,7 +164,7 @@ bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
-		reprocess = process_in_table(treebuilder, token);
+		reprocess = handle_in_table(treebuilder, token);
 		break;
 	}
 

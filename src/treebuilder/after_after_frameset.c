@@ -15,13 +15,13 @@
 
 
 /**
- * Handle token in "after after body" insertion mode
+ * Handle token in "after after frameset" insertion mode
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_after_after_body(hubbub_treebuilder *treebuilder,
+bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
 	bool reprocess = false;

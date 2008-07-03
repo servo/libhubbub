@@ -78,7 +78,7 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 			close_cell(treebuilder);
 			reprocess = true;
 		} else {
-			reprocess = process_in_table(treebuilder, token);
+			reprocess = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -122,7 +122,7 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 				/** \todo parse error */
 			}
 		} else {
-			reprocess = process_in_table(treebuilder, token);
+			reprocess = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -130,7 +130,7 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
-		reprocess = process_in_table(treebuilder, token);
+		reprocess = handle_in_table(treebuilder, token);
 		break;
 	}
 

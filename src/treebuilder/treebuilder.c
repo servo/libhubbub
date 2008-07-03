@@ -327,20 +327,46 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 			reprocess = handle_in_body(treebuilder, token);
 			break;
 		case IN_TABLE:
+			reprocess = handle_in_table(treebuilder, token);
+			break;
 		case IN_CAPTION:
+			reprocess = handle_in_caption(treebuilder, token);
+			break;
 		case IN_COLUMN_GROUP:
+			reprocess = handle_in_column_group(treebuilder, token);
+			break;
 		case IN_TABLE_BODY:
+			reprocess = handle_in_table_body(treebuilder, token);
+			break;
 		case IN_ROW:
+			reprocess = handle_in_row(treebuilder, token);
+			break;
 		case IN_CELL:
+			reprocess = handle_in_cell(treebuilder, token);
+			break;
 		case IN_SELECT:
+			reprocess = handle_in_select(treebuilder, token);
+			break;
 		case IN_SELECT_IN_TABLE:
+			reprocess = handle_in_select_in_table(treebuilder, token);
+			break;
 		case IN_FOREIGN_CONTENT:
+			reprocess = handle_in_foreign_content(treebuilder, token);
+			break;
 		case AFTER_BODY:
+			reprocess = handle_after_body(treebuilder, token);
+			break;
 		case IN_FRAMESET:
+			reprocess = handle_in_frameset(treebuilder, token);
+			break;
 		case AFTER_FRAMESET:
+			reprocess = handle_after_frameset(treebuilder, token);
+			break;
 		case AFTER_AFTER_BODY:
+			reprocess = handle_after_after_body(treebuilder, token);
+			break;
 		case AFTER_AFTER_FRAMESET:
-			reprocess = false;
+			reprocess = handle_after_after_frameset(treebuilder, token);
 			break;
 		case GENERIC_RCDATA:
 			reprocess = handle_generic_rcdata(treebuilder, token);
@@ -1077,6 +1103,18 @@ element_type current_node(hubbub_treebuilder *treebuilder)
 {
 	return treebuilder->context.element_stack
 			[treebuilder->context.current_node].type;
+}
+
+/**
+ * Peek at the top element of the element stack.
+ *
+ * \param treebuilder  Treebuilder instance
+ * \return Element type on the top of the stack
+ */
+hubbub_ns current_node_ns(hubbub_treebuilder *treebuilder)
+{
+	return treebuilder->context.element_stack
+			[treebuilder->context.current_node].ns;
 }
 
 /**

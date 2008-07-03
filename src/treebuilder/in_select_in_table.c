@@ -53,7 +53,7 @@ bool handle_in_select_in_table(hubbub_treebuilder *treebuilder,
 	}
 
 	if (!handled) {
-		reprocess = process_in_select(treebuilder, token);
+		reprocess = handle_in_select(treebuilder, token);
 	}
 
 	return reprocess;
