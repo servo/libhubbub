@@ -1,0 +1,416 @@
+#data
+<!doctype html><body><title>X</title>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <title>
+|       "X"
+
+#data
+<!doctype html><table><title>X</title></table>
+#errors
+xxx
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <title>
+|       "X"
+|     <table>
+
+#data
+<!doctype html><head></head><title>X</title>
+#errors
+element-belongs-in-da-head
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|     <title>
+|       "X"
+|   <body>
+
+#data
+<!doctype html></head><title>X</title>
+#errors
+element-belongs-in-da-head
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|     <title>
+|       "X"
+|   <body>
+
+#data
+<!doctype html></body><title>X</title>
+#errors
+22: Stray end tag “body”.
+29: “title” element outside “head”.
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|     <title>
+|       "X"
+|   <body>
+
+#data
+<!doctype html><table><meta></table>
+#errors
+meta-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <meta>
+|     <table>
+
+#data
+<!doctype html><table> X<meta></table>
+#errors
+characters-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     "X"
+|     <meta>
+|     <table>
+|       " "
+
+#data
+<!doctype html><table>X<tr><td><table> <meta></table></table>
+#errors
+characters-in-table
+meta-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     "X"
+|     <table>
+|       <tbody>
+|         <tr>
+|           <td>
+|             <meta>
+|             <table>
+|               " "
+
+#data
+<!doctype html><html> <head>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+
+#data
+<!doctype html> <head>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+
+#data
+<!doctype html><table> x</table>
+#errors
+node-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     "x"
+|     <table>
+|       " "
+
+#data
+<!doctype html><table> x </table>
+#errors
+node-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     "x "
+|     <table>
+|       " "
+
+#data
+<!doctype html><table><tr> x</table>
+#errors
+node-in-table-row
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     "x"
+|     <table>
+|       <tbody>
+|         <tr>
+|           " "
+
+#data
+<!doctype html><table><style> <tr>x </style> </table>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <table>
+|       <style>
+|         " <tr>x "
+|       " "
+
+#data
+<!doctype html><table><TBODY><script> <tr>x </script> </table>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <table>
+|       <tbody>
+|         <script>
+|           " <tr>x "
+|         " "
+
+#data
+<!doctype html><table>X<style> <tr>x </style> </table>
+#errors
+xxxx
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     "X"
+|     <style>
+|       " <tr>x "
+|     " "
+|     <table>
+
+#data
+<!doctype html><p><applet><p>X</p></applet>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <p>
+|       <applet>
+|         <p>
+|           "X"
+
+#data
+<!doctype html><listing>
+X</listing>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <listing>
+|       "X"
+
+#data
+<!doctype html><select><input>X
+#errors
+input-in-select
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <select>
+|     <input>
+|     "X"
+
+#data
+<!doctype html><select><select>X
+#errors
+select-in-select
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <select>
+|     "X"
+
+#data
+<!doctype html><table><input type=hidDEN></table>
+#errors
+input-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <table>
+|       <input>
+|         type="hidDEN"
+
+#data
+<!doctype html><table>X<input type=hidDEN></table>
+#errors
+input-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     "X"
+|     <input>
+|       type="hidDEN"
+|     <table>
+
+#data
+<!doctype html><table>  <input type=hidDEN></table>
+#errors
+input-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <table>
+|       "  "
+|       <input>
+|         type="hidDEN"
+
+#data
+<!doctype html><table>  <input type='hidDEN'></table>
+#errors
+input-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <table>
+|       "  "
+|       <input>
+|         type="hidDEN"
+
+#data
+<!doctype html><table><input type=" hidden"><input type=hidDEN></table>
+#errors
+input-in-table
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <input>
+|       type=" hidden"
+|     <input>
+|       type="hidDEN"
+|     <table>
+
+#data
+<!doctype html><table><select>X<tr>
+#errors
+select-in-table
+unexpected-tr-in-select-in-table
+eof
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <select>
+|       "X"
+|     <table>
+|       <tbody>
+|         <tr>
+
+#data
+<!doctype html><select>X</select>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <select>
+|       "X"
+
+#data
+<!DOCTYPE hTmL><html></html>
+#errors
+#document
+| <!DOCTYPE hTmL>
+| <html>
+|   <head>
+|   <body>
+
+#data
+<!DOCTYPE HTML><html></html>
+#errors
+#document
+| <!DOCTYPE HTML>
+| <html>
+|   <head>
+|   <body>
+
+#data
+<body>X</body></body>
+#errors
+21: Saw an end tag after body had been closed.
+#document-fragment
+html
+#document
+| <head>
+| <body>
+|   "X"
+
+#data
+<!doctype html><div><table><a>foo</a> <tr><td>bar</td> </tr></table></div>
+#errors
+unexpected-start-tag-implies-table-voodoo
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <body>
+|     <div>
+|       <a>
+|         "foo"
+|       "  "
+|       <table>
+|         <tbody>
+|           <tr>
+|             <td>
+|               "bar"
+
+#data
+<div><p>a</x> b
+#errors
+5: Start tag seen without seeing a doctype first. Expected “<!DOCTYPE html>”.
+13: Stray end tag “x”.
+15: End of file seen and there were open elements.
+#document
+| <html>
+|   <head>
+|   <body>
+|     <div>
+|       <p>
+|         "a b"
