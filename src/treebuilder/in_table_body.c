@@ -34,6 +34,10 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 			/** \todo errors */
 		}
 
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
+
 		cur_node = treebuilder->context.element_stack[
 				treebuilder->context.current_node].type;
 	}
@@ -64,6 +68,10 @@ static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
 		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 			/** \todo errors */
 		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
 
 		treebuilder->context.mode = IN_TABLE;
 
@@ -145,6 +153,10 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 						&otype, &node)) {
 					/** \todo errors */
 				}
+
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						node);
 
 				treebuilder->context.mode = IN_TABLE;
 			}

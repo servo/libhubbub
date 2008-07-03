@@ -90,6 +90,10 @@ bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 			/** \todo errors */
 		}
 
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
+
 		treebuilder->context.mode = IN_TABLE;
 	}
 

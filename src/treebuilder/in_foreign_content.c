@@ -104,6 +104,9 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 				void *node;
 				element_stack_pop(treebuilder, &cur_node_ns,
 						&cur_node, &node);
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						node);
 				cur_node_ns = current_node_ns(treebuilder);
 			}
 

@@ -90,6 +90,10 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 					&node)) {
 				/** \todo errors */
 			}
+
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					node);
 		}
 
 		clear_active_formatting_list_to_marker(treebuilder);

@@ -73,6 +73,10 @@ bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 				/** \todo errors */
 			}
 
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					node);
+
 			if (type != FRAMESET)
 				treebuilder->context.mode = AFTER_FRAMESET;
 		} else {

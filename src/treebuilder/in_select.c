@@ -56,6 +56,10 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 						&node)) {
 					/** \todo errors */
 				}
+
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						node);
 			}
 
 			insert_element(treebuilder, &token->data.tag);
@@ -65,6 +69,10 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 						&node)) {
 					/** \todo errors */
 				}
+
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						node);
 			}
 
 			if (current_node(treebuilder) == OPTGROUP) {
@@ -72,6 +80,10 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 						&node)) {
 					/** \todo errors */
 				}
+
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						node);
 			}
 
 			insert_element(treebuilder, &token->data.tag);
@@ -104,6 +116,10 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 						&node)) {
 					/** \todo errors */
 				}
+
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						node);
 			}
 
 			if (current_node(treebuilder) == OPTGROUP) {
@@ -111,6 +127,10 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 						&node)) {
 					/** \todo errors */
 				}
+
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						node);
 			} else {
 				/** \todo parse error */
 			}
@@ -120,6 +140,10 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 						&node)) {
 					/** \todo errors */
 				}
+
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						node);
 			} else {
 				/** \todo parse error */
 			}

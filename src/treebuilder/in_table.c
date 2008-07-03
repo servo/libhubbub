@@ -28,6 +28,10 @@ static inline void clear_stack_table_context(hubbub_treebuilder *treebuilder)
 
 	while (type != TABLE && type != HTML) {
 		element_stack_pop(treebuilder, &ns, &type, &node);
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
 	}
 
 	return;

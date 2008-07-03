@@ -42,6 +42,10 @@ static inline void close_cell(hubbub_treebuilder *treebuilder)
 		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
 			/** \todo errors */
 		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
 	}
 
 	clear_active_formatting_list_to_marker(treebuilder);
@@ -101,6 +105,10 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 							&ns, &otype, &node)) {
 						/** \todo errors */
 					}
+
+					treebuilder->tree_handler->unref_node(
+							treebuilder->tree_handler->ctx,
+							node);
 				}
 
 				clear_active_formatting_list_to_marker(
