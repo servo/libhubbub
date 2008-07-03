@@ -35,9 +35,16 @@ typedef enum
 
 typedef struct element_context
 {
-	hubbub_ns ns;
-	element_type type;
-	void *node;
+	hubbub_ns ns;			/**< Element namespace */
+	element_type type;		/**< Element type */
+
+	bool tainted;			/**< Only for tables.  "Once the
+					 * current table has been tainted,
+					 * whitespace characters are inserted
+					 * into the foster parent element
+					 * instead of the current node." */
+
+	void *node;			/**< Node pointer */
 } element_context;
 
 typedef struct formatting_list_entry
@@ -80,9 +87,13 @@ typedef struct hubbub_treebuilder_context
 		hubbub_string string;	/**< Text data */
 	} collect;			/**< Context for character collecting */
 
-	bool strip_leading_lr;		/**< Whether to strip a LR from the 
+	bool strip_leading_lr;		/**< Whether to strip a LR from the
 					 * start of the next character sequence
 					 * received */
+
+	bool in_table_foster;		/**< Whether nodes that would be
+					* inserted into the current node should
+					* be foster parented */
 } hubbub_treebuilder_context;
 
 struct hubbub_treebuilder

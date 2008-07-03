@@ -55,6 +55,8 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+bool handle_in_table(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 bool handle_in_caption(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 bool handle_in_column_group(hubbub_treebuilder *treebuilder,
