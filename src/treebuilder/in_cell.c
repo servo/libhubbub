@@ -75,14 +75,14 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 				&token->data.tag.name);
 
 		if (type == CAPTION || type == COL ||
-				type == COLGROUP || type == TBODY ||
-				type == TFOOT || type == TH || type == THEAD ||
-				type == TR) {
+				type == COLGROUP || type == TBODY || 
+				type == TD || type == TFOOT || type == TH || 
+				type == THEAD || type == TR) {
 			/** \todo fragment case */
 			close_cell(treebuilder);
 			reprocess = true;
 		} else {
-			reprocess = handle_in_table(treebuilder, token);
+			reprocess = handle_in_body(treebuilder, token);
 		}
 	}
 		break;
@@ -130,7 +130,7 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 				/** \todo parse error */
 			}
 		} else {
-			reprocess = handle_in_table(treebuilder, token);
+			reprocess = handle_in_body(treebuilder, token);
 		}
 	}
 		break;
@@ -138,7 +138,7 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
-		reprocess = handle_in_table(treebuilder, token);
+		reprocess = handle_in_body(treebuilder, token);
 		break;
 	}
 

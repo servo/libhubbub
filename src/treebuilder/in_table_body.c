@@ -50,6 +50,7 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
  * Handle the case common to some start tag and the table end tag cases.
  *
  * \param treebuilder	The treebuilder instance
+ * \return Whether to reprocess the current token
  */
 static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
 {
@@ -121,6 +122,7 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 			tag.n_attributes = 0;
 			tag.attributes = NULL;
 
+			table_clear_stack(treebuilder);
 			insert_element(treebuilder, &tag);
 			treebuilder->context.mode = IN_ROW;
 
@@ -128,7 +130,7 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 		} else if (type == CAPTION || type == COL ||
 				type == COLGROUP || type == TBODY ||
 				type == TFOOT || type == THEAD) {
-			table_sub_start_or_table_end(treebuilder);
+			reprocess = table_sub_start_or_table_end(treebuilder);
 		} else {
 			reprocess = true;
 		}
@@ -161,7 +163,7 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 				treebuilder->context.mode = IN_TABLE;
 			}
 		} else if (type == TABLE) {
-			table_sub_start_or_table_end(treebuilder);
+			reprocess = table_sub_start_or_table_end(treebuilder);
 		} else if (type == BODY || type == CAPTION || type == COL ||
 				type == COLGROUP || type == HTML ||
 				type == TD || type == TH || type == TR) {

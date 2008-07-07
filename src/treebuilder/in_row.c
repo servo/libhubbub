@@ -93,11 +93,17 @@ bool handle_in_row(hubbub_treebuilder *treebuilder,
 		element_type type = element_type_from_name(treebuilder,
 				&token->data.tag.name);
 
-		if (type == TH || TD) {
+		if (type == TH || type == TD) {
 			table_clear_stack(treebuilder);
 
 			insert_element(treebuilder, &token->data.tag);
 			treebuilder->context.mode = IN_CELL;
+
+			/* ref node for formatting list */
+			treebuilder->tree_handler->ref_node(
+				treebuilder->tree_handler->ctx, 
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node);
 
 			formatting_list_append(treebuilder, type,
 					treebuilder->context.element_stack[

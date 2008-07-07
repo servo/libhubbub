@@ -1088,6 +1088,9 @@ bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 			/** \todo error -- never happens */
 			return false;
 		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, node);
 	}
 
 	return true;
