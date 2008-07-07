@@ -34,13 +34,14 @@ d              := $(DIR)
 # Extend toolchain settings
 # We require the presence of libjson -- http://oss.metaparadigm.com/json-c/
 CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
-		`$(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json`
+		`$(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json` \
+		-Wno-unused-parameter
 LDFLAGS := $(LDFLAGS) `$(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json`
 
 # Tests
 TESTS_$(d) := aliases cscodec csdetect dict entities filter hubbub \
 	inputstream parser parser-utf16 tokeniser tokeniser2 tokeniser3 \
-	tree
+	tree tree2
 TESTS_$(d) := $(TESTS_$(d)) regression/cscodec-segv regression/filter-segv \
 	regression/stream-nomem
 

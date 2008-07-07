@@ -16,6 +16,7 @@ tokeniser	HTML tokeniser				html
 tokeniser2	HTML tokeniser (again)			tokeniser2
 tokeniser3	HTML tokeniser (byte-by-byte)		tokeniser2
 tree		Treebuilding API			html
+tree2		Treebuilding API			tree-construction
 
 # Regression tests
 regression/cscodec-segv	Segfault in charset codecs
