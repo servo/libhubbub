@@ -214,15 +214,23 @@ bool process_tag_in_body(hubbub_treebuilder *treebuilder,
 {
 	bool reprocess = false;
 
+	if (treebuilder->context.strip_leading_lr &&
+			token->type != HUBBUB_TOKEN_CHARACTER) {
+		/* Reset the LR stripping flag */
+		treebuilder->context.strip_leading_lr = false;
+	}
+
 	switch (token->type)
 	{
+	case HUBBUB_TOKEN_CHARACTER:
+		process_character(treebuilder, token);
+		break;
 	case HUBBUB_TOKEN_START_TAG:
 		reprocess = process_start_tag(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_END_TAG:
 		reprocess = process_end_tag(treebuilder, token);
 		break;
-	case HUBBUB_TOKEN_CHARACTER:
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:

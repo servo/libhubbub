@@ -89,11 +89,12 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_CHARACTER:
 		if (treebuilder->context.element_stack[
 				treebuilder->context.current_table
-				].tainted)
+				].tainted) {
 			handled = false;
-
-		reprocess = process_characters_expect_whitespace(treebuilder,
-				token, true);
+		} else {
+			handled = !process_characters_expect_whitespace(
+					treebuilder, token, true);
+		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		process_comment_append(treebuilder, token,
