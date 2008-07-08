@@ -420,8 +420,7 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 		}
 
 		/* Update token data to strip leading whitespace */
-		((hubbub_token *) token)->data.character.data.off += 
-				len - c;
+		((hubbub_token *) token)->data.character.data.off += c;
 		((hubbub_token *) token)->data.character.len -= c;
 
 		return true;

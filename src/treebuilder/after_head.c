@@ -29,7 +29,8 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		append_text(treebuilder, &token->data.character);
+		reprocess = process_characters_expect_whitespace(treebuilder,
+				token, true);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		process_comment_append(treebuilder, token,
