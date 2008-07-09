@@ -15,14 +15,13 @@
 
 
 /**
- * Clear the stack back to a table body context.
+ * Clear the stack back to a table row context.
  *
  * \param treebuilder	The treebuilder instance
  */
 static void table_clear_stack(hubbub_treebuilder *treebuilder)
 {
-	element_type cur_node = treebuilder->context.element_stack[
-			treebuilder->context.current_node].type;
+	element_type cur_node = current_node(treebuilder);
 
 	while (cur_node != TR && cur_node != HTML) {
 		hubbub_ns ns;
@@ -37,8 +36,7 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 				treebuilder->tree_handler->ctx,
 				node);
 
-		cur_node = treebuilder->context.element_stack[
-				treebuilder->context.current_node].type;
+		cur_node = current_node(treebuilder);
 	}
 
 	return;

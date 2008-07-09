@@ -21,8 +21,7 @@
  */
 static void table_clear_stack(hubbub_treebuilder *treebuilder)
 {
-	element_type cur_node = treebuilder->context.element_stack[
-			treebuilder->context.current_node].type;
+	element_type cur_node = current_node(treebuilder);
 
 	while (cur_node != TBODY && cur_node != TFOOT &&
 			cur_node != THEAD && cur_node != HTML) {
@@ -38,8 +37,7 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 				treebuilder->tree_handler->ctx,
 				node);
 
-		cur_node = treebuilder->context.element_stack[
-				treebuilder->context.current_node].type;
+		cur_node = current_node(treebuilder);
 	}
 
 	return;
@@ -109,7 +107,7 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 			table_clear_stack(treebuilder);
 			insert_element(treebuilder, &token->data.tag);
 			treebuilder->context.mode = IN_ROW;
-		} else if (type == TH || TD) {
+		} else if (type == TH || type == TD) {
 			hubbub_tag tag;
 
 			/** \todo parse error */
@@ -132,7 +130,7 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 				type == TFOOT || type == THEAD) {
 			reprocess = table_sub_start_or_table_end(treebuilder);
 		} else {
-			reprocess = true;
+			reprocess = handle_in_table(treebuilder, token);
 		}
 	}
 		break;

@@ -15,7 +15,7 @@
 
 
 /**
- * Clear the stack back to a table body context.
+ * Clear the stack back to a table row context.
  *
  * \param treebuilder	The treebuilder instance
  */

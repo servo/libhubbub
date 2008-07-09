@@ -32,6 +32,8 @@ static inline void clear_stack_table_context(hubbub_treebuilder *treebuilder)
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
 				node);
+
+		type = current_node(treebuilder);
 	}
 
 	return;
