@@ -224,7 +224,10 @@ int main(int argc, char **argv)
 			break;
 
 		case READING_ERRORS:
-			assert(strcmp(line, "#document-fragment\n") != 0);
+			if (strcmp(line, "#document-fragment\n") == 0) {
+				hubbub_parser_destroy(parser);
+				state = EXPECT_DATA;
+			}
 
 			if (strcmp(line, "#document\n") == 0)
 				state = READING_TREE;
