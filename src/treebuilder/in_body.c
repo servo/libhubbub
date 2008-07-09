@@ -1114,10 +1114,10 @@ void process_0container_in_body(hubbub_treebuilder *treebuilder,
 		element_type type)
 {
 	if (type == FORM) {
-		assert(treebuilder->context.form_element != NULL);
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx,
-				treebuilder->context.form_element);
+		if (treebuilder->context.form_element != NULL)
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					treebuilder->context.form_element);
 		treebuilder->context.form_element = NULL;
 	}
 
