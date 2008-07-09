@@ -57,6 +57,7 @@ typedef enum hubbub_token_type {
  * Possible namespaces
  */
 typedef enum hubbub_ns {
+	HUBBUB_NS_NULL,
 	HUBBUB_NS_HTML,
 	HUBBUB_NS_MATHML,
 	HUBBUB_NS_SVG,

@@ -1122,6 +1122,7 @@ bool hubbub_tokeniser_handle_before_attribute_name(
 
 		ctag->attributes = attr;
 
+		attr[ctag->n_attributes].ns = HUBBUB_NS_NULL;
 		attr[ctag->n_attributes].name.type = HUBBUB_STRING_OFF;
 		attr[ctag->n_attributes].name.data.off = pos;
 		attr[ctag->n_attributes].name.len = len;
@@ -1165,6 +1166,7 @@ bool hubbub_tokeniser_handle_before_attribute_name(
 
 		ctag->attributes = attr;
 
+		attr[ctag->n_attributes].ns = HUBBUB_NS_NULL;
 		attr[ctag->n_attributes].name.type = HUBBUB_STRING_OFF;
 		attr[ctag->n_attributes].name.data.off = pos;
 		attr[ctag->n_attributes].name.len = len;
@@ -1293,6 +1295,7 @@ bool hubbub_tokeniser_handle_after_attribute_name(
 
 		ctag->attributes = attr;
 
+		attr[ctag->n_attributes].ns = HUBBUB_NS_NULL;
 		attr[ctag->n_attributes].name.type = HUBBUB_STRING_OFF;
 		attr[ctag->n_attributes].name.data.off = pos;
 		attr[ctag->n_attributes].name.len = len;
@@ -1339,6 +1342,7 @@ bool hubbub_tokeniser_handle_after_attribute_name(
 
 		ctag->attributes = attr;
 
+		attr[ctag->n_attributes].ns = HUBBUB_NS_NULL;
 		attr[ctag->n_attributes].name.type = HUBBUB_STRING_OFF;
 		attr[ctag->n_attributes].name.data.off = pos;
 		attr[ctag->n_attributes].name.len = len;
