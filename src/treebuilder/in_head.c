@@ -111,7 +111,7 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		} else if (type == BASE || type == COMMAND ||
 				type == EVENT_SOURCE || type == LINK) {
 			process_base_link_meta_in_head(treebuilder,

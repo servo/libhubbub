@@ -49,7 +49,7 @@ bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		} else if (type == COL) {
 			insert_element_no_push(treebuilder, &token->data.tag);
 

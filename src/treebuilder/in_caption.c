@@ -40,7 +40,7 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 			handled = true;
 		} else {
 			/* Process as if "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		}
 	}
 		break;
@@ -59,7 +59,7 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 			/** \todo parse error */
 		} else {
 			/* Process as if "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		}
 	}
 		break;
@@ -68,7 +68,7 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
 		/* Process as if "in body" */
-		process_tag_in_body(treebuilder, token);
+		handle_in_body(treebuilder, token);
 
 		break;
 	}

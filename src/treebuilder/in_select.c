@@ -49,7 +49,7 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		} else if (type == OPTION) {
 			if (current_node(treebuilder) == OPTION) {
 				if (!element_stack_pop(treebuilder, &ns, &otype,

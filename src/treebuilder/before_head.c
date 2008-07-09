@@ -47,7 +47,7 @@ bool handle_before_head(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		} else if (type == HEAD) {
 			handled = true;
 		} else {

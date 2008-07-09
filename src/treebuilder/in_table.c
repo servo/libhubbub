@@ -207,7 +207,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 		}
 
 		/** \todo parse error */
-		process_tag_in_body(treebuilder, token);
+		handle_in_body(treebuilder, token);
 
 		treebuilder->context.in_table_foster = false;
 	}

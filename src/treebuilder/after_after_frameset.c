@@ -30,7 +30,7 @@ bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_CHARACTER:
-		process_tag_in_body(treebuilder, token);
+		handle_in_body(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 	{
@@ -39,7 +39,7 @@ bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		} else {
 			/** \todo parse error */
 			treebuilder->context.mode = IN_BODY;

@@ -39,7 +39,7 @@ bool handle_after_after_body(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		} else {
 			/** \todo parse error */
 			treebuilder->context.mode = IN_BODY;

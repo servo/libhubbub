@@ -47,7 +47,7 @@ bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (type == HTML) {
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		} else if (type == FRAMESET) {
 			insert_element(treebuilder, &token->data.tag);
 		} else if (type == FRAME) {

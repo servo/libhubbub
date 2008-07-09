@@ -203,45 +203,6 @@ void process_character(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a tag as if in "in body" mode
- *
- * \param treebuilder  The treebuilder instance
- * \param token        The token to process
- * \return True to reprocess the token
- */
-bool process_tag_in_body(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token)
-{
-	bool reprocess = false;
-
-	if (treebuilder->context.strip_leading_lr &&
-			token->type != HUBBUB_TOKEN_CHARACTER) {
-		/* Reset the LR stripping flag */
-		treebuilder->context.strip_leading_lr = false;
-	}
-
-	switch (token->type)
-	{
-	case HUBBUB_TOKEN_CHARACTER:
-		process_character(treebuilder, token);
-		break;
-	case HUBBUB_TOKEN_START_TAG:
-		reprocess = process_start_tag(treebuilder, token);
-		break;
-	case HUBBUB_TOKEN_END_TAG:
-		reprocess = process_end_tag(treebuilder, token);
-		break;
-	case HUBBUB_TOKEN_COMMENT:
-	case HUBBUB_TOKEN_DOCTYPE:
-	case HUBBUB_TOKEN_EOF:
-		assert(0);
-		break;
-	}
-
-	return reprocess;
-}
-
-/**
  * Process a start tag
  *
  * \param treebuilder  The treebuilder instance

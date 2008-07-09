@@ -44,7 +44,7 @@ bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as "in body" */
-			process_tag_in_body(treebuilder, token);
+			handle_in_body(treebuilder, token);
 		} else if (type == NOSCRIPT) {
 			handled = true;
 		} else if (type == LINK || type == META || type == NOFRAMES ||
