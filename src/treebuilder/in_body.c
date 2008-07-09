@@ -94,7 +94,7 @@ static void aa_reparent_node(hubbub_treebuilder *treebuilder, void *node,
 		void *new_parent);
 static void aa_find_bookmark_location_reparenting_misnested(
 		hubbub_treebuilder *treebuilder, 
-		uint32_t formatting_element, uint32_t furthest_block,
+		uint32_t formatting_element, uint32_t *furthest_block,
 		bookmark *bookmark, uint32_t *last_node);
 static void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder, 
 		uint32_t index, uint32_t limit);
@@ -1336,7 +1336,7 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		uint32_t last_node;
 
 		aa_find_bookmark_location_reparenting_misnested(treebuilder,
-				formatting_element, furthest_block, 
+				formatting_element, &furthest_block, 
 				&bookmark, &last_node);
 
 		/* 8 */
@@ -1596,20 +1596,21 @@ void aa_reparent_node(hubbub_treebuilder *treebuilder, void *node,
  *
  * \param treebuilder         The treebuilder instance
  * \param formatting_element  The stack index of the formatting element
- * \param furthest_block      Index of furthest block in element stack
+ * \param furthest_block      Pointer to index of furthest block in element 
+ *                            stack (updated on exit)
  * \param bookmark            Pointer to bookmark (pre-initialised)
  * \param last_node           Pointer to location to receive index of last node
  */
 void aa_find_bookmark_location_reparenting_misnested(
 		hubbub_treebuilder *treebuilder, 
-		uint32_t formatting_element, uint32_t furthest_block,
+		uint32_t formatting_element, uint32_t *furthest_block,
 		bookmark *bookmark, uint32_t *last_node)
 {
 	element_context *stack = treebuilder->context.element_stack;
-	uint32_t node, last;
+	uint32_t node, last, fb;
 	formatting_list_entry *node_entry;
 
-	node = last = furthest_block;
+	node = last = fb = *furthest_block;
 
 	while (true) {
 		/* i */
@@ -1618,7 +1619,7 @@ void aa_find_bookmark_location_reparenting_misnested(
 		/* ii */
 		for (node_entry = treebuilder->context.formatting_list_end; 
 				node_entry != NULL; 
-				node_entry = node_entry->next) {
+				node_entry = node_entry->prev) {
 			if (node_entry->stack_index == node)
 				break;
 		}
@@ -1630,7 +1631,7 @@ void aa_find_bookmark_location_reparenting_misnested(
 
 			/* Update furthest block index and the last node index,
 			 * as these are always below node in the stack */
-			furthest_block--;
+			fb--;
 			last--;
 
 			/* Fixup the current_node index */
@@ -1645,8 +1646,8 @@ void aa_find_bookmark_location_reparenting_misnested(
 			break;
 
 		/* iv */
-		if (last == furthest_block) {
-			bookmark->prev = node_entry->prev;
+		if (last == fb) {
+			bookmark->prev = node_entry;
 			bookmark->next = node_entry->next;
 		}
 
@@ -1671,6 +1672,7 @@ void aa_find_bookmark_location_reparenting_misnested(
 		/* viii */
 	}
 
+	*furthest_block = fb;
 	*last_node = last;
 }
 

@@ -91,7 +91,7 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 		element_type type = element_type_from_name(treebuilder,
 				&token->data.tag.name);
 
-		if (type == TH || TD) {
+		if (type == TH || type == TD) {
 			if (element_in_scope(treebuilder, type, true)) {
 				hubbub_ns ns;
 				element_type otype = UNKNOWN;
