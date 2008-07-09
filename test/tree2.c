@@ -24,6 +24,7 @@ typedef struct node_t node_t;
 typedef struct buf_t buf_t;
 
 struct attr_t {
+	hubbub_ns ns;
 	char *name;
 	char *value;
 };
@@ -39,6 +40,7 @@ struct node_t {
 		} doctype;
 
 		struct {
+			hubbub_ns ns;
 			char *name;
 			attr_t *attrs;
 			size_t n_attrs;
@@ -59,6 +61,12 @@ struct buf_t {
 	size_t len;
 	size_t pos;
 };
+
+
+#define NUM_NAMESPACES 7
+const char const *ns_names[NUM_NAMESPACES] =
+		{ NULL, NULL /*html*/, "math", "svg", "xlink", "xml", "xmlns" };
+
 
 node_t *Document;
 
@@ -345,7 +353,10 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
+	assert(tag->ns < NUM_NAMESPACES);
+
 	node->type = ELEMENT;
+	node->data.element.ns = tag->ns;
 	node->data.element.name = strndup(
 			(char *)ptr_from_hubbub_string(&tag->name),
 			tag->name.len);
@@ -355,13 +366,17 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 			sizeof *node->data.element.attrs);
 
 	for (size_t i = 0; i < tag->n_attributes; i++) {
-		node->data.element.attrs[i].name = strndup(
-				(char *)ptr_from_hubbub_string(
+		attr_t *attr = &node->data.element.attrs[i];
+
+		assert(tag->attributes[i].ns < NUM_NAMESPACES);
+
+		attr->ns = tag->attributes[i].ns;
+
+		attr->name = strndup((char *)ptr_from_hubbub_string(
 						&tag->attributes[i].name),
 				tag->attributes[i].name.len);
 
-		node->data.element.attrs[i].value = strndup(
-				(char *)ptr_from_hubbub_string(
+		attr->value = strndup((char *)ptr_from_hubbub_string(
 						&tag->attributes[i].value),
 				tag->attributes[i].value.len);
 	}
@@ -564,14 +579,29 @@ static int compare_attrs(const void *a, const void *b) {
 }
 
 
-static void node_print(buf_t *buf, node_t *node, unsigned depth)
-{
-	if (!node) return;
 
+
+static void indent(buf_t *buf, unsigned depth)
+{
 	buf_add(buf, "| ");
 	for (unsigned i = 0; i < depth; i++) {
 		buf_add(buf, "  ");
 	}
+}
+
+static void print_ns(buf_t *buf, hubbub_ns ns)
+{
+	if (ns_names[ns] != NULL) {
+		buf_add(buf, ns_names[ns]);
+		buf_add(buf, " ");
+	}
+}
+
+static void node_print(buf_t *buf, node_t *node, unsigned depth)
+{
+	if (!node) return;
+
+	indent(buf, depth);
 
 	switch (node->type)
 	{
@@ -580,22 +610,23 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 		break;
 	case ELEMENT:
 		buf_add(buf, "<");
+		print_ns(buf, node->data.element.ns);
 		buf_add(buf, node->data.element.name);
+		buf_add(buf, ">\n");
 
 		qsort(node->data.element.attrs, node->data.element.n_attrs,
 				sizeof *node->data.element.attrs,
 				compare_attrs);
 
 		for (size_t i = 0; i < node->data.element.n_attrs; i++) {
-			buf_add(buf, " ");
+			indent(buf, depth + 1);
+			print_ns(buf, node->data.element.attrs[i].ns);
 			buf_add(buf, node->data.element.attrs[i].name);
 			buf_add(buf, "=");
 			buf_add(buf, "\"");
 			buf_add(buf, node->data.element.attrs[i].value);
-			buf_add(buf, "\"");
+			buf_add(buf, "\"\n");
 		}
-
-		buf_add(buf, ">\n");
 
 		break;
 	case CHARACTER:
