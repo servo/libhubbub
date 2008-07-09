@@ -217,9 +217,9 @@ int main(int argc, char **argv)
 			} else {
 				size_t len = strlen(line);
 
+				printf(": %s", line);
 				assert(hubbub_parser_parse_chunk(parser, (uint8_t *)line,
 						len - 1) == HUBBUB_OK);
-				printf(": %s", line);
 			}
 			break;
 
