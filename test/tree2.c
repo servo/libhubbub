@@ -298,6 +298,7 @@ int main(int argc, char **argv)
 				buf_clear(&expected);
 
 				hubbub_parser_destroy(parser);
+				Document = NULL;
 
 				state = EXPECT_DATA;
 			}
@@ -414,24 +415,32 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 	node_t *tparent = parent;
 	node_t *tchild = child;
 
+	node_t *insert = NULL;
+
+	tchild->parent = tparent;
+	tchild->child = tchild->next = tchild->prev = NULL;
+
 	if (parent == (void *)1) {
-		Document = tchild;
+		if (Document) {
+			insert = Document;
+		} else {
+			Document = tchild;
+		}
 	} else {
 		if (tparent->child == NULL) {
 			tparent->child = tchild;
-			tchild->parent = tparent;
 		} else {
-			node_t *insert = tparent->child;
-
-			while (insert->next != NULL) {
-				insert = insert->next;
-			}
-
-			insert->next = tchild;
-			tchild->prev = insert;
-
-			tchild->parent = tparent;
+			insert = tparent->child;
 		}
+	}
+
+	if (insert) {
+		while (insert->next != NULL) {
+			insert = insert->next;
+		}
+
+		insert->next = tchild;
+		tchild->prev = insert;
 	}
 
 	*result = child;
@@ -642,11 +651,10 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 	}
 
 	if (node->child) {
-		node = node->child;
+		node_print(buf, node->child, depth + 1);
+	}
 
-		while (node) {
-			node_print(buf, node, depth + 1);
-			node = node->next;
-		}
+	if (node->next) {
+		node_print(buf, node->next, depth);
 	}
 }
