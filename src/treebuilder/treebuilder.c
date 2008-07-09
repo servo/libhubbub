@@ -8,6 +8,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <stdio.h>
+
 #include "treebuilder/modes.h"
 #include "treebuilder/internal.h"
 #include "treebuilder/treebuilder.h"
@@ -303,75 +305,86 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 			treebuilder->tree_handler == NULL)
 		return;
 
+	assert((signed) treebuilder->context.current_node >= 0);
+
+#ifdef NDEBUG
+# define hack(x) \
+		case x:
+#else
+# define hack(x) \
+		case x: \
+			printf( #x "\n");
+#endif
+
 	while (reprocess) {
 		switch (treebuilder->context.mode) {
-		case INITIAL:
+		hack(INITIAL)
 			reprocess = handle_initial(treebuilder, token);
 			break;
-		case BEFORE_HTML:
+		hack(BEFORE_HTML)
 			reprocess = handle_before_html(treebuilder, token);
 			break;
-		case BEFORE_HEAD:
+		hack(BEFORE_HEAD)
 			reprocess = handle_before_head(treebuilder, token);
 			break;
-		case IN_HEAD:
+		hack(IN_HEAD)
 			reprocess = handle_in_head(treebuilder, token);
 			break;
-		case IN_HEAD_NOSCRIPT:
+		hack(IN_HEAD_NOSCRIPT)
 			reprocess = handle_in_head_noscript(treebuilder, token);
 			break;
-		case AFTER_HEAD:
+		hack(AFTER_HEAD)
 			reprocess = handle_after_head(treebuilder, token);
 			break;
-		case IN_BODY:
+		hack(IN_BODY)
 			reprocess = handle_in_body(treebuilder, token);
 			break;
-		case IN_TABLE:
+		hack(IN_TABLE)
 			reprocess = handle_in_table(treebuilder, token);
 			break;
-		case IN_CAPTION:
+		hack(IN_CAPTION)
 			reprocess = handle_in_caption(treebuilder, token);
 			break;
-		case IN_COLUMN_GROUP:
+		hack(IN_COLUMN_GROUP)
 			reprocess = handle_in_column_group(treebuilder, token);
 			break;
-		case IN_TABLE_BODY:
+		hack(IN_TABLE_BODY)
 			reprocess = handle_in_table_body(treebuilder, token);
 			break;
-		case IN_ROW:
+		hack(IN_ROW)
 			reprocess = handle_in_row(treebuilder, token);
 			break;
-		case IN_CELL:
+		hack(IN_CELL)
 			reprocess = handle_in_cell(treebuilder, token);
 			break;
-		case IN_SELECT:
+		hack(IN_SELECT)
 			reprocess = handle_in_select(treebuilder, token);
 			break;
-		case IN_SELECT_IN_TABLE:
+		hack(IN_SELECT_IN_TABLE)
 			reprocess = handle_in_select_in_table(treebuilder, token);
 			break;
-		case IN_FOREIGN_CONTENT:
+		hack(IN_FOREIGN_CONTENT)
 			reprocess = handle_in_foreign_content(treebuilder, token);
 			break;
-		case AFTER_BODY:
+		hack(AFTER_BODY)
 			reprocess = handle_after_body(treebuilder, token);
 			break;
-		case IN_FRAMESET:
+		hack(IN_FRAMESET)
 			reprocess = handle_in_frameset(treebuilder, token);
 			break;
-		case AFTER_FRAMESET:
+		hack(AFTER_FRAMESET)
 			reprocess = handle_after_frameset(treebuilder, token);
 			break;
-		case AFTER_AFTER_BODY:
+		hack(AFTER_AFTER_BODY)
 			reprocess = handle_after_after_body(treebuilder, token);
 			break;
-		case AFTER_AFTER_FRAMESET:
+		hack(AFTER_AFTER_FRAMESET)
 			reprocess = handle_after_after_frameset(treebuilder, token);
 			break;
-		case GENERIC_RCDATA:
+		hack(GENERIC_RCDATA)
 			reprocess = handle_generic_rcdata(treebuilder, token);
 			break;
-		case SCRIPT_COLLECT_CHARACTERS:
+		hack(SCRIPT_COLLECT_CHARACTERS)
 			reprocess = handle_script_collect_characters(
 					treebuilder, token);
 			break;
@@ -542,6 +555,8 @@ uint32_t element_in_scope(hubbub_treebuilder *treebuilder,
 
 	if (treebuilder->context.element_stack == NULL)
 		return false;
+
+	assert((signed) treebuilder->context.current_node >= 0);
 
 	for (node = treebuilder->context.current_node; node > 0; node--) {
 		element_type node_type =
