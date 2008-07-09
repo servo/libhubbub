@@ -28,8 +28,10 @@ bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		reprocess = process_characters_expect_whitespace(treebuilder,
-				token, true);
+		if (process_characters_expect_whitespace(treebuilder,
+				token, true)) {
+			/** \todo parser error */
+		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		process_comment_append(treebuilder, token,

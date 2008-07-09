@@ -28,8 +28,42 @@ bool handle_after_body(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		reprocess = process_characters_expect_whitespace(treebuilder,
-				token, true);
+	{
+		/* mostly cribbed from process_characters_expect_whitespace */
+
+		const uint8_t *data = treebuilder->input_buffer +
+				token->data.character.data.off;
+
+		size_t len = token->data.character.len;
+		size_t c;
+
+		/** \todo utf-16 */
+
+		/* Scan for whitespace */
+		for (c = 0; c < len; c++) {
+			if (data[c] != 0x09 && data[c] != 0x0A &&
+					data[c] != 0x0C && data[c] != 0x20)
+				break;
+		}
+
+		/* Non-whitespace characters in token, so handle as in body */
+		if (c > 0) {
+			hubbub_token temp = *token;
+			temp.data.character.len = c;
+
+			handle_in_body(treebuilder, &temp);
+		}
+
+		/* Anything else, switch to in body */
+		if (c != len) {
+			/* Update token data to strip leading whitespace */
+			((hubbub_token *) token)->data.character.data.off += c;
+			((hubbub_token *) token)->data.character.len -= c;
+
+			treebuilder->context.mode = IN_BODY;
+			reprocess = true;
+		}
+	}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		process_comment_append(treebuilder, token,

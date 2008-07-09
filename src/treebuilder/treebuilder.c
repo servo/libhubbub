@@ -407,7 +407,7 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool insert_into_current_node)
 {
-	const uint8_t *data = treebuilder->input_buffer + 
+	const uint8_t *data = treebuilder->input_buffer +
 			token->data.character.data.off;
 	size_t len = token->data.character.len;
 	size_t c;
@@ -415,9 +415,8 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 	/** \todo UTF-16 */
 
 	for (c = 0; c < len; c++) {
-		if (data[c] != 0x09 && data[c] != 0x0A && 
-				data[c] != 0x0B && data[c] != 0x0C &&
-				data[c] != 0x20)
+		if (data[c] != 0x09 && data[c] != 0x0A &&
+				data[c] != 0x0C && data[c] != 0x20)
 			break;
 	}
 	/* Non-whitespace characters in token, so reprocess */
@@ -713,6 +712,8 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 	int success;
 	void *node, *appended;
 
+	/** \todo handle treebuilder->context.in_table_foster */
+
 	success = treebuilder->tree_handler->create_element(
 			treebuilder->tree_handler->ctx, tag, &node);
 	if (success != 0) {
@@ -750,6 +751,8 @@ void insert_element_no_push(hubbub_treebuilder *treebuilder,
 {
 	int success;
 	void *node, *appended;
+
+	/** \todo handle treebuilder->context.in_table_foster */
 
 	success = treebuilder->tree_handler->create_element(
 			treebuilder->tree_handler->ctx, tag, &node);
@@ -1081,6 +1084,7 @@ bool element_stack_pop(hubbub_treebuilder *treebuilder,
 	/** \todo reduce allocated stack size once there's enough free */
 
 	treebuilder->context.current_node = slot - 1;
+	assert((signed) treebuilder->context.current_node >= 0);
 
 	return true;
 }
@@ -1105,6 +1109,8 @@ bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, node);
+
+		assert((signed) treebuilder->context.current_node >= 0);
 	}
 
 	return true;
