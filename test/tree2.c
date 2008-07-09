@@ -21,6 +21,7 @@
 
 typedef struct attr_t attr_t;
 typedef struct node_t node_t;
+typedef struct buf_t buf_t;
 
 struct attr_t {
 	char *name;
@@ -53,11 +54,17 @@ struct node_t {
 	node_t *parent;
 };
 
+struct buf_t {
+	char *buf;
+	size_t len;
+	size_t pos;
+};
+
 node_t *Document;
 
 
 
-static void node_print(node_t *node, unsigned depth);
+static void node_print(buf_t *buf, node_t *node, unsigned depth);
 
 
 static const uint8_t *pbuffer;
@@ -166,6 +173,33 @@ void buffer_handler(const uint8_t *buffer, size_t len, void *pw)
 }
 
 
+/*** Buffer handling bits ***/
+static void buf_clear(buf_t *buf)
+{
+	buf->buf[0] = '\0';
+	buf->pos = 0;
+}
+
+static void buf_add(buf_t *buf, const char *str)
+{
+	size_t len = strlen(str) + 1;
+
+	if (buf->buf == NULL) {
+		buf->len = ((len + 1024) / 1024) * 1024;
+		buf->buf = calloc(1, buf->len);
+	}
+
+	while (buf->pos + len > buf->len) {
+		buf->len *= 2;
+		buf->buf = realloc(buf->buf, buf->len);
+	}
+
+	strcat(buf->buf, str);
+	buf->pos += len;
+}
+
+
+
 /* States for reading in data from the tree construction file */
 enum reading_state {
 	EXPECT_DATA,
@@ -184,6 +218,9 @@ int main(int argc, char **argv)
 	hubbub_parser *parser;
 	enum reading_state state = EXPECT_DATA;
 
+	buf_t expected = { NULL, 0, 0 };
+	buf_t got = { NULL, 0, 0 };
+
 
 	if (argc != 3) {
 		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
@@ -200,7 +237,7 @@ int main(int argc, char **argv)
 	}
 
 	/* We rely on lines not being anywhere near 1024 characters... */
-	while (fgets(line, sizeof line, fp) == line) {
+	while (passed && fgets(line, sizeof line, fp) == line) {
 		switch (state)
 		{
  		case EXPECT_DATA:
@@ -237,9 +274,21 @@ int main(int argc, char **argv)
 
 		case READING_TREE:
 			if (line[0] == '|' && line[1] == ' ') {
-				printf("%s", line);
+				buf_add(&expected, line);
 			} else {
-				node_print(Document, 0);
+				node_print(&got, Document, 0);
+
+				passed = !strcmp(got.buf, expected.buf);
+				if (!passed) {
+					printf("expected:\n");
+					printf("%s", expected.buf);
+					printf("got:\n");
+					printf("%s", got.buf);
+				}
+
+				buf_clear(&got);
+				buf_clear(&expected);
+
 				hubbub_parser_destroy(parser);
 
 				state = EXPECT_DATA;
@@ -515,41 +564,49 @@ static int compare_attrs(const void *a, const void *b) {
 }
 
 
-static void node_print(node_t *node, unsigned depth)
+static void node_print(buf_t *buf, node_t *node, unsigned depth)
 {
 	if (!node) return;
 
-	printf("@ ");
+	buf_add(buf, "| ");
 	for (unsigned i = 0; i < depth; i++) {
-		printf("  ");
+		buf_add(buf, "  ");
 	}
 
 	switch (node->type)
 	{
 	case DOCTYPE:
-		printf("<!DOCTYPE \n");
+		buf_add(buf, "<!DOCTYPE \n");
 		break;
 	case ELEMENT:
-		printf("<%s", node->data.element.name);
+		buf_add(buf, "<");
+		buf_add(buf, node->data.element.name);
 
 		qsort(node->data.element.attrs, node->data.element.n_attrs,
 				sizeof *node->data.element.attrs,
 				compare_attrs);
 
 		for (size_t i = 0; i < node->data.element.n_attrs; i++) {
-			printf(" %s=\"%s\"",
-					node->data.element.attrs[i].name,
-					node->data.element.attrs[i].value);
+			buf_add(buf, " ");
+			buf_add(buf, node->data.element.attrs[i].name);
+			buf_add(buf, "=");
+			buf_add(buf, "\"");
+			buf_add(buf, node->data.element.attrs[i].value);
+			buf_add(buf, "\"");
 		}
 
-		printf(">\n");
+		buf_add(buf, ">\n");
 
 		break;
 	case CHARACTER:
-		printf("\"%s\"\n", node->data.content);
+		buf_add(buf, "\"");
+		buf_add(buf, node->data.content);
+		buf_add(buf, "\"\n");
 		break;
 	case COMMENT:
-		printf("<!--%s-->\n", node->data.content);
+		buf_add(buf, "<!--");
+		buf_add(buf, node->data.content);
+		buf_add(buf, "-->\n");
 		break;
 	}
 
@@ -557,7 +614,7 @@ static void node_print(node_t *node, unsigned depth)
 		node = node->child;
 
 		while (node) {
-			node_print(node, depth + 1);
+			node_print(buf, node, depth + 1);
 			node = node->next;
 		}
 	}
