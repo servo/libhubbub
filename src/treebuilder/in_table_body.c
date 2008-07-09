@@ -113,6 +113,7 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 			/** \todo parse error */
 
 			/* Manufacture tr tag */
+			tag.ns = HUBBUB_NS_HTML;
 			tag.name.type = HUBBUB_STRING_PTR;
 			tag.name.data.ptr = (const uint8_t *) "tr";
 			tag.name.len = SLEN("tr");

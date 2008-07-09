@@ -72,6 +72,7 @@ bool handle_before_html(hubbub_treebuilder *treebuilder,
 			hubbub_tag tag;
 
 			/** \todo UTF-16 */
+			tag.ns = HUBBUB_NS_HTML;
 			tag.name.type = HUBBUB_STRING_PTR;
 			tag.name.data.ptr = (const uint8_t *) "html";
 			tag.name.len = SLEN("html");
