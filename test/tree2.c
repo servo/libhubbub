@@ -192,6 +192,11 @@ static void buf_add(buf_t *buf, const char *str)
 {
 	size_t len = strlen(str) + 1;
 
+	if (!buf) {
+		printf("%s", str);
+		return;
+	}
+
 	if (buf->buf == NULL) {
 		buf->len = ((len + 1024) / 1024) * 1024;
 		buf->buf = calloc(1, buf->len);
@@ -418,7 +423,15 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 	node_t *insert = NULL;
 
 	tchild->parent = tparent;
-	tchild->child = tchild->next = tchild->prev = NULL;
+	tchild->next = tchild->prev = NULL;
+
+#ifndef NDEBUG
+	printf("appending (%x):\n", (unsigned)tchild);
+	node_print(NULL, tchild, 0);
+	printf("to:\n");
+	if (parent != (void *)1)
+		node_print(NULL, tparent, 0);
+#endif
 
 	if (parent == (void *)1) {
 		if (Document) {
@@ -476,10 +489,11 @@ int remove_child(void *ctx, void *parent, void *child, void **result)
 	node_t *tchild = child;
 
 	assert(tparent->child);
+	assert(tchild->parent == tparent);
 
-
-	if (tchild->parent->child == tchild)
+	if (tchild->parent->child == tchild) {
 		tchild->parent->child = tchild->next;
+	}
 
 	if (tchild->prev)
 		tchild->prev->next = tchild->next;
