@@ -531,15 +531,36 @@ int clone_node(void *ctx, void *node, bool deep, void **result)
 	return 0;
 }
 
-/* Reparent "node" to "new_parent" */
+/* Take all of the child nodes of "node" and append them to "new_parent" */
 int reparent_children(void *ctx, void *node, void *new_parent)
 {
-	node_t *tparent = new_parent;
-	node_t *tchild = node;
-	void *nnode;
+	node_t *parent = new_parent;
+	node_t *old_parent = node;
 
-	remove_child(ctx, tchild->parent, tchild, &nnode);
-	append_child(ctx, tparent, tchild, &nnode);
+	node_t *insert;
+	node_t *kids;
+
+	kids = old_parent->child;
+	if (!kids) return 0;
+
+	old_parent->child = NULL;
+
+	insert = parent->child;
+	if (!insert) {
+		parent->child = kids;
+	} else {
+		while (insert->next != NULL) {
+			insert = insert->next;
+		}
+
+		insert->next = kids;
+		kids->prev = insert;
+	}
+
+	while (kids) {
+		kids->parent = parent;
+		kids = kids->next;
+	}
 
 	return 0;
 }
