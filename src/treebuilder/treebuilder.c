@@ -730,16 +730,16 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, appended);
-
-		if (!element_stack_push(treebuilder,
-				tag->ns,
-				element_type_from_name(treebuilder, &tag->name),
-				node)) {
-			/** \todo errors */
-		}
 	} else {
 		printf("should be inserting foster here\n");
 		aa_insert_into_foster_parent(treebuilder, node);
+	}
+
+	if (!element_stack_push(treebuilder,
+			tag->ns,
+			element_type_from_name(treebuilder, &tag->name),
+			node)) {
+		/** \todo errors */
 	}
 }
 
