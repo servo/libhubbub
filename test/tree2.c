@@ -359,6 +359,9 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
+	if (tag->ns >= NUM_NAMESPACES) {
+	*(int *)((void *)0x30) = 3;
+	}
 	assert(tag->ns < NUM_NAMESPACES);
 
 	node->type = ELEMENT;
@@ -679,9 +682,9 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 		buf_add(buf, "\"\n");
 		break;
 	case COMMENT:
-		buf_add(buf, "<!--");
+		buf_add(buf, "<!-- ");
 		buf_add(buf, node->data.content);
-		buf_add(buf, "-->\n");
+		buf_add(buf, " -->\n");
 		break;
 	}
 
