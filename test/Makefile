@@ -76,12 +76,8 @@ $(2): $(1)
 endef
 
 # Build rules for each test binary -- they all depend on the debug library
-# FIXME - these need to depend on the debug library, so they're rebuilt when 
-# it changes. Simply adding it to the prerequisites list causes all test 
-# drivers to be rebuilt every time, regardless of if there have been any 
-# changes.
 define compile_test
-$(2): $(3)
+$(2): $(3) $(TOP)/$(COMPONENT)-debug.a
 	@$$(ECHO) $$(ECHOFLAGS) "==> $(1)"
 	@$$(CC) -c -g $$(DEBUGCFLAGS) -o $$@.o $(1)
 	@$$(LD) -g -o $$@ $$@.o $$(LDFLAGS) -lhubbub-debug -lgcov
