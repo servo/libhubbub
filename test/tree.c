@@ -189,7 +189,7 @@ int main(int argc, char **argv)
 	/* Ensure that all nodes have been released by the treebuilder */
 	for (uintptr_t n = 1; n <= node_counter; n++) {
 		if (node_ref[n] != 0) {
-			printf("%u still referenced (=%u)\n", n, node_ref[n]);
+			printf("%" PRIuPTR " still referenced (=%u)\n", n, node_ref[n]);
 			passed = false;
 		}
 	}
@@ -211,8 +211,8 @@ void buffer_handler(const uint8_t *buffer, size_t len, void *pw)
 
 int create_comment(void *ctx, const hubbub_string *data, void **result)
 {
-	printf("Creating (%u) [comment '%.*s']\n", ++node_counter,
-			data->len, ptr_from_hubbub_string(data));
+	printf("Creating (%" PRIuPTR ") [comment '%.*s']\n", ++node_counter,
+			(int) data->len, ptr_from_hubbub_string(data));
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -231,8 +231,8 @@ int create_doctype(void *ctx, const hubbub_string *qname,
 	UNUSED(public_id);
 	UNUSED(system_id);
 
-	printf("Creating (%u) [doctype '%.*s']\n", ++node_counter,
-			qname->len, ptr_from_hubbub_string(qname));
+	printf("Creating (%" PRIuPTR ") [doctype '%.*s']\n", ++node_counter,
+			(int) qname->len, ptr_from_hubbub_string(qname));
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -246,8 +246,8 @@ int create_doctype(void *ctx, const hubbub_string *qname,
 
 int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
-	printf("Creating (%u) [element '%.*s']\n", ++node_counter,
-			tag->name.len, ptr_from_hubbub_string(&tag->name));
+	printf("Creating (%" PRIuPTR ") [element '%.*s']\n", ++node_counter,
+			(int) tag->name.len, ptr_from_hubbub_string(&tag->name));
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -261,8 +261,8 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 
 int create_text(void *ctx, const hubbub_string *data, void **result)
 {
-	printf("Creating (%u) [text '%.*s']\n", ++node_counter,
-			data->len, ptr_from_hubbub_string(data));
+	printf("Creating (%" PRIuPTR ") [text '%.*s']\n", ++node_counter,
+			(int) data->len, ptr_from_hubbub_string(data));
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -278,7 +278,7 @@ int ref_node(void *ctx, void *node)
 {
 	UNUSED(ctx);
 
-	printf("Referencing %u (=%u)\n", 
+	printf("Referencing %" PRIuPTR " (=%u)\n", 
 			(uintptr_t) node, ++node_ref[(uintptr_t) node]);
 
 	return 0;
@@ -288,7 +288,7 @@ int unref_node(void *ctx, void *node)
 {
 	UNUSED(ctx);
 
-	printf("Unreferencing %u (=%u)\n", 
+	printf("Unreferencing %" PRIuPTR " (=%u)\n", 
 			(uintptr_t) node, --node_ref[(uintptr_t) node]);
 
 	return 0;
@@ -296,7 +296,7 @@ int unref_node(void *ctx, void *node)
 
 int append_child(void *ctx, void *parent, void *child, void **result)
 {
-	printf("Appending %u to %u\n", (uintptr_t) child, (uintptr_t) parent);
+	printf("Appending %" PRIuPTR " to %" PRIuPTR "\n", (uintptr_t) child, (uintptr_t) parent);
 	ref_node(ctx, child);
 
 	*result = (void *) child;
@@ -307,7 +307,7 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 		void **result)
 {
-	printf("Inserting %u in %u before %u\n", (uintptr_t) child, 
+	printf("Inserting %" PRIuPTR " in %" PRIuPTR " before %" PRIuPTR "\n", (uintptr_t) child, 
 			(uintptr_t) parent, (uintptr_t) ref_child);
 	ref_node(ctx, child);
 
@@ -318,7 +318,7 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 
 int remove_child(void *ctx, void *parent, void *child, void **result)
 {
-	printf("Removing %u from %u\n", (uintptr_t) child, (uintptr_t) parent);
+	printf("Removing %" PRIuPTR " from %" PRIuPTR "\n", (uintptr_t) child, (uintptr_t) parent);
 	ref_node(ctx, child);
 
 	*result = (void *) child;
@@ -328,7 +328,7 @@ int remove_child(void *ctx, void *parent, void *child, void **result)
 
 int clone_node(void *ctx, void *node, bool deep, void **result)
 {
-	printf("%sCloning %u -> %u\n", deep ? "Deep-" : "",
+	printf("%sCloning %" PRIuPTR " -> %" PRIuPTR "\n", deep ? "Deep-" : "",
 			(uintptr_t) node, ++node_counter);
 
 	GROW_REF
@@ -345,7 +345,7 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 {
 	UNUSED(ctx);
 
-	printf("Reparenting children of %u to %u\n", 
+	printf("Reparenting children of %" PRIuPTR " to %" PRIuPTR "\n", 
 				(uintptr_t) node, (uintptr_t) new_parent);
 
 	return 0;
@@ -353,7 +353,7 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 
 int get_parent(void *ctx, void *node, bool element_only, void **result)
 {
-	printf("Retrieving parent of %u (%s)\n", (uintptr_t) node,
+	printf("Retrieving parent of %" PRIuPTR " (%s)\n", (uintptr_t) node,
 			element_only ? "element only" : "");
 
 	ref_node(ctx, (void *) 1);
@@ -366,7 +366,7 @@ int has_children(void *ctx, void *node, bool *result)
 {
 	UNUSED(ctx);
 
-	printf("Want children for %u\n", (uintptr_t) node);
+	printf("Want children for %" PRIuPTR "\n", (uintptr_t) node);
 
 	*result = false;
 
@@ -377,7 +377,7 @@ int form_associate(void *ctx, void *form, void *node)
 {
 	UNUSED(ctx);
 
-	printf("Associating %u with form %u\n", 
+	printf("Associating %" PRIuPTR " with form %" PRIuPTR "\n", 
 			(uintptr_t) node, (uintptr_t) form);
 
 	return 0;
@@ -390,7 +390,7 @@ int add_attributes(void *ctx, void *node,
 	UNUSED(attributes);
 	UNUSED(n_attributes);
 
-	printf("Adding attributes to %u\n", (uintptr_t) node);
+	printf("Adding attributes to %" PRIuPTR "\n", (uintptr_t) node);
 
 	return 0;
 }
