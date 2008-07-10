@@ -804,6 +804,7 @@ void process_image_in_body(hubbub_treebuilder *treebuilder,
 	hubbub_tag tag;
 
 	/** \todo UTF-16 */
+	tag.ns = HUBBUB_NS_HTML;
 	tag.name.type = HUBBUB_STRING_PTR;
 	tag.name.data.ptr = (const uint8_t *) "img";
 	tag.name.len = SLEN("img");
@@ -900,6 +901,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 
 	/* Set up dummy as a start tag token */
 	dummy.type = HUBBUB_TOKEN_START_TAG;
+	dummy.data.tag.ns = HUBBUB_NS_HTML;
 	dummy.data.tag.name.type = HUBBUB_STRING_PTR;
 
 	/* Act as if <form> were seen */
@@ -1145,6 +1147,7 @@ void process_0p_in_body(hubbub_treebuilder *treebuilder)
 		hubbub_token dummy;
 
 		dummy.type = HUBBUB_TOKEN_START_TAG;
+		dummy.data.tag.ns = HUBBUB_NS_HTML;
 		dummy.data.tag.name.type = HUBBUB_STRING_PTR;
 		/** \todo UTF-16 */
 		dummy.data.tag.name.data.ptr = (const uint8_t *) "p";
@@ -1839,6 +1842,7 @@ void process_0br_in_body(hubbub_treebuilder *treebuilder)
 	/* Act as if <br> has been seen. */
 
 	/** \todo UTF-16 */
+	tag.ns = HUBBUB_NS_HTML;
 	tag.name.type = HUBBUB_STRING_PTR;
 	tag.name.data.ptr = (const uint8_t *) "br";
 	tag.name.len = SLEN("br");
