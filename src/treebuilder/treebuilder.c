@@ -712,31 +712,34 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 	int success;
 	void *node, *appended;
 
-	/** \todo handle treebuilder->context.in_table_foster */
-
 	success = treebuilder->tree_handler->create_element(
 			treebuilder->tree_handler->ctx, tag, &node);
 	if (success != 0) {
 		/** \todo errors */
 	}
 
-	success = treebuilder->tree_handler->append_child(
-			treebuilder->tree_handler->ctx,
-			treebuilder->context.element_stack[
-				treebuilder->context.current_node].node,
-			node, &appended);
-	if (success != 0) {
-		/** \todo errors */
-	}
+	if (!treebuilder->context.in_table_foster) {
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.element_stack[
+					treebuilder->context.current_node].node,
+				node, &appended);
+		if (success != 0) {
+			/** \todo errors */
+		}
 
-	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
-			appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
 
-	if (!element_stack_push(treebuilder,
-			tag->ns,
-			element_type_from_name(treebuilder, &tag->name),
-			node)) {
-		/** \todo errors */
+		if (!element_stack_push(treebuilder,
+				tag->ns,
+				element_type_from_name(treebuilder, &tag->name),
+				node)) {
+			/** \todo errors */
+		}
+	} else {
+		printf("should be inserting foster here\n");
+		aa_insert_into_foster_parent(treebuilder, node);
 	}
 }
 
@@ -760,19 +763,23 @@ void insert_element_no_push(hubbub_treebuilder *treebuilder,
 		/** \todo errors */
 	}
 
-	success = treebuilder->tree_handler->append_child(
-			treebuilder->tree_handler->ctx,
-			treebuilder->context.element_stack[
-				treebuilder->context.current_node].node,
-			node, &appended);
-	if (success != 0) {
-		/** \todo errors */
-	}
+	if (!treebuilder->context.in_table_foster) {
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.element_stack[
+					treebuilder->context.current_node].node,
+				node, &appended);
+		if (success != 0) {
+			/** \todo errors */
+		}
 
-	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
-			appended);
-	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
-			node);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, node);
+	} else {
+		aa_insert_into_foster_parent(treebuilder, node);
+	}
 }
 
 /**

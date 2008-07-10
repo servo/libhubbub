@@ -100,8 +100,6 @@ static void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 		uint32_t index, uint32_t limit);
 static void aa_clone_and_replace_entries(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *element);
-static void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, 
-		void *node); 
 
 
 /**
@@ -1737,6 +1735,8 @@ void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 	void *foster_parent = NULL;
 	bool insert = false;
 	void *inserted;
+
+	stack[treebuilder->context.current_table].tainted = true;
 
 	if (treebuilder->context.current_table == 0) {
 		treebuilder->tree_handler->ref_node(

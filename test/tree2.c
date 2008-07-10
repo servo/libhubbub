@@ -475,10 +475,12 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 	tchild->next = tref;
 	tref->prev = tchild;
 
-	if (tref->prev)
-		tref->prev->next = tchild;
+	if (tchild->prev)
+		tchild->prev->next = tchild;
 	else
 		tparent->child = tchild;
+
+	*result = child;
 
 	return 0;
 }

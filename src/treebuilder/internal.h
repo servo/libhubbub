@@ -176,6 +176,9 @@ bool formatting_list_replace(hubbub_treebuilder *treebuilder,
 void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag);
 
+/* This one's in in_body.c */
+void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node);
+
 #ifndef NDEBUG
 #include <stdio.h>
 
