@@ -15,6 +15,7 @@ INSTALL := install
 SED := sed
 LCOV := lcov
 GENHTML := genhtml
+TOUCH := touch
 
 # Toolchain flags
 WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
@@ -33,6 +34,7 @@ MVFLAGS :=
 ECHOFLAGS := 
 MAKEFLAGS :=
 PKGCONFIGFLAGS :=
+TOUCHFLAGS :=
 
 EXEEXT :=
 

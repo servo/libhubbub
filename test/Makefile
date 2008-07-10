@@ -49,7 +49,8 @@ TESTS_$(d) := $(TESTS_$(d)) regression/cscodec-segv regression/filter-segv \
 ITEMS_CLEAN := $(ITEMS_CLEAN) \
 	$(addprefix $(d), $(addsuffix $(EXEEXT), $(TESTS_$(d)))) \
 	$(addprefix $(d), $(addsuffix .gcda, $(TESTS_$(d)))) \
-	$(addprefix $(d), $(addsuffix .gcno, $(TESTS_$(d))))
+	$(addprefix $(d), $(addsuffix .gcno, $(TESTS_$(d)))) \
+	$(addprefix $(d), $(addsuffix .d, $(TESTS_$(d))))
 ITEMS_DISTCLEAN := $(ITEMS_DISTCLEAN) $(d)log
 
 # Targets for top-level makefile to run
@@ -64,9 +65,23 @@ TARGET_TESTS := $(TARGET_TESTS) test_$(d)
 test_$(d): $(d) $(addprefix $(d), $(TESTS_$(d)))
 	@$(PERL) $(TOP)/$<testrunner.pl $(TOP)/$< $(EXEEXT)
 
+DEP_$(d) :=
+
+define dep_test
+DEP_$(d) += $(2)
+$(2): $(1)
+	@$$(RM) $$(RMFLAGS) $(2)
+	@$$(CC) $$(DEBUGCFLAGS) -MM -MT '$(2) $(3)' -MF $(2) $(1)
+
+endef
+
 # Build rules for each test binary -- they all depend on the debug library
+# FIXME - these need to depend on the debug library, so they're rebuilt when 
+# it changes. Simply adding it to the prerequisites list causes all test 
+# drivers to be rebuilt every time, regardless of if there have been any 
+# changes.
 define compile_test
-$(2): $$(TOP)/$$(COMPONENT)-debug.a $(1)
+$(2): $(3)
 	@$$(ECHO) $$(ECHOFLAGS) "==> $(1)"
 	@$$(CC) -c -g $$(DEBUGCFLAGS) -o $$@.o $(1)
 	@$$(LD) -g -o $$@ $$@.o $$(LDFLAGS) -lhubbub-debug -lgcov
@@ -75,7 +90,14 @@ $(2): $$(TOP)/$$(COMPONENT)-debug.a $(1)
 endef
 
 $(eval $(foreach TEST,$(addprefix $(d), $(TESTS_$(d))), \
-	$(call compile_test,$(addsuffix .c, $(TEST)),$(TEST))))
+	$(call dep_test,$(addsuffix .c, $(TEST)),$(addsuffix .d, $(TEST)),$(TEST))))
+
+ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
+-include $(sort $(DEP_$(d)))
+endif
+
+$(eval $(foreach TEST,$(addprefix $(d), $(TESTS_$(d))), \
+	$(call compile_test,$(addsuffix .c, $(TEST)),$(TEST),$(addsuffix .d, $(TEST)))))
 
 # Now include any children we may have
 MAKE_INCLUDES := $(wildcard $(d)*/Makefile)
