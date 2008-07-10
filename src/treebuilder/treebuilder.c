@@ -709,6 +709,7 @@ void clear_active_formatting_list_to_marker(hubbub_treebuilder *treebuilder)
  */
 void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 {
+	element_type type = current_node(treebuilder);
 	int success;
 	void *node, *appended;
 
@@ -718,7 +719,11 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 		/** \todo errors */
 	}
 
-	if (!treebuilder->context.in_table_foster) {
+	if (treebuilder->context.in_table_foster &&
+			(type == TABLE || type == TBODY || type == TFOOT ||
+			type == THEAD || type == TR)) {
+		aa_insert_into_foster_parent(treebuilder, node);
+	} else {
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
 				treebuilder->context.element_stack[
@@ -730,9 +735,6 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, appended);
-	} else {
-		printf("should be inserting foster here\n");
-		aa_insert_into_foster_parent(treebuilder, node);
 	}
 
 	if (!element_stack_push(treebuilder,
@@ -752,6 +754,7 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 void insert_element_no_push(hubbub_treebuilder *treebuilder, 
 		const hubbub_tag *tag)
 {
+	element_type type = current_node(treebuilder);
 	int success;
 	void *node, *appended;
 
@@ -763,7 +766,11 @@ void insert_element_no_push(hubbub_treebuilder *treebuilder,
 		/** \todo errors */
 	}
 
-	if (!treebuilder->context.in_table_foster) {
+	if (treebuilder->context.in_table_foster &&
+			(type == TABLE || type == TBODY || type == TFOOT ||
+			type == THEAD || type == TR)) {
+		aa_insert_into_foster_parent(treebuilder, node);
+	} else {
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
 				treebuilder->context.element_stack[
@@ -777,8 +784,6 @@ void insert_element_no_push(hubbub_treebuilder *treebuilder,
 				treebuilder->tree_handler->ctx, appended);
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, node);
-	} else {
-		aa_insert_into_foster_parent(treebuilder, node);
 	}
 }
 

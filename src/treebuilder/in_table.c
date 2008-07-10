@@ -197,14 +197,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 	}
 
 	if (!handled) {
-		element_type cur_node = current_node(treebuilder);
-
-		if (cur_node == TABLE || cur_node == TBODY ||
-				cur_node == TFOOT || cur_node == THEAD ||
-				cur_node == TR) {
-			/** \todo in_body needs to take account of this flag */
-			treebuilder->context.in_table_foster = true;
-		}
+		treebuilder->context.in_table_foster = true;
 
 		/** \todo parse error */
 		handle_in_body(treebuilder, token);
