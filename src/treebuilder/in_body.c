@@ -1685,6 +1685,16 @@ void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 	/* Now, shuffle the stack up one, removing node in the process */
 	memmove(&stack[index], &stack[index + 1],
 			(limit - index) * sizeof(element_context));
+
+	uint32_t t;
+
+	/* Set current_table again properly */
+	for (t = treebuilder->context.current_node; t != 0; t--) {
+		if (stack[t].type == TABLE)
+			break;
+	}
+
+	treebuilder->context.current_table = t;
 }
 
 /**
