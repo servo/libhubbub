@@ -451,6 +451,7 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 void process_comment_append(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, void *parent)
 {
+	element_type type = current_node(treebuilder);
 	int success;
 	void *comment, *appended;
 
@@ -461,21 +462,26 @@ void process_comment_append(hubbub_treebuilder *treebuilder,
 		/** \todo errors */
 	}
 
-	/* Append to Document node */
-	success = treebuilder->tree_handler->append_child(
-			treebuilder->tree_handler->ctx,
-			parent, comment, &appended);
-	if (success != 0) {
-		/** \todo errors */
-		treebuilder->tree_handler->unref_node(
+	if (treebuilder->context.in_table_foster &&
+			(type == TABLE || type == TBODY || type == TFOOT ||
+			type == THEAD || type == TR)) {
+		aa_insert_into_foster_parent(treebuilder, comment);
+	} else {
+		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
-				comment);
-	}
+				parent, comment, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					comment);
+		}
 
-	treebuilder->tree_handler->unref_node(
-			treebuilder->tree_handler->ctx, appended);
-	treebuilder->tree_handler->unref_node(
-			treebuilder->tree_handler->ctx, comment);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, comment);
+	}
 }
 
 /**
@@ -891,6 +897,7 @@ void reset_insertion_mode(hubbub_treebuilder *treebuilder)
 void append_text(hubbub_treebuilder *treebuilder,
 		const hubbub_string *string)
 {
+	element_type type = current_node(treebuilder);
 	int success;
 	void *text, *appended;
 
@@ -903,22 +910,28 @@ void append_text(hubbub_treebuilder *treebuilder,
 		/** \todo errors */
 	}
 
-	success = treebuilder->tree_handler->append_child(
-			treebuilder->tree_handler->ctx,
-			treebuilder->context.element_stack[
-				treebuilder->context.current_node].node,
-					text, &appended);
-	if (success != 0) {
-		/** \todo errors */
-		treebuilder->tree_handler->unref_node(
+	if (treebuilder->context.in_table_foster &&
+			(type == TABLE || type == TBODY || type == TFOOT ||
+			type == THEAD || type == TR)) {
+		aa_insert_into_foster_parent(treebuilder, text);
+	} else {
+		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
-				text);
-	}
+				treebuilder->context.element_stack[
+					treebuilder->context.current_node].node,
+						text, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					text);
+		}
 
-	treebuilder->tree_handler->unref_node(
-			treebuilder->tree_handler->ctx, appended);
-	treebuilder->tree_handler->unref_node(
-			treebuilder->tree_handler->ctx, text);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, text);
+	}
 }
 
 /**
