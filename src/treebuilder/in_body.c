@@ -1199,7 +1199,7 @@ void process_0dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a </h1>, </h2>, </h3>, </h4>, 
+ * Process a </h1>, </h2>, </h3>, </h4>,
  * </h5>, or </h6> end tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
@@ -1266,18 +1266,20 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry;
 		uint32_t formatting_element;
 
-		if (!aa_find_and_validate_formatting_element(treebuilder, 
+		if (!aa_find_and_validate_formatting_element(treebuilder,
 				type, &entry))
 			return;
 
-		/* Take a copy of the stack index for use 
+		assert(entry->details.type == type);
+
+		/* Take a copy of the stack index for use
 		 * during stack manipulation */
 		formatting_element = entry->stack_index;
 
 		/* 2 & 3 */
 		uint32_t furthest_block;
 
-		if (!aa_find_furthest_block(treebuilder, 
+		if (!aa_find_furthest_block(treebuilder,
 				entry, &furthest_block))
 			return;
 
@@ -1297,16 +1299,16 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		uint32_t last_node;
 
 		aa_find_bookmark_location_reparenting_misnested(treebuilder,
-				formatting_element, &furthest_block, 
+				formatting_element, &furthest_block,
 				&bookmark, &last_node);
 
 		/* 8 */
-		if (stack[common_ancestor].type == TABLE || 
-				stack[common_ancestor].type == TBODY || 
-				stack[common_ancestor].type == TFOOT || 
-				stack[common_ancestor].type == THEAD || 
+		if (stack[common_ancestor].type == TABLE ||
+				stack[common_ancestor].type == TBODY ||
+				stack[common_ancestor].type == TFOOT ||
+				stack[common_ancestor].type == THEAD ||
 				stack[common_ancestor].type == TR) {
-			aa_insert_into_foster_parent(treebuilder, 
+			aa_insert_into_foster_parent(treebuilder,
 					stack[last_node].node);
 		} else {
 			aa_reparent_node(treebuilder, stack[last_node].node,
@@ -1330,20 +1332,20 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 
 		treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
-				stack[furthest_block].node, fe_clone, 
+				stack[furthest_block].node, fe_clone,
 				&clone_appended);
 
-		/* 12 and 13 are reversed here so that we know the correct 
+		/* 12 and 13 are reversed here so that we know the correct
 		 * stack index to use when inserting into the formatting list */
 
 		/* 13 */
-		aa_remove_element_stack_item(treebuilder, formatting_element, 
+		aa_remove_element_stack_item(treebuilder, formatting_element,
 				furthest_block);
-	
+
 		/* Fix up furthest block index */
 		furthest_block--;
 
-		/* Now, in the gap after furthest block, 
+		/* Now, in the gap after furthest block,
 		 * we insert an entry for clone */
 		stack[furthest_block + 1].type = entry->details.type;
 		stack[furthest_block + 1].node = clone_appended;
@@ -1353,13 +1355,13 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		void *onode;
 		uint32_t oindex;
 
-		formatting_list_remove(treebuilder, entry, 
+		formatting_list_remove(treebuilder, entry,
 				&otype, &onode, &oindex);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,	onode);
 
-		formatting_list_insert(treebuilder, 
+		formatting_list_insert(treebuilder,
 				bookmark.prev, bookmark.next,
 				otype, fe_clone, furthest_block + 1);
 
@@ -1382,8 +1384,8 @@ bool aa_find_and_validate_formatting_element(hubbub_treebuilder *treebuilder,
 
 	entry = aa_find_formatting_element(treebuilder, type);
 
-	if (entry == NULL || (entry->stack_index != 0 && 
-			element_in_scope(treebuilder, entry->details.type, 
+	if (entry == NULL || (entry->stack_index != 0 &&
+			element_in_scope(treebuilder, entry->details.type,
 					false) != entry->stack_index)) {
 		/** \todo parse error */
 		return false;
@@ -1429,11 +1431,11 @@ formatting_list_entry *aa_find_formatting_element(
 {
 	formatting_list_entry *entry;
 
-	for (entry = treebuilder->context.formatting_list_end; 
+	for (entry = treebuilder->context.formatting_list_end;
 			entry != NULL; entry = entry->prev) {
 
 		/* Assumption: HTML and TABLE elements are not in the list */
-		if (is_scoping_element(entry->details.type) || 
+		if (is_scoping_element(entry->details.type) ||
 				entry->details.type == type)
 			break;
 	}
@@ -1452,9 +1454,9 @@ formatting_list_entry *aa_find_formatting_element(
  * \param formatting_element  The formatting element
  * \param furthest_block      Pointer to location to receive furthest block
  * \return True to continue processing (::furthest_block filled in).
- */ 
+ */
 bool aa_find_furthest_block(hubbub_treebuilder *treebuilder,
-		formatting_list_entry *formatting_element, 
+		formatting_list_entry *formatting_element,
 		uint32_t *furthest_block)
 {
 	uint32_t fe_index = formatting_element->stack_index;
@@ -1513,9 +1515,9 @@ void aa_remove_from_parent(hubbub_treebuilder *treebuilder, void *node)
 	/* Get parent */
 	void *parent = NULL;
 
-	treebuilder->tree_handler->get_parent(treebuilder->tree_handler->ctx, 
+	treebuilder->tree_handler->get_parent(treebuilder->tree_handler->ctx,
 			node, false, &parent);
-	
+
 	if (parent != NULL) {
 		void *removed;
 
@@ -1537,8 +1539,8 @@ void aa_remove_from_parent(hubbub_treebuilder *treebuilder, void *node)
  * \param treebuilder  The treebuilder instance
  * \param node         The node to reparent
  * \param new_parent   The new parent
- */ 
-void aa_reparent_node(hubbub_treebuilder *treebuilder, void *node, 
+ */
+void aa_reparent_node(hubbub_treebuilder *treebuilder, void *node,
 		void *new_parent)
 {
 	void *appended;
@@ -1557,13 +1559,13 @@ void aa_reparent_node(hubbub_treebuilder *treebuilder, void *node,
  *
  * \param treebuilder         The treebuilder instance
  * \param formatting_element  The stack index of the formatting element
- * \param furthest_block      Pointer to index of furthest block in element 
+ * \param furthest_block      Pointer to index of furthest block in element
  *                            stack (updated on exit)
  * \param bookmark            Pointer to bookmark (pre-initialised)
  * \param last_node           Pointer to location to receive index of last node
  */
 void aa_find_bookmark_location_reparenting_misnested(
-		hubbub_treebuilder *treebuilder, 
+		hubbub_treebuilder *treebuilder,
 		uint32_t formatting_element, uint32_t *furthest_block,
 		bookmark *bookmark, uint32_t *last_node)
 {
@@ -1578,8 +1580,8 @@ void aa_find_bookmark_location_reparenting_misnested(
 		node--;
 
 		/* ii */
-		for (node_entry = treebuilder->context.formatting_list_end; 
-				node_entry != NULL; 
+		for (node_entry = treebuilder->context.formatting_list_end;
+				node_entry != NULL;
 				node_entry = node_entry->prev) {
 			if (node_entry->stack_index == node)
 				break;
@@ -1587,7 +1589,7 @@ void aa_find_bookmark_location_reparenting_misnested(
 
 		/* Node is not in list of active formatting elements */
 		if (node_entry == NULL) {
-			aa_remove_element_stack_item(treebuilder, 
+			aa_remove_element_stack_item(treebuilder,
 				node, treebuilder->context.current_node);
 
 			/* Update furthest block index and the last node index,
@@ -1624,7 +1626,7 @@ void aa_find_bookmark_location_reparenting_misnested(
 		}
 
 		/* vi */
-		aa_reparent_node(treebuilder, 
+		aa_reparent_node(treebuilder,
 				stack[last].node, stack[node].node);
 
 		/* vii */
@@ -1647,7 +1649,7 @@ void aa_find_bookmark_location_reparenting_misnested(
  * Preconditions: index < limit, limit <= current_node
  * Postcondition: stack[limit] is empty
  */
-void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder, 
+void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 		uint32_t index, uint32_t limit)
 {
 	element_context *stack = treebuilder->context.element_stack;
@@ -1655,10 +1657,10 @@ void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 	assert(index < limit);
 	assert(limit <= treebuilder->context.current_node);
 
-	/* First, scan over subsequent entries in the stack, 
-	 * searching for them in the list of active formatting 
-	 * entries. If found, update the corresponding 
-	 * formatting list entry's stack index to match the 
+	/* First, scan over subsequent entries in the stack,
+	 * searching for them in the list of active formatting
+	 * entries. If found, update the corresponding
+	 * formatting list entry's stack index to match the
 	 * new stack location */
 	for (uint32_t n = index + 1; n <= limit; n++) {
 		if (is_formatting_element(stack[n].type) ||
@@ -1667,7 +1669,7 @@ void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 				stack[n].type != TABLE)) {
 			formatting_list_entry *e;
 
-			for (e = treebuilder->context.formatting_list_end; 
+			for (e = treebuilder->context.formatting_list_end;
 					e != NULL; e = e->prev) {
 				if (e->stack_index == n)
 					e->stack_index--;
@@ -1680,7 +1682,7 @@ void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 					stack[index].node);
 
 	/* Now, shuffle the stack up one, removing node in the process */
-	memmove(&stack[index], &stack[index + 1], 
+	memmove(&stack[index], &stack[index + 1],
 			(limit - index) * sizeof(element_context));
 }
 
@@ -1704,19 +1706,19 @@ void aa_clone_and_replace_entries(hubbub_treebuilder *treebuilder,
 
 	/* Replace formatting list entry for node with clone */
 	formatting_list_replace(treebuilder, element,
-			element->details.type, clone, element->stack_index, 
+			element->details.type, clone, element->stack_index,
 			&otype, &onode, &oindex);
 
-	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx, 
+	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
 			onode);
 
-	treebuilder->tree_handler->ref_node(treebuilder->tree_handler->ctx, 
+	treebuilder->tree_handler->ref_node(treebuilder->tree_handler->ctx,
 			clone);
 
 	/* Replace node's stack entry with clone */
 	treebuilder->context.element_stack[element->stack_index].node = clone;
 
-	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx, 
+	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
 			onode);
 }
 
@@ -1782,7 +1784,7 @@ void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 
 
 /**
- * Process an </applet>, <button>, <marquee>, 
+ * Process an </applet>, <button>, <marquee>,
  * or <object> end tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
