@@ -1378,7 +1378,6 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 
 
 #ifndef NDEBUG
-static const char *element_type_to_name(element_type type);
 
 /**
  * Dump an element stack to the given file pointer

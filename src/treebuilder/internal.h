@@ -181,6 +181,9 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 
 void element_stack_dump(hubbub_treebuilder *treebuilder, FILE *fp);
 void formatting_list_dump(hubbub_treebuilder *treebuilder, FILE *fp);
+
+const char *element_type_to_name(element_type type);
+
 #endif
 
 #endif
