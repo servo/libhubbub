@@ -63,6 +63,7 @@ static const struct {
 	{ "SMALL", SMALL },	{ "STRIKE", STRIKE },
 	{ "STRONG", STRONG },	{ "TT", TT },
 	{ "U", U },
+	{ "XMP", XMP },
 };
 
 
