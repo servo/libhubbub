@@ -27,10 +27,20 @@ bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 	bool reprocess = false;
 
 	switch (token->type) {
-	case HUBBUB_TOKEN_COMMENT:
-	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_CHARACTER:
-		handle_in_body(treebuilder, token);
+		if (process_characters_expect_whitespace(treebuilder,
+				token, true)) {
+			treebuilder->context.mode = IN_FRAMESET;
+			reprocess = true;
+		}
+		break;
+	case HUBBUB_TOKEN_COMMENT:
+		process_comment_append(treebuilder, token,
+				treebuilder->context.document);
+		break;
+	case HUBBUB_TOKEN_DOCTYPE:
+		/** \todo parse error */
+		/* ignore token */
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 	{
@@ -42,7 +52,7 @@ bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 			handle_in_body(treebuilder, token);
 		} else {
 			/** \todo parse error */
-			treebuilder->context.mode = IN_BODY;
+			treebuilder->context.mode = IN_FRAMESET;
 			reprocess = true;
 		}
 	}

@@ -27,12 +27,18 @@ bool handle_after_after_body(hubbub_treebuilder *treebuilder,
 	bool reprocess = false;
 
 	switch (token->type) {
+	case HUBBUB_TOKEN_CHARACTER:
+		if (process_characters_expect_whitespace(treebuilder,
+				token, true)) {
+			treebuilder->context.mode = IN_BODY;
+			reprocess = true;
+		}
+		break;
 	case HUBBUB_TOKEN_COMMENT:
 		process_comment_append(treebuilder, token,
 				treebuilder->context.document);
 		break;
 	case HUBBUB_TOKEN_DOCTYPE:
-	case HUBBUB_TOKEN_CHARACTER:
 		handle_in_body(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_START_TAG:

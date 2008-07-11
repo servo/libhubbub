@@ -69,7 +69,12 @@ bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 			hubbub_ns ns;
 			void *node;
 
-			/** \todo fragment case */
+			/* fragment case -- ignore */
+			if (current_node(treebuilder) == HTML) {
+				/** \todo parse error */
+				break;
+			}
+
 			if (!element_stack_pop(treebuilder, &ns, &type,
 					&node)) {
 				/** \todo errors */
@@ -79,8 +84,9 @@ bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 					treebuilder->tree_handler->ctx,
 					node);
 
-			if (type != FRAMESET)
+			if (current_node(treebuilder) != FRAMESET) {
 				treebuilder->context.mode = AFTER_FRAMESET;
+			}
 		} else {
 			/** \todo parse error */
 		}
