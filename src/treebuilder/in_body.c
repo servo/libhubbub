@@ -871,8 +871,9 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	/* First up, clone the token's attributes */
 	if (token->data.tag.n_attributes > 0) {
 		attrs = treebuilder->alloc(NULL, 
-			token->data.tag.n_attributes * sizeof(hubbub_attribute),
-		       	treebuilder->alloc_pw);
+				(token->data.tag.n_attributes + 1) *
+						sizeof(hubbub_attribute),
+		       		treebuilder->alloc_pw);
 		if (attrs == NULL) {
 			/** \todo error handling */
 			return;
@@ -889,10 +890,20 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 			} else if (strncmp((const char *) name, "prompt",
 					attr->name.len) == 0) {
 				prompt = attr;
+			} else if (strncmp((const char *) name, "name",
+					attr->name.len) == 0) {
 			} else {
 				attrs[n_attrs++] = *attr;
 			}
 		}
+
+		attrs[n_attrs].name.type = HUBBUB_STRING_PTR;
+		attrs[n_attrs].name.data.ptr = (const uint8_t *) "name";
+		attrs[n_attrs].name.len = SLEN("name");
+		attrs[n_attrs].value.type = HUBBUB_STRING_PTR;
+		attrs[n_attrs].value.data.ptr = (const uint8_t *) "isindex";
+		attrs[n_attrs].value.len = SLEN("isindex");
+		n_attrs++;
 	}
 
 	/* isindex algorithm */
@@ -941,7 +952,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 		dummy.data.character = prompt->value;
 	} else {
 		/** \todo Localisation */
-#define PROMPT "This is a searchable index. Insert your search keywords here:"
+#define PROMPT "This is a searchable index. Insert your search keywords here: "
 		dummy.data.character.type = HUBBUB_STRING_PTR;
 		dummy.data.character.data.ptr = (const uint8_t *) PROMPT;
 		dummy.data.character.len = SLEN(PROMPT);
