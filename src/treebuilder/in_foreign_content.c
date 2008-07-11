@@ -14,7 +14,10 @@
 #include "utils/utils.h"
 
 
-
+/**
+ * Returns true iff there is an element in scope that has a namespace other
+ * than the HTML namespace.
+ */
 static bool element_in_scope_in_non_html_ns(hubbub_treebuilder *treebuilder)
 {
 	element_context *stack = treebuilder->context.element_stack;
@@ -28,13 +31,23 @@ static bool element_in_scope_in_non_html_ns(hubbub_treebuilder *treebuilder)
 	return false;
 }
 
-
+/**
+ * Process a token as if in the secondary insertion mode.
+ */
 static void process_as_in_secondary(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
+	/* Because we don't support calling insertion modes directly,
+	 * instead we set the current mode to the secondary mode,
+	 * call the token handler, and then reset the mode afterward
+	 * as long as it's unchanged, as this has the same effect */
+
 	treebuilder->context.mode = treebuilder->context.second_mode;
 
 	hubbub_treebuilder_token_handler(token, treebuilder);
+
+	if (treebuilder->context.mode == treebuilder->context.second_mode)
+		treebuilder->context.mode = IN_FOREIGN_CONTENT;
 
 	if (treebuilder->context.mode == IN_FOREIGN_CONTENT &&
 			!element_in_scope_in_non_html_ns(treebuilder)) {
@@ -67,7 +80,6 @@ static void foreign_break_out(hubbub_treebuilder *treebuilder)
 
 	treebuilder->context.mode = treebuilder->context.second_mode;
 }
-
 
 /**
  * Handle tokens in "in foreign content" insertion mode
@@ -153,4 +165,3 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 
 	return reprocess;
 }
-
