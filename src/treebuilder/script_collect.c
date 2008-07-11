@@ -93,6 +93,17 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 
 		/** \todo insertion point manipulation */
 
+		/* Scripts in "after head" should be inserted into <head> */
+		/* See 8.2.5.9 The "after head" insertion mode */
+		if (treebuilder->context.collect.mode == AFTER_HEAD) {
+			if (!element_stack_push(treebuilder,
+					HUBBUB_NS_HTML,
+					HEAD,
+					treebuilder->context.head_element)) {
+			        /** \todo errors */
+		        }
+		}
+
 		/* Append script node to current node */
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
@@ -101,6 +112,17 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 				treebuilder->context.collect.node, &appended);
 		if (success != 0) {
 			/** \todo errors */
+		}
+
+		if (treebuilder->context.collect.mode == AFTER_HEAD) {
+			hubbub_ns ns;
+			element_type otype;
+			void *node;
+
+ 			if (!element_stack_pop(treebuilder, &ns, &otype,
+					&node)) {
+				/** \todo errors */
+			}
 		}
 
 		/** \todo restore insertion point */
