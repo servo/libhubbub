@@ -218,7 +218,7 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 	if (type == HTML) {
 		process_html_in_body(treebuilder, token);
 	} else if (type == BASE || type == COMMAND ||
-			type == EVENT_SOURCE || type == LINK ||
+			type == EVENTSOURCE || type == LINK ||
 			type == META || type == NOFRAMES || type == SCRIPT ||
 			type == STYLE || type == TITLE) {
 		/* Process as "in head" */
