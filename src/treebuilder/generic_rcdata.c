@@ -79,7 +79,7 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		break;
 	}
 
-	if (done) {
+	if (done && treebuilder->context.collect.string.len) {
 		int success;
 		void *text, *appended;
 
@@ -107,6 +107,9 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, text);
 
+	}
+
+	if (done) {
 		/* Clean up context */
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -114,8 +117,7 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		treebuilder->context.collect.node = NULL;
 
 		/* Return to previous insertion mode */
-		treebuilder->context.mode =
-				treebuilder->context.collect.mode;
+		treebuilder->context.mode = treebuilder->context.collect.mode;
 	}
 
 	return reprocess;
