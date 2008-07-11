@@ -49,9 +49,9 @@ static inline bool process_input_in_table(hubbub_treebuilder *treebuilder,
 	for (size_t i = 0; i < token->data.tag.n_attributes; i++) {
 		hubbub_attribute *attr = &token->data.tag.attributes[i];
 
-		if (!hubbub_string_match(treebuilder->input_buffer +
-						attr->name.data.off,
-				attr->name.len, (uint8_t *) "hidden",
+		if (!hubbub_string_match_ci(treebuilder->input_buffer +
+						attr->value.data.off,
+				attr->value.len, (uint8_t *) "hidden",
 				SLEN("hidden"))) {
 			continue;
 		}
@@ -129,7 +129,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 			if (type == COL) {
 				/* Insert colgroup and reprocess */
 				tag.name.type = HUBBUB_STRING_PTR;
-				tag.name.data.ptr = 
+				tag.name.data.ptr =
 						(const uint8_t *) "colgroup";
 				tag.name.len = SLEN("colgroup");
 

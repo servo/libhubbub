@@ -517,16 +517,20 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 		/** \todo associate textarea with form */
 	}
 
-	success = treebuilder->tree_handler->append_child(
-			treebuilder->tree_handler->ctx,
-			treebuilder->context.element_stack[
-			treebuilder->context.current_node].node,
-			node, &appended);
-	if (success != 0) {
-		/** \todo errors */
-		treebuilder->tree_handler->unref_node(
+	if (treebuilder->context.in_table_foster) {
+		aa_insert_into_foster_parent(treebuilder, node);
+	} else {
+		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
-				node);
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node,
+				node, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					node);
+		}
 	}
 
 	params.content_model.model = rcdata ? HUBBUB_CONTENT_MODEL_RCDATA 

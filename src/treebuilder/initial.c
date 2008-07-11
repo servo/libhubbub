@@ -14,6 +14,7 @@
 #include "treebuilder/internal.h"
 #include "treebuilder/treebuilder.h"
 #include "utils/utils.h"
+#include "utils/string.h"
 
 
 #define S(s)	{ s, sizeof s }
@@ -107,32 +108,6 @@ static bool starts_with(const uint8_t *a, size_t a_len, const uint8_t *b,
 	return true;
 }
 
-/**
- * Check that one string is exactly equal to another
- *
- * \param a	String to compare
- * \param a_len	Length of first string
- * \param b	String to compare
- * \param b_len	Length of second string
- */
-static bool match(const uint8_t *a, size_t a_len, const uint8_t *b,
-		size_t b_len)
-{
-	uint8_t z1, z2;
-
-	if (a_len != b_len)
-		return false;
-
-	for (const uint8_t *s1 = a, *s2 = b; b_len > 0; s1++, s2++, b_len--)
-	{
-		z1 = (*s1 & ~0x20);
-		z2 = (*s2 & ~0x20);
-		if (z1 != z2) return false;
-	}
-
-	return true;
-}
-
 
 /**
  * Determine whether this doctype triggers full quirks mode
@@ -159,7 +134,7 @@ static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
 #define S(s)	(uint8_t *) s, sizeof s
 
 	/* Check the name is "HTML" (case-insensitively) */
-	if (!match(name, name_len, S("HTML")))
+	if (!hubbub_string_match_ci(name, name_len, S("HTML")))
 		return true;
 
 	/* No public id means not-quirks */
@@ -174,13 +149,13 @@ static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
 		}
 	}
 
-	if (match(public_id, public_id_len,
+	if (hubbub_string_match_ci(public_id, public_id_len,
 					S("-//W3O//DTD W3 HTML Strict 3.0//EN//")) ||
-			match(public_id, public_id_len,
+			hubbub_string_match_ci(public_id, public_id_len,
 					S("-/W3C/DTD HTML 4.0 Transitional/EN")) ||
-			match(public_id, public_id_len,
+			hubbub_string_match_ci(public_id, public_id_len,
 					S("HTML")) ||
-			match(system_id, system_id_len,
+			hubbub_string_match_ci(system_id, system_id_len,
 					S("http://www.ibm.com/data/dtd/v11/ibmxhtml1-transitional.dtd"))) {
 		return true;
 	}
