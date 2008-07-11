@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef UNUSED
 #define UNUSED(x) ((x) = (x))
@@ -119,5 +120,29 @@ size_t parse_filesize(const char *filename)
 	return len;
 }
 
+
+#ifndef strndup
+char *my_strndup(const char *s, size_t n);
+
+char *my_strndup(const char *s, size_t n)
+{
+	size_t len;
+	char *s2;
+
+	for (len = 0; len != n && s[len]; len++)
+		;
+
+	s2 = malloc(len + 1);
+	if (!s2)
+		return NULL;
+
+	memcpy(s2, s, len);
+	s2[len] = '\0';
+
+	return s2;
+}
+
+#define strndup my_strndup
+#endif
 
 #endif
