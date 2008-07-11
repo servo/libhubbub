@@ -1181,18 +1181,6 @@ element_type current_node(hubbub_treebuilder *treebuilder)
 }
 
 /**
- * Peek at the top element of the element stack.
- *
- * \param treebuilder  Treebuilder instance
- * \return Element type on the top of the stack
- */
-hubbub_ns current_node_ns(hubbub_treebuilder *treebuilder)
-{
-	return treebuilder->context.element_stack
-			[treebuilder->context.current_node].ns;
-}
-
-/**
  * Peek at the element below the top of the element stack.
  *
  * \param treebuilder  Treebuilder instance

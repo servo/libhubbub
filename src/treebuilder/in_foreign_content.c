@@ -17,22 +17,56 @@
 
 static bool element_in_scope_in_non_html_ns(hubbub_treebuilder *treebuilder)
 {
+	element_context *stack = treebuilder->context.element_stack;
 	uint32_t node;
 
-	if (treebuilder->context.element_stack == NULL)
-		return false;
-
-	for (node = treebuilder->context.current_node; node > 0; node--) {
-		element_type node_ns =
-				treebuilder->context.element_stack[node].ns;
-
-		if (node_ns != HTML)
+	for (node = treebuilder->context.current_node; node != 0; node--) {
+		if (stack[node].ns != HUBBUB_NS_HTML)
 			return true;
 	}
 
 	return false;
 }
 
+
+static void process_as_in_secondary(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	treebuilder->context.mode = treebuilder->context.second_mode;
+
+	hubbub_treebuilder_token_handler(token, treebuilder);
+
+	if (treebuilder->context.mode == IN_FOREIGN_CONTENT &&
+			!element_in_scope_in_non_html_ns(treebuilder)) {
+		treebuilder->context.mode =
+				treebuilder->context.second_mode;
+	}
+}
+
+/**
+ * Break out of foreign content as a result of certain start tags or EOF.
+ */
+static void foreign_break_out(hubbub_treebuilder *treebuilder)
+{
+	element_context *stack = treebuilder->context.element_stack;
+
+	/** \todo parse error */
+
+	while (stack[treebuilder->context.current_node].ns !=
+			HUBBUB_NS_HTML) {
+		hubbub_ns ns;
+		element_type type;
+		void *node;
+
+		element_stack_pop(treebuilder, &ns, &type, &node);
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
+	}
+
+	treebuilder->context.mode = treebuilder->context.second_mode;
+}
 
 
 /**
@@ -46,10 +80,6 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
 	bool reprocess = false;
-
-	element_type cur_node = current_node(treebuilder);
-	hubbub_ns cur_node_ns = current_node_ns(treebuilder);
-
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
@@ -65,6 +95,10 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 	{
+		hubbub_ns cur_node_ns = treebuilder->context.element_stack[
+				treebuilder->context.current_node].ns;
+
+		element_type cur_node = current_node(treebuilder);
 		element_type type = element_type_from_name(treebuilder,
 				&token->data.tag.name);
 
@@ -74,15 +108,7 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 				(cur_node == MI || cur_node == MO ||
 				cur_node == MN || cur_node == MS ||
 				cur_node == MTEXT))) {
-			treebuilder->context.mode =
-					treebuilder->context.second_mode;
-			hubbub_treebuilder_token_handler(token, treebuilder);
-
-			if (treebuilder->context.mode == IN_FOREIGN_CONTENT &&
-					!element_in_scope_in_non_html_ns(treebuilder)) {
-				treebuilder->context.mode =
-						treebuilder->context.second_mode;
-			}
+			process_as_in_secondary(treebuilder, token);
 		} else if (type == B || type ==  BIG || type == BLOCKQUOTE ||
 				type == BODY || type == BR || type == CENTER ||
 				type == CODE || type == DD || type == DIV ||
@@ -99,20 +125,7 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 				type == STRIKE || type == SUB || type == SUP ||
 				type == TABLE || type == TT || type == U ||
 				type == UL || type == VAR) {
-			/** \todo parse error */
-
-			while (cur_node_ns != HUBBUB_NS_HTML) {
-				void *node;
-				element_stack_pop(treebuilder, &cur_node_ns,
-						&cur_node, &node);
-				treebuilder->tree_handler->unref_node(
-						treebuilder->tree_handler->ctx,
-						node);
-				cur_node_ns = current_node_ns(treebuilder);
-			}
-
-			treebuilder->context.mode =
-					treebuilder->context.second_mode;
+			foreign_break_out(treebuilder);
 		} else {
 			hubbub_tag tag = token->data.tag;
 
@@ -131,34 +144,10 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
-		treebuilder->context.mode =
-				treebuilder->context.second_mode;
-		hubbub_treebuilder_token_handler(token, treebuilder);
-
-		if (treebuilder->context.mode == IN_FOREIGN_CONTENT &&
-				!element_in_scope_in_non_html_ns(treebuilder)) {
-			treebuilder->context.mode =
-					treebuilder->context.second_mode;
-		}
-
+		process_as_in_secondary(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_EOF:
-	{
-		while (cur_node_ns != HUBBUB_NS_HTML) {
-			void *node;
-			element_stack_pop(treebuilder, &cur_node_ns,
-					&cur_node, &node);
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					node);
-			cur_node_ns = current_node_ns(treebuilder);
-		}
-
-		treebuilder->context.mode =
-				treebuilder->context.second_mode;
-
-		reprocess = true;
-	}
+		foreign_break_out(treebuilder);
 		break;
 	}
 

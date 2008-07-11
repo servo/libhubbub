@@ -157,7 +157,6 @@ bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 		element_type type);
 uint32_t current_table(hubbub_treebuilder *treebuilder);
 element_type current_node(hubbub_treebuilder *treebuilder);
-hubbub_ns current_node_ns(hubbub_treebuilder *treebuilder);
 element_type prev_node(hubbub_treebuilder *treebuilder);
 
 bool formatting_list_append(hubbub_treebuilder *treebuilder,
