@@ -328,6 +328,8 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 			/** \todo ack sc flag */
 		} else {
 			insert_element(treebuilder, &tag);
+			treebuilder->context.second_mode =
+					treebuilder->context.mode;
 			treebuilder->context.mode = IN_FOREIGN_CONTENT;
 		}
 	} else if (type == CAPTION || type == COL || type == COLGROUP ||
