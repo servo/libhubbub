@@ -185,7 +185,7 @@ void process_character(hubbub_treebuilder *treebuilder,
 	reconstruct_active_formatting_list(treebuilder);
 
 	if (treebuilder->context.strip_leading_lr) {
-		const uint8_t *str = 
+		const uint8_t *str =
 				treebuilder->input_buffer + dummy.data.off;
 
 		/** \todo UTF-16 */
@@ -197,7 +197,8 @@ void process_character(hubbub_treebuilder *treebuilder,
 		treebuilder->context.strip_leading_lr = false;
 	}
 
-	append_text(treebuilder, &dummy);
+	if (dummy.len)
+		append_text(treebuilder, &dummy);
 }
 
 /**
