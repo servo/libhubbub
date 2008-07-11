@@ -116,7 +116,7 @@ sub run_test
 
 	my $pid = open3("&<NULL", \*OUT, \*ERR, @_);
 
-	$SIG{CHLD} = sub { };
+#	$SIG{CHLD} = sub { };
 
 	my $selector = IO::Select->new();
 	$selector->add(*OUT, *ERR);
