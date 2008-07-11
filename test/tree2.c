@@ -634,10 +634,34 @@ int form_associate(void *ctx, void *form, void *node)
 	return 0;
 }
 
-int add_attributes(void *ctx, void *node,
+int add_attributes(void *ctx, void *vnode,
 		const hubbub_attribute *attributes, uint32_t n_attributes)
 {
-	/* not yet implemented */
+	node_t *node = vnode;
+	size_t old_elems = node->data.element.n_attrs;
+
+	node->data.element.n_attrs += n_attributes;
+
+	node->data.element.attrs = realloc(node->data.element.attrs,
+			node->data.element.n_attrs *
+				sizeof *node->data.element.attrs);
+
+	for (size_t i = 0; i < n_attributes; i++) {
+		attr_t *attr = &node->data.element.attrs[old_elems + i];
+
+		assert(attributes[i].ns < NUM_NAMESPACES);
+
+		attr->ns = attributes[i].ns;
+
+		attr->name = strndup((char *)ptr_from_hubbub_string(
+						&attributes[i].name),
+				attributes[i].name.len);
+
+		attr->value = strndup((char *)ptr_from_hubbub_string(
+						&attributes[i].value),
+				attributes[i].value.len);
+	}
+
 
 	return 0;
 }
