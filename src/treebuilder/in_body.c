@@ -316,14 +316,19 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 	} else if (type == RP || type == RT) {
 		/** \todo ruby */
 	} else if (type == MATH) {
+		hubbub_tag tag = token->data.tag;
+
 		reconstruct_active_formatting_list(treebuilder);
-		/** \todo adjust foreign attributes */
-		/** \todo insert foreign element */
+		adjust_foreign_attributes(treebuilder, &tag);
+
+		tag.ns = HUBBUB_NS_MATHML;
+
 		if (token->data.tag.self_closing) {
-			/** \todo pop off the stack of open elements */
+			insert_element_no_push(treebuilder, &tag);
 			/** \todo ack sc flag */
 		} else {
-			/** \todo set to "in foreign content" */
+			insert_element(treebuilder, &tag);
+			treebuilder->context.mode = IN_FOREIGN_CONTENT;
 		}
 	} else if (type == CAPTION || type == COL || type == COLGROUP ||
 			type == FRAME || type == FRAMESET ||

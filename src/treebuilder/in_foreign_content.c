@@ -47,6 +47,13 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 {
 	bool reprocess = false;
 
+	element_type type = element_type_from_name(treebuilder,
+			&token->data.tag.name);
+
+	element_type cur_node = current_node(treebuilder);
+	hubbub_ns cur_node_ns = current_node_ns(treebuilder);
+
+
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
 		append_text(treebuilder, &token->data.character);
@@ -61,12 +68,6 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 	{
-		element_type type = element_type_from_name(treebuilder,
-				&token->data.tag.name);
-
-		element_type cur_node = current_node(treebuilder);
-		hubbub_ns cur_node_ns = current_node_ns(treebuilder);
-
 		if (cur_node_ns == HUBBUB_NS_HTML ||
 				(cur_node_ns == HUBBUB_NS_MATHML &&
 				(type != MGLYPH && type != MALIGNMARK) &&
@@ -133,6 +134,19 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		/** \parse error */
 		break;
 	case HUBBUB_TOKEN_EOF:
+		while (cur_node_ns != HUBBUB_NS_HTML) {
+			void *node;
+			element_stack_pop(treebuilder, &cur_node_ns,
+					&cur_node, &node);
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					node);
+			cur_node_ns = current_node_ns(treebuilder);
+		}
+
+		treebuilder->context.mode =
+				treebuilder->context.second_mode;
+
 		reprocess = true;
 		break;
 	}
