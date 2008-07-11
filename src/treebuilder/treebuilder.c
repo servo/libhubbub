@@ -414,23 +414,26 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 
 	/** \todo UTF-16 */
 
+	printf("well hello there, I see I'm not being inserted...\n");
+
 	for (c = 0; c < len; c++) {
 		if (data[c] != 0x09 && data[c] != 0x0A &&
 				data[c] != 0x0C && data[c] != 0x20)
 			break;
 	}
+
+	if (c > 0 && insert_into_current_node) {
+		hubbub_string temp;
+
+		temp.type = HUBBUB_STRING_OFF;
+		temp.data.off = token->data.character.data.off;
+		temp.len = c;
+
+		append_text(treebuilder, &temp);
+	}
+
 	/* Non-whitespace characters in token, so reprocess */
 	if (c != len) {
-		if (c > 0 && insert_into_current_node) {
-			hubbub_string temp;
-
-			temp.type = HUBBUB_STRING_OFF;
-			temp.data.off = token->data.character.data.off;
-			temp.len = c;
-
-			append_text(treebuilder, &temp);
-		}
-
 		/* Update token data to strip leading whitespace */
 		((hubbub_token *) token)->data.character.data.off += c;
 		((hubbub_token *) token)->data.character.len -= c;
