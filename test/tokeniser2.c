@@ -209,7 +209,8 @@ void run_test(context *ctx)
 				HUBBUB_OK);
 
 		printf("Input: '%.*s' (%d)\n", (int) ctx->input_len,
-				(const char *) ctx->input, ctx->input_len);
+				(const char *) ctx->input, 
+				(int) ctx->input_len);
 
 		assert(hubbub_tokeniser_run(tok) == HUBBUB_OK);
 

@@ -204,7 +204,8 @@ void run_test(context *ctx)
 				&params) == HUBBUB_OK);
 
 		printf("Input: '%.*s' (%d)\n", (int) ctx->input_len,
-				(const char *) ctx->input, ctx->input_len);
+				(const char *) ctx->input, 
+				(int) ctx->input_len);
 
 		for (j = 0; j < ctx->input_len; j++) {
 			assert(hubbub_inputstream_append(stream,
@@ -448,7 +449,7 @@ void token_handler(const hubbub_token *token, void *pw)
 				expstrlen - ctx->char_off);
 
 		printf("expected: '%.*s'\n",
-				len, expstr + ctx->char_off);
+				(int) len, expstr + ctx->char_off);
 		printf("     got: '%.*s'\n",
 				(int) token->data.character.len, gotstr);
 
