@@ -224,7 +224,7 @@ enum reading_state {
 int main(int argc, char **argv)
 {
 	FILE *fp;
-	char line[1024];
+	char line[2048];
 
 	bool passed = true;
 
@@ -249,7 +249,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* We rely on lines not being anywhere near 1024 characters... */
+	/* We rely on lines not being anywhere near 2048 characters... */
 	while (passed && fgets(line, sizeof line, fp) == line) {
 		switch (state)
 		{
@@ -343,12 +343,16 @@ int create_doctype(void *ctx, const hubbub_string *qname,
 	node->type = DOCTYPE;
 	node->data.doctype.name = strndup((char *)ptr_from_hubbub_string(qname),
 			qname->len);
-	node->data.doctype.public_id =
-			strndup((char *)ptr_from_hubbub_string(public_id),
-			public_id->len);
-	node->data.doctype.system_id = strndup(
-			(char *)ptr_from_hubbub_string(system_id),
-			system_id->len);
+	if (public_id->len) {
+		node->data.doctype.public_id = strndup(
+				(char *)ptr_from_hubbub_string(public_id),
+				public_id->len);
+	}
+	if (system_id->len) {
+		node->data.doctype.system_id = strndup(
+				(char *)ptr_from_hubbub_string(system_id),
+				system_id->len);
+	}
 
 	*result = node;
 
@@ -682,7 +686,19 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 	switch (node->type)
 	{
 	case DOCTYPE:
-		buf_add(buf, "<!DOCTYPE \n");
+		buf_add(buf, "<!DOCTYPE ");
+		buf_add(buf, node->data.doctype.name);
+
+		if (node->data.doctype.public_id) {
+			buf_add(buf, " ");
+			buf_add(buf, node->data.doctype.public_id);
+		}
+		if (node->data.doctype.system_id) {
+			buf_add(buf, " ");
+			buf_add(buf, node->data.doctype.system_id);
+		}
+
+		buf_add(buf, ">\n");
 		break;
 	case ELEMENT:
 		buf_add(buf, "<");
