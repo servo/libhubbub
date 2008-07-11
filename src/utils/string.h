@@ -13,4 +13,7 @@ bool hubbub_string_starts(const uint8_t *a, size_t a_len,
 bool hubbub_string_match(const uint8_t *a, size_t a_len,
 		const uint8_t *b, size_t b_len);
 
+bool hubbub_string_match_ci(const uint8_t *a, size_t a_len,
+		const uint8_t *b, size_t b_len);
+
 #endif
