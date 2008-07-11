@@ -83,8 +83,6 @@ bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 				treebuilder->context.mode = AFTER_FRAMESET;
 		} else {
 			/** \todo parse error */
-			treebuilder->context.mode = IN_BODY;
-			reprocess = true;
 		}
 	}
 		break;
