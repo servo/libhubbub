@@ -415,8 +415,6 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 
 	/** \todo UTF-16 */
 
-	printf("well hello there, I see I'm not being inserted...\n");
-
 	for (c = 0; c < len; c++) {
 		if (data[c] != 0x09 && data[c] != 0x0A &&
 				data[c] != 0x0C && data[c] != 0x20)

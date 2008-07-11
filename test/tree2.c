@@ -184,6 +184,8 @@ void buffer_handler(const uint8_t *buffer, size_t len, void *pw)
 /*** Buffer handling bits ***/
 static void buf_clear(buf_t *buf)
 {
+	if (!buf || !buf->buf) return;
+
 	buf->buf[0] = '\0';
 	buf->pos = 0;
 }
@@ -215,6 +217,7 @@ static void buf_add(buf_t *buf, const char *str)
 
 /* States for reading in data from the tree construction file */
 enum reading_state {
+	ERASE_DATA,
 	EXPECT_DATA,
 	READING_DATA,
 	READING_DATA_AFTER_FIRST,
@@ -257,6 +260,15 @@ int main(int argc, char **argv)
 
 		switch (state)
 		{
+		case ERASE_DATA:
+			buf_clear(&got);
+			buf_clear(&expected);
+
+			hubbub_parser_destroy(parser);
+			Document = NULL;
+
+			state = EXPECT_DATA;
+
  		case EXPECT_DATA:
 			if (strcmp(line, "#data\n") == 0) {
 				parser = setup_parser();
@@ -289,8 +301,8 @@ int main(int argc, char **argv)
 
 		case READING_ERRORS:
 			if (strcmp(line, "#document-fragment\n") == 0) {
-				hubbub_parser_destroy(parser);
-				state = EXPECT_DATA;
+				state = ERASE_DATA;
+				reprocess = true;
 			}
 
 			if (strcmp(line, "#document\n") == 0)
@@ -314,13 +326,7 @@ int main(int argc, char **argv)
 					printf("%s", got.buf);
 				}
 
-				buf_clear(&got);
-				buf_clear(&expected);
-
-				hubbub_parser_destroy(parser);
-				Document = NULL;
-
-				state = EXPECT_DATA;
+				state = ERASE_DATA;
 				reprocess = true;
 			} else {
 				buf_add(&expected, line);
