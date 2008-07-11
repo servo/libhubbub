@@ -217,6 +217,7 @@ static void buf_add(buf_t *buf, const char *str)
 enum reading_state {
 	EXPECT_DATA,
 	READING_DATA,
+	READING_DATA_AFTER_FIRST,
 	READING_ERRORS,
 	READING_TREE,
 };
@@ -226,6 +227,7 @@ int main(int argc, char **argv)
 	FILE *fp;
 	char line[2048];
 
+	bool reprocess = false;
 	bool passed = true;
 
 	hubbub_parser *parser;
@@ -250,7 +252,9 @@ int main(int argc, char **argv)
 	}
 
 	/* We rely on lines not being anywhere near 2048 characters... */
-	while (passed && fgets(line, sizeof line, fp) == line) {
+	while (reprocess || (passed && fgets(line, sizeof line, fp) == line)) {
+		reprocess = false;
+
 		switch (state)
 		{
  		case EXPECT_DATA:
@@ -261,17 +265,27 @@ int main(int argc, char **argv)
 			break;
 
 		case READING_DATA:
+		case READING_DATA_AFTER_FIRST:
 			if (strcmp(line, "#errors\n") == 0) {
 				assert(hubbub_parser_completed(parser) == HUBBUB_OK);
 				state = READING_ERRORS;
 			} else {
 				size_t len = strlen(line);
 
+				if (state == READING_DATA_AFTER_FIRST) {
+					assert(hubbub_parser_parse_chunk(parser,
+						(uint8_t *)"\n",
+						1) == HUBBUB_OK);
+				} else {
+					state = READING_DATA_AFTER_FIRST;
+				}
+
 				printf(": %s", line);
 				assert(hubbub_parser_parse_chunk(parser, (uint8_t *)line,
 						len - 1) == HUBBUB_OK);
 			}
 			break;
+
 
 		case READING_ERRORS:
 			if (strcmp(line, "#document-fragment\n") == 0) {
@@ -286,10 +300,11 @@ int main(int argc, char **argv)
 			break;
 
 		case READING_TREE:
-			if (line[0] == '|' && line[1] == ' ') {
-				buf_add(&expected, line);
-			} else {
+			if (strcmp(line, "#data\n") == 0) {
 				node_print(&got, Document, 0);
+
+				/* Trim off the last newline */
+				expected.buf[strlen(expected.buf) - 1] = '\0';
 
 				passed = !strcmp(got.buf, expected.buf);
 				if (!passed) {
@@ -306,6 +321,9 @@ int main(int argc, char **argv)
 				Document = NULL;
 
 				state = EXPECT_DATA;
+				reprocess = true;
+			} else {
+				buf_add(&expected, line);
 			}
 			break;
 		}
