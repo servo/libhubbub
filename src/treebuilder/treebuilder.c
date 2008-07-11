@@ -38,7 +38,7 @@ static const struct {
 	{ "IMAGE", IMAGE },	{ "IMG", IMG },
 	{ "INPUT", INPUT },	{ "ISINDEX", ISINDEX },
 	{ "LI", LI },		{ "LINK", LINK },
-	{ "LISTING", LISTING },	{ "MATH", MATH },
+	{ "LISTING", LISTING },
 	{ "MENU", MENU },
 	{ "META", META },	{ "NOEMBED", NOEMBED },
 	{ "NOFRAMES", NOFRAMES },	{ "NOSCRIPT", NOSCRIPT },
@@ -63,8 +63,8 @@ static const struct {
 	{ "NOBR", NOBR },	{ "S", S },
 	{ "SMALL", SMALL },	{ "STRIKE", STRIKE },
 	{ "STRONG", STRONG },	{ "TT", TT },
-	{ "U", U },
-	{ "XMP", XMP },
+	{ "U", U },		{ "XMP", XMP },
+	{ "MATH", MATH },	{ "SVG", SVG },
 };
 
 
@@ -1348,73 +1348,6 @@ bool formatting_list_replace(hubbub_treebuilder *treebuilder,
 	return true;
 }
 
-/**
- * Adjust foreign attributes.
- *
- * \param treebuilder	Treebuilder instance
- * \param tag		Tag to adjust the attributes of
- */
-void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
-		hubbub_tag *tag)
-{
-	for (size_t i = 0; i < tag->n_attributes; i++) {
-		hubbub_attribute *attr = &tag->attributes[i];
-		const uint8_t *name = treebuilder->input_buffer +
-				attr->name.data.off;
-
-#define S(s)	(uint8_t *) s, SLEN(s)
-
-		/* 10 == strlen("xlink:href") */
-		if (attr->name.len >= 10 &&
-				strncmp((char *) name, "xlink:", 
-						SLEN("xlink:")) == 0) {
-			size_t len = attr->name.len - 6;
-			name += 6;
-
-			if (hubbub_string_match(name, len, S("actutate")) ||
-					hubbub_string_match(name, len,
-							S("arcrole")) ||
-					hubbub_string_match(name, len,
-							S("href")) ||
-					hubbub_string_match(name, len,
-							S("role")) ||
-					hubbub_string_match(name, len,
-							S("show")) ||
-					hubbub_string_match(name, len,
-							S("title")) ||
-					hubbub_string_match(name, len,
-							S("type"))) {
-				attr->ns = HUBBUB_NS_XLINK;
-				attr->name.data.off += 6;
-				attr->name.len -= 6;
-			}
-		/* 8 == strlen("xml:base") */
-		} else if (attr->name.len >= 8 &&
-				strncmp((char *) name, "xml:", SLEN("xml:")) == 0) {
-			size_t len = attr->name.len - 4;
-			name += 4;
-
-			if (hubbub_string_match(name, len, S("base")) ||
-					hubbub_string_match(name, len,
-							S("lang")) ||
-					hubbub_string_match(name, len,
-							S("space"))) {
-				attr->ns = HUBBUB_NS_XML;
-				attr->name.data.off += 4;
-				attr->name.len -= 4;
-			}
-		} else if (hubbub_string_match(name, attr->name.len,
-						S("xmlns")) ||
-				hubbub_string_match(name, attr->name.len,
-						S("xmlns:xlink"))) {
-			attr->ns = HUBBUB_NS_XMLNS;
-			attr->name.data.off += 6;
-			attr->name.len -= 6;
-		}
-
-#undef S
-	}
-}
 
 
 #ifndef NDEBUG

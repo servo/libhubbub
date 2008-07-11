@@ -30,6 +30,8 @@ typedef enum
 	CODE, LABEL, RP, RT, RUBY, SPAN, SUB, SUP, VAR, XMP,
 /* MathML */
 	MATH, MGLYPH, MALIGNMARK, MI, MO, MN, MS, MTEXT,
+/* SVG */
+	SVG,
 	UNKNOWN,
 } element_type;
 
@@ -172,10 +174,13 @@ bool formatting_list_replace(hubbub_treebuilder *treebuilder,
 		element_type type, void *node, uint32_t stack_index,
 		element_type *otype, void **onode, uint32_t *ostack_index);
 
+/* in_foreign_content.c */
+void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
+		hubbub_tag *tag);
 void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag);
 
-/* This one's in in_body.c */
+/* in_body.c */
 void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node);
 
 #ifndef NDEBUG

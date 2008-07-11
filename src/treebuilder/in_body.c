@@ -315,13 +315,18 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 		}
 	} else if (type == RP || type == RT) {
 		/** \todo ruby */
-	} else if (type == MATH) {
+	} else if (type == MATH || type == SVG) {
 		hubbub_tag tag = token->data.tag;
 
 		reconstruct_active_formatting_list(treebuilder);
 		adjust_foreign_attributes(treebuilder, &tag);
 
-		tag.ns = HUBBUB_NS_MATHML;
+		if (type == SVG) {
+			adjust_svg_attributes(treebuilder, &tag);
+			tag.ns = HUBBUB_NS_SVG;
+		} else {
+			tag.ns = HUBBUB_NS_MATHML;
+		}
 
 		if (token->data.tag.self_closing) {
 			insert_element_no_push(treebuilder, &tag);

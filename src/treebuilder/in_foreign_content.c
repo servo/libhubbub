@@ -12,6 +12,190 @@
 #include "treebuilder/internal.h"
 #include "treebuilder/treebuilder.h"
 #include "utils/utils.h"
+#include "utils/string.h"
+
+
+/*** Attribute-correction stuff ***/
+
+#define S(s)		s, SLEN(s)
+
+static const struct
+{
+	const char *attr;
+	size_t attr_len;
+	const char *proper;
+} svg_attributes[] = {
+	{ S("attributename"),		"attributeName" },
+	{ S("attributetype"),		"attributeType" },
+	{ S("basefrequency"),		"baseFrequency" },
+	{ S("baseprofile"),		"baseProfile" },
+	{ S("calcmode"),		"calcMode" },
+	{ S("clippathunits"),		"clipPathUnits" },
+	{ S("contentscripttype"),	"contentScriptType" },
+	{ S("contentstyletype"),	"contentStyleType" },
+	{ S("diffuseconstant"),		"diffuseConstant" },
+	{ S("edgemode"),		"edgeMode" },
+	{ S("externalresourcesrequired"),	"externalResourcesRequired" },
+	{ S("filterres"),		"filterRes" },
+	{ S("filterunits"),		"filterUnits" },
+	{ S("glyphref"),		"glyphRef" },
+	{ S("gradienttransform"),	"gradientTransform" },
+	{ S("gradientunits"),		"gradientUnits" },
+	{ S("kernelmatrix"),		"kernelMatrix" },
+	{ S("kernelunitlength"),	"kernelUnitLength" },
+	{ S("keypoints"),		"keyPoints" },
+	{ S("keysplines"),		"keySplines" },
+	{ S("keytimes"),		"keyTimes" },
+	{ S("lengthadjust"),		"lengthAdjust" },
+	{ S("limitingconeangle"),	"limitingConeAngle" },
+	{ S("markerheight"),		"markerHeight" },
+	{ S("markerunits"),		"markerUnits" },
+	{ S("markerwidth"),		"markerWidth" },
+	{ S("maskcontentunits"),	"maskContentUnits" },
+	{ S("maskunits"),		"maskUnits" },
+	{ S("numoctaves"),		"numOctaves" },
+	{ S("pathlength"),		"pathLength" },
+	{ S("patterncontentunits"),	"patternContentUnits" },
+	{ S("patterntransform"),	"patternTransform" },
+	{ S("patternunits"),		"patternUnits" },
+	{ S("pointsatx"),		"pointsAtX" },
+	{ S("pointsaty"),		"pointsAtY" },
+	{ S("pointsatz"),		"pointsAtZ" },
+	{ S("preservealpha"),		"preserveAlpha" },
+	{ S("preserveaspectratio"),	"preserveAspectRatio" },
+	{ S("primitiveunits"),		"primitiveUnits" },
+	{ S("refx"),			"refX" },
+	{ S("refy"),			"refY" },
+	{ S("repeatcount"),		"repeatCount" },
+	{ S("repeatdur"),		"repeatDur" },
+	{ S("requiredextensions"),	"requiredExtensions" },
+	{ S("requiredfeatures"),	"requiredFeatures" },
+	{ S("specularconstant"),	"specularConstant" },
+	{ S("specularexponent"),	"specularExponent" },
+	{ S("spreadmethod"),		"spreadMethod" },
+	{ S("startoffset"),		"startOffset" },
+	{ S("stddeviation"),		"stdDeviation" },
+	{ S("stitchtiles"),		"stitchTiles" },
+	{ S("surfacescale"),		"surfaceScale" },
+	{ S("systemlanguage"),		"systemLanguage" },
+	{ S("tablevalues"),		"tableValues" },
+	{ S("targetx"),			"targetX" },
+	{ S("targety"),			"targetY" },
+	{ S("textlength"),		"textLength" },
+	{ S("viewbox"),			"viewBox" },
+	{ S("viewtarget"),		"viewTarget" },
+	{ S("xchannelselector"),	"xChannelSelector" },
+	{ S("ychannelselector"),	"yChannelSelector" },
+	{ S("zoomandpan"),		"zoomAndPan" },
+};
+
+#undef S
+
+#define N_ELEMENTS(x)		(sizeof(x) / sizeof((x)[0]))
+
+
+/**
+ * Adjust SVG attributes.
+ *
+ * \param treebuilder	Treebuilder instance
+ * \param tag		Tag to adjust the attributes of
+ */
+void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
+		hubbub_tag *tag)
+{
+	for (size_t i = 0; i < tag->n_attributes; i++) {
+		hubbub_attribute *attr = &tag->attributes[i];
+
+		uint8_t *name = (uint8_t *) treebuilder->input_buffer +
+				attr->name.data.off;
+		size_t len = attr->name.len;
+
+		for (size_t j = 0; j < N_ELEMENTS(svg_attributes); j++) {
+			if (hubbub_string_match(name, len,
+					(uint8_t *)svg_attributes[j].attr,
+					svg_attributes[j].attr_len)) {
+				attr->name.type = HUBBUB_STRING_PTR;
+				attr->name.data.ptr =
+					(uint8_t *)svg_attributes[j].proper;
+			}
+		}
+	}
+}
+
+
+
+#define S(s)		(uint8_t *) s, SLEN(s)
+
+/**
+ * Adjust foreign attributes.
+ *
+ * \param treebuilder	Treebuilder instance
+ * \param tag		Tag to adjust the attributes of
+ */
+void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
+		hubbub_tag *tag)
+{
+	for (size_t i = 0; i < tag->n_attributes; i++) {
+		hubbub_attribute *attr = &tag->attributes[i];
+		const uint8_t *name = treebuilder->input_buffer +
+				attr->name.data.off;
+
+		/* 10 == strlen("xlink:href") */
+		if (attr->name.len >= 10 &&
+				strncmp((char *) name, "xlink:", 
+						SLEN("xlink:")) == 0) {
+			size_t len = attr->name.len - 6;
+			name += 6;
+
+			if (hubbub_string_match(name, len, S("actutate")) ||
+					hubbub_string_match(name, len,
+							S("arcrole")) ||
+					hubbub_string_match(name, len,
+							S("href")) ||
+					hubbub_string_match(name, len,
+							S("role")) ||
+					hubbub_string_match(name, len,
+							S("show")) ||
+					hubbub_string_match(name, len,
+							S("title")) ||
+					hubbub_string_match(name, len,
+							S("type"))) {
+				attr->ns = HUBBUB_NS_XLINK;
+				attr->name.data.off += 6;
+				attr->name.len -= 6;
+			}
+		/* 8 == strlen("xml:base") */
+		} else if (attr->name.len >= 8 &&
+				strncmp((char *) name, "xml:", SLEN("xml:")) == 0) {
+			size_t len = attr->name.len - 4;
+			name += 4;
+
+			if (hubbub_string_match(name, len, S("base")) ||
+					hubbub_string_match(name, len,
+							S("lang")) ||
+					hubbub_string_match(name, len,
+							S("space"))) {
+				attr->ns = HUBBUB_NS_XML;
+				attr->name.data.off += 4;
+				attr->name.len -= 4;
+			}
+		} else if (hubbub_string_match(name, attr->name.len,
+						S("xmlns")) ||
+				hubbub_string_match(name, attr->name.len,
+						S("xmlns:xlink"))) {
+			attr->ns = HUBBUB_NS_XMLNS;
+			attr->name.data.off += 6;
+			attr->name.len -= 6;
+		}
+
+	}
+}
+
+#undef S
+
+
+
+/*** Foreign content insertion mode ***/
 
 
 /**
