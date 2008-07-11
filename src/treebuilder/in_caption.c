@@ -37,7 +37,7 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 				type == TBODY || type == TD || type == TFOOT ||
 				type == TH || type == THEAD || type == TR) {
 			/** \todo parse error */
-			handled = true;
+			reprocess = true;
 		} else {
 			/* Process as if "in body" */
 			handle_in_body(treebuilder, token);
@@ -49,9 +49,11 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 		element_type type = element_type_from_name(treebuilder,
 				&token->data.tag.name);
 
-		if (type == CAPTION || type == TABLE) {
-			/** \todo parse error if type == TABLE */
+		if (type == CAPTION) {
 			handled = true;
+		} else if (type == TABLE) {
+			/** \todo parse error if type == TABLE */
+			reprocess = true;
 		} else if (type == BODY || type == COL || type == COLGROUP ||
 				type == HTML || type == TBODY || type == TD ||
 				type == TFOOT || type == TH ||
