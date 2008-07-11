@@ -433,6 +433,8 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 		node_print(NULL, tparent, 0);
 #endif
 
+	*result = child;
+
 	if (parent == (void *)1) {
 		if (Document) {
 			insert = Document;
@@ -452,11 +454,17 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 			insert = insert->next;
 		}
 
-		insert->next = tchild;
-		tchild->prev = insert;
+		if (tchild->type == CHARACTER && insert->type == CHARACTER) {
+			insert->data.content = realloc(insert->data.content,
+					strlen(insert->data.content) +
+					strlen(tchild->data.content) + 1);
+			strcat(insert->data.content, tchild->data.content);
+			*result = insert;
+		} else {
+			insert->next = tchild;
+			tchild->prev = insert;
+		}
 	}
-
-	*result = child;
 
 	return 0;
 }
@@ -469,18 +477,40 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 	node_t *tchild = child;
 	node_t *tref = ref_child;
 
-	tchild->parent = parent;
+#ifndef NDEBUG
+	printf("inserting (%x):\n", (unsigned)tchild);
+	node_print(NULL, tchild, 0);
+	printf("before:\n");
+	node_print(NULL, tref, 0);
+	printf("under:\n");
+	if (parent != (void *)1)
+		node_print(NULL, tparent, 0);
+#endif
 
-	tchild->prev = tref->prev;
-	tchild->next = tref;
-	tref->prev = tchild;
+	if (tchild->type == CHARACTER && tref->prev &&
+			tref->prev->type == CHARACTER) {
+		node_t *insert = tref->prev;
 
-	if (tchild->prev)
-		tchild->prev->next = tchild;
-	else
-		tparent->child = tchild;
+		insert->data.content = realloc(insert->data.content,
+				strlen(insert->data.content) +
+				strlen(tchild->data.content) + 1);
+		strcat(insert->data.content, tchild->data.content);
 
-	*result = child;
+		*result = insert;
+	} else {
+		tchild->parent = parent;
+
+		tchild->prev = tref->prev;
+		tchild->next = tref;
+		tref->prev = tchild;
+
+		if (tchild->prev)
+			tchild->prev->next = tchild;
+		else
+			tparent->child = tchild;
+
+		*result = child;
+	}
 
 	return 0;
 }
