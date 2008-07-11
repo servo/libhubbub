@@ -874,6 +874,12 @@ void reset_insertion_mode(hubbub_treebuilder *treebuilder)
 	/** \todo fragment parsing algorithm */
 
 	for (node = treebuilder->context.current_node; node > 0; node--) {
+		if (stack[node].ns != HUBBUB_NS_HTML) {
+			treebuilder->context.mode = IN_FOREIGN_CONTENT;
+			treebuilder->context.second_mode = IN_BODY;
+			break;
+		}
+
 		switch (stack[node].type) {
 		case SELECT:
 			/* fragment case */
