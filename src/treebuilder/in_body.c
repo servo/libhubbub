@@ -898,6 +898,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 			}
 		}
 
+		attrs[n_attrs].ns = HUBBUB_NS_HTML;
 		attrs[n_attrs].name.type = HUBBUB_STRING_PTR;
 		attrs[n_attrs].name.data.ptr = (const uint8_t *) "name";
 		attrs[n_attrs].name.len = SLEN("name");
