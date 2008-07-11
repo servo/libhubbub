@@ -68,7 +68,7 @@ bool handle_after_body(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_COMMENT:
 		process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
-				treebuilder->context.current_node].node);
+				0].node);
 		break;
 	case HUBBUB_TOKEN_DOCTYPE:
 		/** \todo parse error */

@@ -28,6 +28,9 @@ bool handle_after_after_body(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_COMMENT:
+		process_comment_append(treebuilder, token,
+				treebuilder->context.document);
+		break;
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_CHARACTER:
 		handle_in_body(treebuilder, token);
