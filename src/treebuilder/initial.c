@@ -273,9 +273,8 @@ bool handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 		/** \todo need public and system ids from tokeniser */
 		success = treebuilder->tree_handler->create_doctype(
 				treebuilder->tree_handler->ctx,
-				&token->data.doctype.name,
-				&token->data.doctype.public_id,
-				&token->data.doctype.system_id, &doctype);
+				&token->data.doctype,
+				&doctype);
 		if (success != 0) {
 			/** \todo errors */
 		}

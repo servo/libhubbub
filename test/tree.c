@@ -33,8 +33,7 @@ static const uint8_t *pbuffer;
 
 static void buffer_handler(const uint8_t *buffer, size_t len, void *pw);
 static int create_comment(void *ctx, const hubbub_string *data, void **result);
-static int create_doctype(void *ctx, const hubbub_string *qname,
-		const hubbub_string *public_id, const hubbub_string *system_id,
+static int create_doctype(void *ctx, const hubbub_doctype *doctype,
 		void **result);
 static int create_element(void *ctx, const hubbub_tag *tag, void **result);
 static int create_text(void *ctx, const hubbub_string *data, void **result);
@@ -224,15 +223,11 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 	return 0;
 }
 
-int create_doctype(void *ctx, const hubbub_string *qname,
-		const hubbub_string *public_id, const hubbub_string *system_id,
-		void **result)
+int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 {
-	UNUSED(public_id);
-	UNUSED(system_id);
-
 	printf("Creating (%" PRIuPTR ") [doctype '%.*s']\n", ++node_counter,
-			(int) qname->len, ptr_from_hubbub_string(qname));
+			(int) doctype->name.len,
+			ptr_from_hubbub_string(&doctype->name));
 
 	GROW_REF
 	node_ref[node_counter] = 0;

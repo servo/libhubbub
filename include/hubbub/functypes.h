@@ -43,8 +43,8 @@ typedef int (*hubbub_tree_create_comment)(void *ctx, const hubbub_string *data,
 /**
  * Type of tree doctype node creation function
  */
-typedef int (*hubbub_tree_create_doctype)(void *ctx, const hubbub_string *qname,
-		const hubbub_string *public_id, const hubbub_string *system_id,
+typedef int (*hubbub_tree_create_doctype)(void *ctx,
+		const hubbub_doctype *doctype,
 		void **result);
 
 /**

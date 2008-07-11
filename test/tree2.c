@@ -79,8 +79,7 @@ static const uint8_t *pbuffer;
 
 static void buffer_handler(const uint8_t *buffer, size_t len, void *pw);
 static int create_comment(void *ctx, const hubbub_string *data, void **result);
-static int create_doctype(void *ctx, const hubbub_string *qname,
-		const hubbub_string *public_id, const hubbub_string *system_id,
+static int create_doctype(void *ctx, const hubbub_doctype *doctype,
 		void **result);
 static int create_element(void *ctx, const hubbub_tag *tag, void **result);
 static int create_text(void *ctx, const hubbub_string *data, void **result);
@@ -358,24 +357,27 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 	return 0;
 }
 
-int create_doctype(void *ctx, const hubbub_string *qname,
-		const hubbub_string *public_id, const hubbub_string *system_id,
-		void **result)
+int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
 	node->type = DOCTYPE;
-	node->data.doctype.name = strndup((char *)ptr_from_hubbub_string(qname),
-			qname->len);
-	if (public_id->len) {
+	node->data.doctype.name = strndup(
+			(char *)ptr_from_hubbub_string(&doctype->name),
+			doctype->name.len);
+
+	if (!doctype->public_missing) {
 		node->data.doctype.public_id = strndup(
-				(char *)ptr_from_hubbub_string(public_id),
-				public_id->len);
+				(char *)ptr_from_hubbub_string(
+					&doctype->public_id),
+				doctype->public_id.len);
 	}
-	if (system_id->len) {
+
+	if (!doctype->system_missing) {
 		node->data.doctype.system_id = strndup(
-				(char *)ptr_from_hubbub_string(system_id),
-				system_id->len);
+				(char *)ptr_from_hubbub_string(
+					&doctype->system_id),
+				doctype->system_id.len);
 	}
 
 	*result = node;
