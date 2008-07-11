@@ -19,12 +19,14 @@
 
 #define S(s)		s, SLEN(s)
 
-static const struct
+typedef struct
 {
 	const char *attr;
-	size_t attr_len;
+	size_t len;
 	const char *proper;
-} svg_attributes[] = {
+} case_changes;
+
+static const case_changes svg_attributes[] = {
 	{ S("attributename"),		"attributeName" },
 	{ S("attributetype"),		"attributeType" },
 	{ S("basefrequency"),		"baseFrequency" },
@@ -89,6 +91,45 @@ static const struct
 	{ S("zoomandpan"),		"zoomAndPan" },
 };
 
+static const case_changes svg_tagnames[] = {
+	{ S("altglyph"),		"altGlyph" },
+	{ S("altglyphdef"),		"altGlyphDef" },
+	{ S("altglyphitem"),		"altGlyphItem" },
+	{ S("animatecolor"),		"animateColor" },
+	{ S("animatemotion"),		"animateMotion" },
+	{ S("animatetransform"),	"animateTransform" },
+	{ S("clippath"),		"clipPath" },
+	{ S("feblend"),			"feBlend" },
+	{ S("fecolormatrix"),		"feColorMatrix" },
+	{ S("fecomponenttransfer"),	"feComponentTransfer" },
+	{ S("fecomposite"),		"feComposite" },
+	{ S("feconvolvematrix"),	"feConvolveMatrix" },
+	{ S("fediffuselighting"),	"feDiffuseLighting" },
+	{ S("fedisplacementmap"),	"feDisplacementMap" },
+	{ S("fedistantlight"),		"feDistantLight" },
+	{ S("feflood"),			"feFlood" },
+	{ S("fefunca"),			"feFuncA" },
+	{ S("fefuncb"),			"feFuncB" },
+	{ S("fefuncg"),			"feFuncG" },
+	{ S("fefuncr"),			"feFuncR" },
+	{ S("fegaussianblur"),		"feGaussianBlur" },
+	{ S("feimage"),			"feImage" },
+	{ S("femerge"),			"feMerge" },
+	{ S("femergenode"),		"feMergeNode" },
+	{ S("femorphology"),		"feMorphology" },
+	{ S("feoffset"),		"feOffset" },
+	{ S("fepointlight"),		"fePointLight" },
+	{ S("fespecularlighting"),	"feSpecularLighting" },
+	{ S("fespotlight"),		"feSpotLight" },
+	{ S("fetile"),			"feTile" },
+	{ S("feturbulence"),		"feTurbulence" },
+	{ S("foreignobject"),		"foreignObject" },
+	{ S("glyphref"),		"glyphRef" },
+	{ S("lineargradient"),		"linearGradient" },
+	{ S("radialgradient"),		"radialGradient" },
+	{ S("textpath"),		"textPath" },
+};
+
 #undef S
 
 #define N_ELEMENTS(x)		(sizeof(x) / sizeof((x)[0]))
@@ -106,18 +147,42 @@ void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
 	for (size_t i = 0; i < tag->n_attributes; i++) {
 		hubbub_attribute *attr = &tag->attributes[i];
 
-		uint8_t *name = (uint8_t *) treebuilder->input_buffer +
+		const uint8_t *name = treebuilder->input_buffer +
 				attr->name.data.off;
 		size_t len = attr->name.len;
 
 		for (size_t j = 0; j < N_ELEMENTS(svg_attributes); j++) {
 			if (hubbub_string_match(name, len,
 					(uint8_t *)svg_attributes[j].attr,
-					svg_attributes[j].attr_len)) {
+					svg_attributes[j].len)) {
 				attr->name.type = HUBBUB_STRING_PTR;
 				attr->name.data.ptr =
 					(uint8_t *)svg_attributes[j].proper;
 			}
+		}
+	}
+}
+
+/**
+ * Adjust SVG tagnmes.
+ *
+ * \param treebuilder	Treebuilder instance
+ * \param tag		Tag to adjust the name of
+ */
+void adjust_svg_tagname(hubbub_treebuilder *treebuilder,
+		hubbub_tag *tag)
+{
+	uint8_t *name = (uint8_t *) treebuilder->input_buffer +
+			tag->name.data.off;
+	size_t len = tag->name.len;
+
+	for (size_t i = 0; i < N_ELEMENTS(svg_tagnames); i++) {
+		if (hubbub_string_match(name, len,
+				(uint8_t *)svg_tagnames[i].attr,
+				svg_tagnames[i].len)) {
+			tag->name.type = HUBBUB_STRING_PTR;
+			tag->name.data.ptr =
+				(uint8_t *)svg_tagnames[i].proper;
 		}
 	}
 }
@@ -339,6 +404,11 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 			hubbub_tag tag = token->data.tag;
 
 			adjust_foreign_attributes(treebuilder, &tag);
+
+			if (cur_node_ns == HUBBUB_NS_SVG) {
+				adjust_svg_tagname(treebuilder, &tag);
+				adjust_svg_attributes(treebuilder, &tag);
+			}
 
 			/* Set to the right namespace and insert */
 			tag.ns = cur_node_ns;

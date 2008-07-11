@@ -177,6 +177,8 @@ bool formatting_list_replace(hubbub_treebuilder *treebuilder,
 /* in_foreign_content.c */
 void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag);
+void adjust_svg_tagname(hubbub_treebuilder *treebuilder,
+		hubbub_tag *tag);
 void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag);
 
