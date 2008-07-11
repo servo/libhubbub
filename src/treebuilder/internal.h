@@ -29,9 +29,10 @@ typedef enum
 	/**< \todo Enumerate phrasing elements */
 	CODE, LABEL, RP, RT, RUBY, SPAN, SUB, SUP, VAR, XMP,
 /* MathML */
-	MATH, MGLYPH, MALIGNMARK, MI, MO, MN, MS, MTEXT,
+	MATH, MGLYPH, MALIGNMARK, MI, MO, MN, MS, MTEXT, ANNOTATION_XML,
 /* SVG */
-	SVG,
+	SVG, FOREIGNOBJECT, /* foreignobject is scoping, but only in SVG ns */
+	DESC,
 	UNKNOWN,
 } element_type;
 

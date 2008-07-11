@@ -376,11 +376,17 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (cur_node_ns == HUBBUB_NS_HTML ||
-				(cur_node_ns == HUBBUB_NS_MATHML &&
+			(cur_node_ns == HUBBUB_NS_MATHML &&
 				(type != MGLYPH && type != MALIGNMARK) &&
 				(cur_node == MI || cur_node == MO ||
 				cur_node == MN || cur_node == MS ||
-				cur_node == MTEXT))) {
+				cur_node == MTEXT)) ||
+			(type == SVG && (cur_node_ns == HUBBUB_NS_MATHML &&
+				cur_node == ANNOTATION_XML)) ||
+			(cur_node_ns == HUBBUB_NS_SVG &&
+				(cur_node == FOREIGNOBJECT ||
+				cur_node == DESC ||
+				cur_node == TITLE))) {
 			process_as_in_secondary(treebuilder, token);
 		} else if (type == B || type ==  BIG || type == BLOCKQUOTE ||
 				type == BODY || type == BR || type == CENTER ||

@@ -64,7 +64,15 @@ static const struct {
 	{ "SMALL", SMALL },	{ "STRIKE", STRIKE },
 	{ "STRONG", STRONG },	{ "TT", TT },
 	{ "U", U },		{ "XMP", XMP },
-	{ "MATH", MATH },	{ "SVG", SVG },
+
+	{ "MATH", MATH },	{ "MGLYPH", MGLYPH },
+	{ "MALIGNMARK", MALIGNMARK },
+	{ "MI", MI },		{ "MO", MO },
+	{ "MN", MN },		{ "MS", MS },
+	{ "MTEXT", MTEXT },	{ "ANNOTATION-XML", ANNOTATION_XML },
+
+	{ "SVG", SVG },		{ "DESC", DESC },
+	{ "FOREIGNOBJECT", FOREIGNOBJECT },
 };
 
 
@@ -571,6 +579,8 @@ uint32_t element_in_scope(hubbub_treebuilder *treebuilder,
 	assert((signed) treebuilder->context.current_node >= 0);
 
 	for (node = treebuilder->context.current_node; node > 0; node--) {
+		hubbub_ns node_ns =
+				treebuilder->context.element_stack[node].ns;
 		element_type node_type =
 				treebuilder->context.element_stack[node].type;
 
@@ -585,8 +595,11 @@ uint32_t element_in_scope(hubbub_treebuilder *treebuilder,
 		 * in the previous conditional and HTML should only occur
 		 * as the first node in the stack, which is never processed
 		 * in this loop. */
-		if (!in_table && is_scoping_element(node_type))
+		if (!in_table && (is_scoping_element(node_type) ||
+				(node_type == FOREIGNOBJECT &&
+						node_ns == HUBBUB_NS_SVG))) {
 			break;
+		}
 	}
 
 	return 0;
