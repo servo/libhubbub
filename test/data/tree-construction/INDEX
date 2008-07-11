@@ -14,3 +14,5 @@ tests9.dat		html5lib tests
 tests10.dat		html5lib tests
 tests11.dat		html5lib tests
 tests12.dat		html5lib tests
+after-after-body.dat	Tests "after after body" mode
+after-after-frameset.dat	Tests "after after frameset" mode

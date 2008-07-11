@@ -1,0 +1,120 @@
+#data
+<!DOCTYPE html><html><frameset></frameset></html><!--x-->
+#errors
+#comments
+Tests comments in "after after frameset" get appended to the Document object.
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <frameset>
+| <!-- x -->
+
+#data
+<!DOCTYPE html><html><frameset></frameset></html><!DOCTYPE foo>
+#errors
+Unexpected DOCTYPE: <!DOCTYPE foo>
+#comments
+This tests DOCTYPE ignorance in "after after frameset".
+This handling should be identical to "in body".
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <frameset>
+
+#data
+<!DOCTYPE html><html><frameset></frameset></html>
+
+#errors
+#comments
+This tests that whitespace in "after after" frameset is appended to the current
+node, which in "after after frameset" is always the "html" element.
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <frameset>
+|   "
+"
+
+#data
+<!DOCTYPE html><frameset></frameset></html><html>
+#errors
+Second <html> tag not allowed.
+#comments
+This tests that no new "html" tag is added to the document.
+This handling should be identical to "in body".
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <frameset>
+
+#data
+<!DOCTYPE html><frameset></frameset></html><html bgcolor="red">
+#errors
+Second <html> tag not allowed.
+#comments
+This tests that the attributes on <html> tags in "after after frameset" are added
+to the top element on the stack of open elements (e.g. the root <html> tag.)
+This handling should be identical to "in body".
+#document
+| <!DOCTYPE html>
+| <html>
+|   bgcolor="red"
+|   <head>
+|   <frameset>
+
+#data
+<!DOCTYPE html><html><frameset></frameset></html>
+#errors
+#comments
+Test EOF in "after after frameset".
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <frameset>
+
+#data
+<!DOCTYPE html><html><frameset></frameset></html>xx
+#errors
+Text after </html> tag.
+Text in frameset.
+#comments
+Test non-space character in "after after frameset".
+This handling should be identical to "in frameset".
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <frameset>
+
+#data
+<!DOCTYPE html><html><frameset></frameset></html><table>
+#errors
+Tag after </html>.
+<table> not allowed in <frameset>.
+#comments
+Test non-html start tag in "after after frameset".
+This handling should be identical to "in frameset".
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <frameset>
+
+#data
+<!DOCTYPE html><html><frameset></frameset></html></frameset>
+#errors
+End tag after </html>.
+</frameset> when the current node is the root "html" element.
+#comments
+Test non-html start tag in "after after frameset".
+This handling should be identical to "in frameset".
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|   <frameset>
