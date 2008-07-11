@@ -620,6 +620,8 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 		void *prev_node;
 		uint32_t prev_stack_index;
 
+		element_type type = current_node(treebuilder);
+
 		success = treebuilder->tree_handler->clone_node(
 				treebuilder->tree_handler->ctx,
 				entry->details.node,
@@ -630,30 +632,40 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 			return;
 		}
 
-		success = treebuilder->tree_handler->append_child(
-				treebuilder->tree_handler->ctx,
-				treebuilder->context.element_stack[
-					treebuilder->context.current_node].node,
-				clone,
-				&appended);
-		if (success != 0) {
-			/** \todo handle errors */
-			treebuilder->tree_handler->unref_node(
+		bool foster = treebuilder->context.in_table_foster &&
+				(type == TABLE || type == TBODY ||
+					type == TFOOT || type == THEAD ||
+					type == TR);
+
+		if (foster) {
+			aa_insert_into_foster_parent(treebuilder, clone);
+		} else {
+			success = treebuilder->tree_handler->append_child(
 					treebuilder->tree_handler->ctx,
-					clone);
-			return;
+					treebuilder->context.element_stack[
+						treebuilder->context.current_node].node,
+					clone,
+					&appended);
+			if (success != 0) {
+				/** \todo handle errors */
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						clone);
+				return;
+			}
 		}
 
 		if (!element_stack_push(treebuilder,
 				entry->details.ns, entry->details.type,
-				appended)) {
+				clone)) {
 			/** \todo handle memory exhaustion */
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
-					appended);
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
 					clone);
+			if (foster)
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						appended);
 		}
 
 		if (!formatting_list_replace(treebuilder, entry,
@@ -763,8 +775,6 @@ void insert_element_no_push(hubbub_treebuilder *treebuilder,
 	element_type type = current_node(treebuilder);
 	int success;
 	void *node, *appended;
-
-	/** \todo handle treebuilder->context.in_table_foster */
 
 	success = treebuilder->tree_handler->create_element(
 			treebuilder->tree_handler->ctx, tag, &node);
@@ -1053,10 +1063,6 @@ bool element_stack_push(hubbub_treebuilder *treebuilder,
 
 	treebuilder->context.current_node = slot;
 
-	/* Update current table index */
-	if (type == TABLE)
-		treebuilder->context.current_table = slot;
-
 	return true;
 }
 
@@ -1082,8 +1088,6 @@ bool element_stack_pop(hubbub_treebuilder *treebuilder,
 			if (stack[t].type == TABLE)
 				break;
 		}
-
-		treebuilder->context.current_table = t;
 	}
 
 	if (is_formatting_element(stack[slot].type) || 
@@ -1139,6 +1143,22 @@ bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 	}
 
 	return true;
+}
+
+/**
+ * Find the stack index of the current table.
+ */
+uint32_t current_table(hubbub_treebuilder *treebuilder)
+{
+	element_context *stack = treebuilder->context.element_stack;
+
+	for (size_t t = treebuilder->context.current_node; t != 0; t--) {
+		if (stack[t].type == TABLE)
+			return t;
+	}
+
+	/* fragment case */
+	return 0;
 }
 
 /**

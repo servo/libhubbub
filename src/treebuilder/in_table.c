@@ -90,7 +90,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
 		if (treebuilder->context.element_stack[
-				treebuilder->context.current_table
+				current_table(treebuilder)
 				].tainted) {
 			handled = false;
 		} else {
@@ -111,7 +111,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 		element_type type = element_type_from_name(treebuilder,
 				&token->data.tag.name);
 		bool tainted = treebuilder->context.element_stack[
-					treebuilder->context.current_table
+					current_table(treebuilder)
 					].tainted;
 
 		if (type == CAPTION) {

@@ -275,7 +275,7 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 		 * real-world pages. */
 /*		if (treebuilder->context.mode == IN_BODY) {*/
 			treebuilder->context.element_stack[
-					treebuilder->context.current_table].
+					current_table(treebuilder)].
 					tainted = false;
 			treebuilder->context.mode = IN_TABLE;
 /*		}*/
@@ -1685,16 +1685,6 @@ void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 	/* Now, shuffle the stack up one, removing node in the process */
 	memmove(&stack[index], &stack[index + 1],
 			(limit - index) * sizeof(element_context));
-
-	uint32_t t;
-
-	/* Set current_table again properly */
-	for (t = treebuilder->context.current_node; t != 0; t--) {
-		if (stack[t].type == TABLE)
-			break;
-	}
-
-	treebuilder->context.current_table = t;
 }
 
 /**
@@ -1746,9 +1736,11 @@ void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 	bool insert = false;
 	void *inserted;
 
-	stack[treebuilder->context.current_table].tainted = true;
+	uint32_t cur_table = current_table(treebuilder);
 
-	if (treebuilder->context.current_table == 0) {
+	stack[cur_table].tainted = true;
+
+	if (cur_table == 0) {
 		treebuilder->tree_handler->ref_node(
 				treebuilder->tree_handler->ctx,
 				stack[0].node);
@@ -1759,7 +1751,7 @@ void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 
 		treebuilder->tree_handler->get_parent(
 			treebuilder->tree_handler->ctx,
-			stack[treebuilder->context.current_table].node,
+			stack[cur_table].node,
 			true, &t_parent);
 
 		if (t_parent != NULL) {
@@ -1768,10 +1760,8 @@ void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 		} else {
 			treebuilder->tree_handler->ref_node(
 					treebuilder->tree_handler->ctx,
-					stack[treebuilder->context.
-						current_table - 1].node);
-			foster_parent = stack[treebuilder->context.
-					current_table - 1].node;
+					stack[cur_table - 1].node);
+			foster_parent = stack[cur_table - 1].node;
 		}
 	}
 
@@ -1779,7 +1769,7 @@ void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 		treebuilder->tree_handler->insert_before(
 				treebuilder->tree_handler->ctx,
 				foster_parent, node,
-				stack[treebuilder->context.current_table].node,
+				stack[cur_table].node,
 				&inserted);
 	} else {
 		treebuilder->tree_handler->append_child(

@@ -66,7 +66,6 @@ typedef struct hubbub_treebuilder_context
 	element_context *element_stack;	/**< Stack of open elements */
 	uint32_t stack_alloc;		/**< Number of stack slots allocated */
 	uint32_t current_node;		/**< Index of current node in stack */
-	uint32_t current_table;		/**< Index of current table in stack */
 
 	formatting_list_entry *formatting_list;	/**< List of active formatting 
 						 * elements */
@@ -156,6 +155,7 @@ bool element_stack_pop(hubbub_treebuilder *treebuilder,
 		hubbub_ns *ns, element_type *type, void **node);
 bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 		element_type type);
+uint32_t current_table(hubbub_treebuilder *treebuilder);
 element_type current_node(hubbub_treebuilder *treebuilder);
 hubbub_ns current_node_ns(hubbub_treebuilder *treebuilder);
 element_type prev_node(hubbub_treebuilder *treebuilder);
