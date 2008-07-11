@@ -23,7 +23,19 @@ static bool element_in_scope_in_non_html_ns(hubbub_treebuilder *treebuilder)
 	element_context *stack = treebuilder->context.element_stack;
 	uint32_t node;
 
-	for (node = treebuilder->context.current_node; node != 0; node--) {
+	assert((signed) treebuilder->context.current_node >= 0);
+
+	for (node = treebuilder->context.current_node; node > 0; node--) {
+		element_type node_type = stack[node].type;
+
+		/* The list of element types given in the spec here are the
+		 * scoping elements excluding TABLE and HTML. TABLE is handled
+		 * in the previous conditional and HTML should only occur
+		 * as the first node in the stack, which is never processed
+		 * in this loop. */
+		if (node_type == TABLE || is_scoping_element(node_type))
+			break;
+
 		if (stack[node].ns != HUBBUB_NS_HTML)
 			return true;
 	}
