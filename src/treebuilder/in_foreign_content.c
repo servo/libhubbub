@@ -150,6 +150,7 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 				type == TABLE || type == TT || type == U ||
 				type == UL || type == VAR) {
 			foreign_break_out(treebuilder);
+			reprocess = true;
 		} else {
 			hubbub_tag tag = token->data.tag;
 
@@ -172,6 +173,7 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		break;
 	case HUBBUB_TOKEN_EOF:
 		foreign_break_out(treebuilder);
+		reprocess = true;
 		break;
 	}
 
