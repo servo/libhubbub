@@ -426,7 +426,7 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 
 			temp.type = HUBBUB_STRING_OFF;
 			temp.data.off = token->data.character.data.off;
-			temp.len = len - c;
+			temp.len = c;
 
 			append_text(treebuilder, &temp);
 		}
