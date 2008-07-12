@@ -3,7 +3,7 @@ TODO list
 
   + Implement one or more tree builders
   + More charset convertors (or make the iconv codec significantly faster)
-  + Parse error reporting from the tokeniser
+  + Parse error reporting
   + Implement extraneous chunk insertion/tokenisation
   + Statistical charset autodetection
   + Shared library, for those platforms that support such things
