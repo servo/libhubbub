@@ -317,84 +317,85 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 
 	assert((signed) treebuilder->context.current_node >= 0);
 
+/* A slightly nasty debugging hook, but very useful */
 #ifdef NDEBUG
-# define hack(x) \
+# define mode(x) \
 		case x:
 #else
-# define hack(x) \
+# define mode(x) \
 		case x: \
 			printf( #x "\n");
 #endif
 
 	while (reprocess) {
 		switch (treebuilder->context.mode) {
-		hack(INITIAL)
+		mode(INITIAL)
 			reprocess = handle_initial(treebuilder, token);
 			break;
-		hack(BEFORE_HTML)
+		mode(BEFORE_HTML)
 			reprocess = handle_before_html(treebuilder, token);
 			break;
-		hack(BEFORE_HEAD)
+		mode(BEFORE_HEAD)
 			reprocess = handle_before_head(treebuilder, token);
 			break;
-		hack(IN_HEAD)
+		mode(IN_HEAD)
 			reprocess = handle_in_head(treebuilder, token);
 			break;
-		hack(IN_HEAD_NOSCRIPT)
+		mode(IN_HEAD_NOSCRIPT)
 			reprocess = handle_in_head_noscript(treebuilder, token);
 			break;
-		hack(AFTER_HEAD)
+		mode(AFTER_HEAD)
 			reprocess = handle_after_head(treebuilder, token);
 			break;
-		hack(IN_BODY)
+		mode(IN_BODY)
 			reprocess = handle_in_body(treebuilder, token);
 			break;
-		hack(IN_TABLE)
+		mode(IN_TABLE)
 			reprocess = handle_in_table(treebuilder, token);
 			break;
-		hack(IN_CAPTION)
+		mode(IN_CAPTION)
 			reprocess = handle_in_caption(treebuilder, token);
 			break;
-		hack(IN_COLUMN_GROUP)
+		mode(IN_COLUMN_GROUP)
 			reprocess = handle_in_column_group(treebuilder, token);
 			break;
-		hack(IN_TABLE_BODY)
+		mode(IN_TABLE_BODY)
 			reprocess = handle_in_table_body(treebuilder, token);
 			break;
-		hack(IN_ROW)
+		mode(IN_ROW)
 			reprocess = handle_in_row(treebuilder, token);
 			break;
-		hack(IN_CELL)
+		mode(IN_CELL)
 			reprocess = handle_in_cell(treebuilder, token);
 			break;
-		hack(IN_SELECT)
+		mode(IN_SELECT)
 			reprocess = handle_in_select(treebuilder, token);
 			break;
-		hack(IN_SELECT_IN_TABLE)
+		mode(IN_SELECT_IN_TABLE)
 			reprocess = handle_in_select_in_table(treebuilder, token);
 			break;
-		hack(IN_FOREIGN_CONTENT)
+		mode(IN_FOREIGN_CONTENT)
 			reprocess = handle_in_foreign_content(treebuilder, token);
 			break;
-		hack(AFTER_BODY)
+		mode(AFTER_BODY)
 			reprocess = handle_after_body(treebuilder, token);
 			break;
-		hack(IN_FRAMESET)
+		mode(IN_FRAMESET)
 			reprocess = handle_in_frameset(treebuilder, token);
 			break;
-		hack(AFTER_FRAMESET)
+		mode(AFTER_FRAMESET)
 			reprocess = handle_after_frameset(treebuilder, token);
 			break;
-		hack(AFTER_AFTER_BODY)
+		mode(AFTER_AFTER_BODY)
 			reprocess = handle_after_after_body(treebuilder, token);
 			break;
-		hack(AFTER_AFTER_FRAMESET)
+		mode(AFTER_AFTER_FRAMESET)
 			reprocess = handle_after_after_frameset(treebuilder, token);
 			break;
-		hack(GENERIC_RCDATA)
+		mode(GENERIC_RCDATA)
 			reprocess = handle_generic_rcdata(treebuilder, token);
 			break;
-		hack(SCRIPT_COLLECT_CHARACTERS)
+		mode(SCRIPT_COLLECT_CHARACTERS)
 			reprocess = handle_script_collect_characters(
 					treebuilder, token);
 			break;
