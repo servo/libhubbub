@@ -90,7 +90,7 @@ static bool aa_find_furthest_block(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *formatting_element, 
 		uint32_t *furthest_block);
 static void aa_remove_from_parent(hubbub_treebuilder *treebuilder, void *node);
-static void aa_reparent_node(hubbub_treebuilder *treebuilder, void *node, 
+static void *aa_reparent_node(hubbub_treebuilder *treebuilder, void *node, 
 		void *new_parent);
 static void aa_find_bookmark_location_reparenting_misnested(
 		hubbub_treebuilder *treebuilder, 
@@ -1329,16 +1329,42 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 				&bookmark, &last_node);
 
 		/* 8 */
+		void *reparented;
+
 		if (stack[common_ancestor].type == TABLE ||
 				stack[common_ancestor].type == TBODY ||
 				stack[common_ancestor].type == TFOOT ||
 				stack[common_ancestor].type == THEAD ||
 				stack[common_ancestor].type == TR) {
-			aa_insert_into_foster_parent(treebuilder,
+			reparented = aa_insert_into_foster_parent(treebuilder,
 					stack[last_node].node);
 		} else {
-			aa_reparent_node(treebuilder, stack[last_node].node,
+			reparented = aa_reparent_node(treebuilder, 
+					stack[last_node].node,
 					stack[common_ancestor].node);
+		}
+		/* If the reparented node is not the same as the one we were
+		 * previously using, then have it take the place of the other
+		 * one in the formatting list and stack. */
+		if (reparented != stack[last_node].node) {
+			for (struct formatting_list_entry *node_entry = 
+				treebuilder->context.formatting_list_end;
+					node_entry != NULL; 
+					node_entry = node_entry->prev) {
+				if (node_entry->stack_index == last_node) {
+					treebuilder->tree_handler->ref_node(
+						treebuilder->tree_handler->ctx,
+						reparented);
+					node_entry->details.node = reparented;
+					treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						stack[last_node].node);
+					break;
+				}
+			}
+			/* Already have enough references, so don't need to 
+			 * explicitly reference it here. */
+			stack[last_node].node = reparented;
 		}
 
 		/* 9 */
@@ -1360,6 +1386,18 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 				treebuilder->tree_handler->ctx,
 				stack[furthest_block].node, fe_clone,
 				&clone_appended);
+
+		if (clone_appended != fe_clone) {
+			/* No longer interested in fe_clone */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx, 
+					fe_clone);
+			/* Need an extra reference, as we'll insert into the 
+			 * formatting list and element stack */
+			treebuilder->tree_handler->ref_node(
+					treebuilder->tree_handler->ctx,
+					clone_appended);
+		}
 
 		/* 12 and 13 are reversed here so that we know the correct
 		 * stack index to use when inserting into the formatting list */
@@ -1389,7 +1427,7 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 
 		formatting_list_insert(treebuilder,
 				bookmark.prev, bookmark.next,
-				otype, fe_clone, furthest_block + 1);
+				otype, clone_appended, furthest_block + 1);
 
 		/* 14 */
 	}
@@ -1565,8 +1603,9 @@ void aa_remove_from_parent(hubbub_treebuilder *treebuilder, void *node)
  * \param treebuilder  The treebuilder instance
  * \param node         The node to reparent
  * \param new_parent   The new parent
+ * \return Pointer to reparented node
  */
-void aa_reparent_node(hubbub_treebuilder *treebuilder, void *node,
+void *aa_reparent_node(hubbub_treebuilder *treebuilder, void *node,
 		void *new_parent)
 {
 	void *appended;
@@ -1577,7 +1616,9 @@ void aa_reparent_node(hubbub_treebuilder *treebuilder, void *node,
 			new_parent, node, &appended);
 
 	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
-			appended);
+			node);
+
+	return appended;
 }
 
 /**
@@ -1652,8 +1693,31 @@ void aa_find_bookmark_location_reparenting_misnested(
 		}
 
 		/* vi */
-		aa_reparent_node(treebuilder,
+		void *reparented = aa_reparent_node(treebuilder,
 				stack[last].node, stack[node].node);
+		/* If the reparented node is not the same as the one we were
+		 * previously using, then have it take the place of the other
+		 * one in the formatting list and stack. */
+		if (reparented != stack[last].node) {
+			for (node_entry = 
+				treebuilder->context.formatting_list_end;
+					node_entry != NULL; 
+					node_entry = node_entry->prev) {
+				if (node_entry->stack_index == last) {
+					treebuilder->tree_handler->ref_node(
+						treebuilder->tree_handler->ctx,
+						reparented);
+					node_entry->details.node = reparented;
+					treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						stack[last].node);
+					break;
+				}
+			}
+			/* Already have enough references, so don't need to 
+			 * explicitly reference it here. */
+			stack[last].node = reparented;
+		}
 
 		/* vii */
 		last = node;
@@ -1753,8 +1817,9 @@ void aa_clone_and_replace_entries(hubbub_treebuilder *treebuilder,
  *
  * \param treebuilder  The treebuilder instance
  * \param node         The node to insert
+ * \return Pointer to inserted node
  */
-void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
+void *aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 {
 	element_context *stack = treebuilder->context.element_stack;
 	void *foster_parent = NULL;
@@ -1804,10 +1869,12 @@ void aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 	}
 
 	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
-			inserted);
+			node);
 
 	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
 			foster_parent);
+
+	return inserted;
 }
 
 

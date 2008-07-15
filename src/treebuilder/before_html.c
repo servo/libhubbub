@@ -104,20 +104,20 @@ bool handle_before_html(hubbub_treebuilder *treebuilder,
 					html);
 		}
 
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				html);
+
 		/* We can't use element_stack_push() here, as it 
 		 * assumes that current_node is pointing at the index 
 		 * before the one to insert at. For the first entry in 
 		 * the stack, this does not hold so we must insert
 		 * manually. */
 		treebuilder->context.element_stack[0].type = HTML;
-		treebuilder->context.element_stack[0].node = html;
+		treebuilder->context.element_stack[0].node = appended;
 		treebuilder->context.current_node = 0;
 
 		/** \todo cache selection algorithm */
-
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx,
-				appended);
 
 		treebuilder->context.mode = BEFORE_HEAD;
 	}

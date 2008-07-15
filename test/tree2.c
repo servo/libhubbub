@@ -1,7 +1,5 @@
 /*
  * Tree construction tester.
- * Leaks a fair bit of memory, because it doesn't make use of reference
- * counting.
  */
 
 #define _GNU_SOURCE
@@ -54,6 +52,8 @@ struct node_t {
 
 	node_t *child;
 	node_t *parent;
+
+	uint32_t refcnt;
 };
 
 struct buf_t {
@@ -97,6 +97,9 @@ static int form_associate(void *ctx, void *form, void *node);
 static int add_attributes(void *ctx, void *node,
 		const hubbub_attribute *attributes, uint32_t n_attributes);
 static int set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
+
+static void delete_node(node_t *node);
+static void delete_attr(attr_t *attr);
 
 static hubbub_tree_handler tree_handler = {
 	create_comment,
@@ -264,6 +267,11 @@ int main(int argc, char **argv)
 			buf_clear(&expected);
 
 			hubbub_parser_destroy(parser);
+			while (Document) {
+				node_t *victim = Document;
+				Document = victim->next;
+				delete_node(victim);
+			}
 			Document = NULL;
 
 			state = EXPECT_DATA;
@@ -334,7 +342,21 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (Document != NULL) {
+		hubbub_parser_destroy(parser);
+		while (Document) {
+			node_t *victim = Document;
+			Document = victim->next;
+			delete_node(victim);
+		}
+	}
+
 	printf("%s\n", passed ? "PASS" : "FAIL");
+
+	fclose(fp);
+
+	free(got.buf);
+	free(expected.buf);
 
 	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
 
@@ -351,6 +373,7 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 	node->type = COMMENT;
 	node->data.content = strndup((char *)ptr_from_hubbub_string(data),
 			data->len);
+	node->refcnt = 1;
 
 	*result = node;
 
@@ -379,6 +402,7 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 					&doctype->system_id),
 				doctype->system_id.len);
 	}
+	node->refcnt = 1;
 
 	*result = node;
 
@@ -416,6 +440,7 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 						&tag->attributes[i].value),
 				tag->attributes[i].value.len);
 	}
+	node->refcnt = 1;
 
 	*result = node;
 
@@ -429,6 +454,7 @@ int create_text(void *ctx, const hubbub_string *data, void **result)
 	node->type = CHARACTER;
 	node->data.content = strndup((char *)ptr_from_hubbub_string(data),
 			data->len);
+	node->refcnt = 1;
 
 	*result = node;
 
@@ -437,11 +463,30 @@ int create_text(void *ctx, const hubbub_string *data, void **result)
 
 int ref_node(void *ctx, void *node)
 {
+	node_t *n = node;
+
+	if (node != (void *) 1)
+		n->refcnt++;
+
 	return 0;
 }
 
 int unref_node(void *ctx, void *node)
 {
+	node_t *n = node;
+
+	if (n != (void *) 1) {
+		assert(n->refcnt > 0);
+
+		n->refcnt--;
+
+		printf("Unreferencing node %p (%d)\n", node, n->refcnt);
+
+		if (n->refcnt == 0 && n->parent == NULL) {
+			delete_node(n);
+		}
+	}
+
 	return 0;
 }
 
@@ -452,7 +497,6 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 
 	node_t *insert = NULL;
 
-	tchild->parent = tparent;
 	tchild->next = tchild->prev = NULL;
 
 #ifndef NDEBUG
@@ -495,6 +539,11 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 			tchild->prev = insert;
 		}
 	}
+
+	if (*result == child)
+		tchild->parent = tparent;
+
+	ref_node(ctx, *result);
 
 	return 0;
 }
@@ -542,6 +591,8 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 		*result = child;
 	}
 
+	ref_node(ctx, *result);
+
 	return 0;
 }
 
@@ -552,6 +603,8 @@ int remove_child(void *ctx, void *parent, void *child, void **result)
 
 	assert(tparent->child);
 	assert(tchild->parent == tparent);
+
+	printf("Removing child %p\n", child);
 
 	if (tchild->parent->child == tchild) {
 		tchild->parent->child = tchild->next;
@@ -568,6 +621,8 @@ int remove_child(void *ctx, void *parent, void *child, void **result)
 
 	*result = child;
 
+	ref_node(ctx, *result);
+
 	return 0;
 }
 
@@ -576,32 +631,73 @@ int clone_node(void *ctx, void *node, bool deep, void **result)
 	node_t *old_node = node;
 	node_t *new_node = calloc(1, sizeof *new_node);
 
-	*new_node = *old_node;
+	new_node->type = old_node->type;
+
+	switch (old_node->type) {
+	case DOCTYPE:
+		new_node->data.doctype.name = 
+				strdup(old_node->data.doctype.name);
+		if (old_node->data.doctype.public_id)
+			new_node->data.doctype.public_id = 
+				strdup(old_node->data.doctype.public_id);
+		if (old_node->data.doctype.system_id)
+			new_node->data.doctype.system_id =
+				strdup(old_node->data.doctype.system_id);
+		break;
+	case COMMENT:
+	case CHARACTER:
+		new_node->data.content = strdup(old_node->data.content);
+		break;
+	case ELEMENT:
+		new_node->data.element.ns = old_node->data.element.ns;
+		new_node->data.element.name = 
+				strdup(old_node->data.element.name);
+		new_node->data.element.attrs = 
+				calloc(old_node->data.element.n_attrs, 
+					sizeof *new_node->data.element.attrs);
+		for (size_t i = 0; i < old_node->data.element.n_attrs; i++) {
+			attr_t *attr = &new_node->data.element.attrs[i];
+
+			attr->ns = old_node->data.element.attrs[i].ns;
+			attr->name = 
+				strdup(old_node->data.element.attrs[i].name);
+			attr->value =
+				strdup(old_node->data.element.attrs[i].value);
+		}
+		new_node->data.element.n_attrs = old_node->data.element.n_attrs;
+		break;
+	}
+
 	*result = new_node;
 
 	new_node->child = new_node->parent =
 			new_node->next = new_node->prev =
 			NULL;
 
+	new_node->refcnt = 1;
+
 	if (deep == false)
 		return 0;
 
-	if (old_node->next) {
-		void *n;
+	node_t *last = NULL;
 
-		clone_node(ctx, old_node->next, true, &n);
+	for (node_t *child = old_node->child; child != NULL; 
+			child = child->next) {
+		node_t *n;
 
-		new_node->next = n;
-		new_node->next->prev = new_node;
-	}
+		clone_node(ctx, child, true, (void **) &n);
 
-	if (old_node->child) {
-		void *n;
+		n->refcnt = 0;
 
-		clone_node(ctx, old_node->child, true, &n);
+		if (last == NULL) {
+			new_node->child = n;
+		} else {
+			last->next = n;
+			n->prev = last;
+		}
 
-		new_node->child = n;
-		new_node->child->parent = new_node;
+		n->parent = new_node;
+		last = n;
 	}
 
 	return 0;
@@ -644,6 +740,9 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 int get_parent(void *ctx, void *node, bool element_only, void **result)
 {
 	*result = ((node_t *)node)->parent;
+
+	if (*result != NULL)
+		ref_node(ctx, *result);
 
 	return 0;
 }
@@ -781,6 +880,9 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 		buf_add(buf, node->data.content);
 		buf_add(buf, " -->\n");
 		break;
+	default:
+		printf("Unexpected node type %d\n", node->type);
+		assert(0);
 	}
 
 	if (node->child) {
@@ -791,3 +893,57 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 		node_print(buf, node->next, depth);
 	}
 }
+
+static void delete_node(node_t *node)
+{
+	if (node == NULL)
+		return;
+
+	if (node->refcnt != 0) {
+		printf("Node %p has non-zero refcount %d\n", 
+				(void *) node, node->refcnt);
+		assert(0);
+	}
+
+	switch (node->type) {
+	case DOCTYPE:
+		free(node->data.doctype.name);
+		free(node->data.doctype.public_id);
+		free(node->data.doctype.system_id);
+		break;
+	case COMMENT:
+	case CHARACTER:
+		free(node->data.content);
+		break;
+	case ELEMENT:
+		free(node->data.element.name);
+		for (size_t i = 0; i < node->data.element.n_attrs; i++)
+			delete_attr(&node->data.element.attrs[i]);
+		free(node->data.element.attrs);
+		break;
+	}
+
+	node_t *c, *d;
+
+	for (c = node->child; c != NULL; c = d) {
+		d = c->next;
+
+		delete_node(c);
+	}
+
+	memset(node, 0xdf, sizeof(node_t));
+
+	free(node);
+}
+
+static void delete_attr(attr_t *attr)
+{
+	if (attr == NULL)
+		return;
+
+	free(attr->name);
+	free(attr->value);
+
+	memset(attr, 0xdf, sizeof(attr_t));
+}
+

@@ -36,7 +36,7 @@ d              := $(DIR)
 CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
 		`$(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json` \
 		-Wno-unused-parameter
-LDFLAGS := $(LDFLAGS) `$(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json`
+LDFLAGS := $(LDFLAGS) `$(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json` -liconv
 
 # Tests
 TESTS_$(d) := aliases cscodec csdetect dict entities filter hubbub \

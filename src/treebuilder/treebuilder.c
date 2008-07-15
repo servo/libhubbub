@@ -477,7 +477,7 @@ void process_comment_append(hubbub_treebuilder *treebuilder,
 	if (treebuilder->context.in_table_foster &&
 			(type == TABLE || type == TBODY || type == TFOOT ||
 			type == THEAD || type == TR)) {
-		aa_insert_into_foster_parent(treebuilder, comment);
+		appended = aa_insert_into_foster_parent(treebuilder, comment);
 	} else {
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
@@ -490,10 +490,11 @@ void process_comment_append(hubbub_treebuilder *treebuilder,
 		}
 
 		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, appended);
-		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, comment);
 	}
+
+	treebuilder->tree_handler->unref_node(
+			treebuilder->tree_handler->ctx, appended);
 }
 
 /**
@@ -528,7 +529,9 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 	}
 
 	if (treebuilder->context.in_table_foster) {
-		aa_insert_into_foster_parent(treebuilder, node);
+		appended = aa_insert_into_foster_parent(treebuilder, node);
+		treebuilder->tree_handler->ref_node(
+				treebuilder->tree_handler->ctx, appended);
 	} else {
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
@@ -541,7 +544,19 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 					treebuilder->tree_handler->ctx,
 					node);
 		}
+		if (appended != node) {
+			/* Transfer the reference we have on node to appended.
+			 * We're no longer interested in node */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					node);
+			treebuilder->tree_handler->ref_node(
+					treebuilder->tree_handler->ctx,
+					appended);
+		}
 	}
+
+	/* Appended node's reference count is 2 */
 
 	params.content_model.model = rcdata ? HUBBUB_CONTENT_MODEL_RCDATA 
 					    : HUBBUB_CONTENT_MODEL_CDATA;
@@ -550,13 +565,12 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 
 	treebuilder->context.collect.mode = treebuilder->context.mode;
 	treebuilder->context.collect.type = type;
-	treebuilder->context.collect.node = node;
+	treebuilder->context.collect.node = appended;
 	treebuilder->context.collect.string.data.off = 0;
 	treebuilder->context.collect.string.len = 0;
 
 	treebuilder->tree_handler->unref_node(
-			treebuilder->tree_handler->ctx,
-			appended);
+			treebuilder->tree_handler->ctx, appended);
 
 	treebuilder->context.mode = GENERIC_RCDATA;
 }
@@ -659,14 +673,19 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 					type == TR);
 
 		if (foster) {
-			aa_insert_into_foster_parent(treebuilder, clone);
+			appended = aa_insert_into_foster_parent(treebuilder, 
+					clone);
+			treebuilder->tree_handler->ref_node(
+					treebuilder->tree_handler->ctx,
+					appended);
 		} else {
 			success = treebuilder->tree_handler->append_child(
 					treebuilder->tree_handler->ctx,
 					treebuilder->context.element_stack[
-						treebuilder->context.current_node].node,
+					treebuilder->context.current_node].node,
 					clone,
 					&appended);
+
 			if (success != 0) {
 				/** \todo handle errors */
 				treebuilder->tree_handler->unref_node(
@@ -674,30 +693,40 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 						clone);
 				return;
 			}
+
+			if (appended != clone) {
+				/* Transfer the reference we hold on clone to
+				 * appended. We're no longer interested in 
+				 * clone.*/
+				treebuilder->tree_handler->unref_node(
+						treebuilder->tree_handler->ctx,
+						clone);
+				treebuilder->tree_handler->ref_node(
+						treebuilder->tree_handler->ctx,
+						appended);
+			}
 		}
+
+		/* At this point, appended's reference count will be 2 */
 
 		if (!element_stack_push(treebuilder,
 				entry->details.ns, entry->details.type,
-				clone)) {
+				appended)) {
 			/** \todo handle memory exhaustion */
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
-					clone);
-			if (foster)
-				treebuilder->tree_handler->unref_node(
-						treebuilder->tree_handler->ctx,
-						appended);
+					appended);
 		}
 
 		if (!formatting_list_replace(treebuilder, entry,
-				entry->details.type, clone,
+				entry->details.type, appended,
 				treebuilder->context.current_node,
 				&prev_type, &prev_node,
 				&prev_stack_index)) {
 			/** \todo handle errors */
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
-					clone);
+					appended);
 		}
 
 		treebuilder->tree_handler->unref_node(
@@ -761,7 +790,7 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 	if (treebuilder->context.in_table_foster &&
 			(type == TABLE || type == TBODY || type == TFOOT ||
 			type == THEAD || type == TR)) {
-		aa_insert_into_foster_parent(treebuilder, node);
+		appended = aa_insert_into_foster_parent(treebuilder, node);
 	} else {
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
@@ -773,13 +802,13 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 		}
 
 		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, appended);
+				treebuilder->tree_handler->ctx, node);
 	}
 
 	if (!element_stack_push(treebuilder,
 			tag->ns,
 			element_type_from_name(treebuilder, &tag->name),
-			node)) {
+			appended)) {
 		/** \todo errors */
 	}
 }
@@ -806,7 +835,7 @@ void insert_element_no_push(hubbub_treebuilder *treebuilder,
 	if (treebuilder->context.in_table_foster &&
 			(type == TABLE || type == TBODY || type == TFOOT ||
 			type == THEAD || type == TR)) {
-		aa_insert_into_foster_parent(treebuilder, node);
+		appended = aa_insert_into_foster_parent(treebuilder, node);
 	} else {
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
@@ -818,10 +847,11 @@ void insert_element_no_push(hubbub_treebuilder *treebuilder,
 		}
 
 		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, appended);
-		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, node);
 	}
+
+	treebuilder->tree_handler->unref_node(
+			treebuilder->tree_handler->ctx, appended);
 }
 
 /**
@@ -950,7 +980,7 @@ void append_text(hubbub_treebuilder *treebuilder,
 	if (treebuilder->context.in_table_foster &&
 			(type == TABLE || type == TBODY || type == TFOOT ||
 			type == THEAD || type == TR)) {
-		aa_insert_into_foster_parent(treebuilder, text);
+		appended = aa_insert_into_foster_parent(treebuilder, text);
 	} else {
 		success = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
@@ -959,16 +989,14 @@ void append_text(hubbub_treebuilder *treebuilder,
 						text, &appended);
 		if (success != 0) {
 			/** \todo errors */
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					text);
 		}
 
 		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, appended);
-		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, text);
 	}
+
+	treebuilder->tree_handler->unref_node(
+			treebuilder->tree_handler->ctx, appended);
 }
 
 /**

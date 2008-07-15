@@ -266,6 +266,11 @@ bool handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 					doctype);
 		}
 
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, doctype);
+
 		const hubbub_doctype *cdoc = &token->data.doctype;
 
 		/* Work out whether we need quirks mode or not */
@@ -279,11 +284,6 @@ bool handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 					treebuilder->tree_handler->ctx,
 					HUBBUB_QUIRKS_MODE_LIMITED);
 		}
-
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, appended);
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, doctype);
 
 		treebuilder->context.mode = BEFORE_HTML;
 	}

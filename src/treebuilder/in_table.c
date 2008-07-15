@@ -116,6 +116,10 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 
 		if (type == CAPTION) {
 			clear_stack_table_context(treebuilder);
+			treebuilder->tree_handler->ref_node(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node);
 			formatting_list_append(treebuilder, type,
 					treebuilder->context.element_stack[
 					treebuilder->context.current_node].node,
