@@ -14,6 +14,14 @@ Types
   -------------
 
 
+Reference counting
+------------------
+
+  The callback interface provides hooks to allow tree nodes to be reference 
+  counted.  There is, however, no requirement that the client actually performs
+  reference counting.  It is perfectly acceptable to use some other object use
+  tracking scheme (e.g. garbage collection).  The descriptions below describe
+  the expected reference counting behaviour, regardless.
 
 
 Callback behaviour
@@ -46,8 +54,8 @@ Callback behaviour
   |                             void **result);
   
   All node creation functions must create a node with the information passed
-  in their second argument, and place a pointer to that node in *result.  They
-  must also ref the node returned.
+  in their second argument, and place a pointer to that node in *result.  The
+  reference count of the created node must be set to 1.
   
   
   | int hubbub_tree_clone_node(void *ctx,
@@ -56,13 +64,14 @@ Callback behaviour
   |                            void **result);
   
   If deep == false, then this function must duplicate "node" and none of its
-  children, and place a pointer to that node in *result.  It must also ref the
-  node created.  This node must be isolated from the document tree (it must
-  have no parent or sibling nodes).
+  children, and place a pointer to the clone in *result.  It must also set the
+  reference count of the clone to 1.  The clone must be isolated from the 
+  document tree (it must have no parent or sibling nodes).
   
   If deep == true, then this function must duplicate "node" and all of its
-  children.  A pointer to the clone of "node" must be placed in *result.  This
-  node and this node only must be ref'd.  This node must also be isolated from
+  children.  A pointer to the clone of "node" must be placed in *result.  The
+  reference count of the clone must be set to 1.  The reference count of all
+  other created nodes must be set to 0. The clone must also be isolated from
   the document tree (it must have no parent or sibling nodes).
   
   
@@ -73,7 +82,10 @@ Callback behaviour
   | int hubbub_tree_ref_node(void *ctx, void *node);
   | int hubbub_tree_unref_node(void *ctx, void *node);
   
-  
+  These functions should increase and decrease the reference count of "node",
+  respectively.  If the reference count of "node" falls to zero, and it is
+  isolated from the document tree (it has no parent or sibling nodes), then
+  it must be destroyed. 
   
   
   
@@ -93,8 +105,8 @@ Callback behaviour
   also a text node, then instead the text of "child" must be appended to that
   node, and a pointer to the node thus appended to must be placed in *result.
   
-  In any case, the refcount of the node pointed to by *result at the end of
-  these steps must be incremented.
+  In any case, the reference count of the node pointed to by *result at the end
+  of these steps must be incremented.
   
   
   | int hubbub_tree_insert_before(void *ctx,
@@ -111,10 +123,10 @@ Callback behaviour
   before "ref_child" is also a text node, then instead the text of "child" must
   be prepended to the text of "ref_child", or appended to the text of node
   before "ref_node", and a pointer to the node thus appended to must be placed
-  in *result*
+  in *result.
   
-  In any case, the refcount of the node pointed to by *result at the end of
-  these steps must be incremented.
+  In any case, the reference count of the node pointed to by *result at the end
+  of these steps must be incremented.
   
   
   | int hubbub_tree_remove_child(void *ctx,
@@ -130,32 +142,49 @@ Callback behaviour
   | int hubbub_tree_reparent_children(void *ctx,
   |                                   void *node,
   |                                   void *new_parent);
-  
+
+  This function must detach all children from "node" and insert them into 
+  "new_parent" in the same order as they were found in "node".
   
   | int hubbub_tree_get_parent(void *ctx,
   |                            void *node,
   |                            bool element_only,
   |                            void **result);
   
-  
+  This function must retrieve the parent of "node".  If there is no parent 
+  node, then NULL must be placed in *result.  Otherwise, it must increment 
+  the reference count of the parent, and place a pointer to the parent in 
+  *result.
+
+  If "element_only" == true and the retrieved parent is not an element node,
+  then act as if no parent exists. 
+
   | int hubbub_tree_has_children(void *ctx,
   |                              void *node,
   |                              bool *result);
-  
+
+  If "node" has any child nodes attached to it, then *result must be set to 
+  true.  Otherwise, *result must be set to false.  
+ 
   | int hubbub_tree_form_associate(void *ctx,
   |                                void *form,
   |                                void *node);
-  
+
+  This function must associate "node" with the node "form" (which is the 
+  currently active form element). 
+
   | int hubbub_tree_add_attributes(void *ctx,
   |                                void *node,
   |                                const hubbub_attribute *attributes,
   |                                uint32_t n_attributes);
-  
-  
+ 
+  For each attribute in the array "attributes", this function must check to
+  see if there is such an attribute already present on "node".  If there is
+  not such an attribute, then the attribute must be added to "node". 
   
   | int hubbub_tree_set_quirks_mode(void *ctx,
   |                                 hubbub_quirks_mode mode);
 
-
+  This function must set the quirks mode flag of the document to "mode".
 
 
