@@ -108,6 +108,8 @@ int main(int argc, char **argv)
 		run_test(&ctx);
 	}
 
+	json_object_put(json);
+
 	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
 
 	printf("PASS\n");
