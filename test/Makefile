@@ -38,6 +38,11 @@ CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
 		-Wno-unused-parameter
 LDFLAGS := $(LDFLAGS) `$(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json`
 
+ifdef PROFILE
+	CFLAGS := $(CFLAGS) -pg -fno-omit-frame-pointer
+	LDFLAGS := $(LDFLAGS) -pg
+endif
+
 # Tests
 TESTS_$(d) := csdetect dict entities hubbub parser \
 	tokeniser tokeniser2 tokeniser3 tree tree2

@@ -2744,7 +2744,7 @@ bool hubbub_tokeniser_handle_cdata_block(hubbub_tokeniser *tokeniser)
 				&len);
 
 		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
-			break;
+			return false;
 		}
 
 		if (tokeniser->context.chars.len > 0) {
