@@ -32,7 +32,8 @@ dirstack_$(sp) := $(d)
 d              := $(DIR)
 
 # Manipulate include paths
-CFLAGS := $(CFLAGS) -I$(d)
+CFLAGS := $(CFLAGS) -I$(d) `pkg-config libparserutils --cflags`
+LDFLAGS := $(LDFLAGS) `pkg-config libparserutils --libs`
 
 # Sources
 SRCS_$(d) := hubbub.c parser.c

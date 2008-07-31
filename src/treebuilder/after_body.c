@@ -31,9 +31,7 @@ bool handle_after_body(hubbub_treebuilder *treebuilder,
 	{
 		/* mostly cribbed from process_characters_expect_whitespace */
 
-		const uint8_t *data = treebuilder->input_buffer +
-				token->data.character.data.off;
-
+		const uint8_t *data = token->data.character.ptr;
 		size_t len = token->data.character.len;
 		size_t c;
 
@@ -57,7 +55,7 @@ bool handle_after_body(hubbub_treebuilder *treebuilder,
 		/* Anything else, switch to in body */
 		if (c != len) {
 			/* Update token data to strip leading whitespace */
-			((hubbub_token *) token)->data.character.data.off += c;
+			((hubbub_token *) token)->data.character.ptr += c;
 			((hubbub_token *) token)->data.character.len -= c;
 
 			treebuilder->context.mode = IN_BODY;

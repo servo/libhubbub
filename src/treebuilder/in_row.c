@@ -103,7 +103,8 @@ bool handle_in_row(hubbub_treebuilder *treebuilder,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 
-			formatting_list_append(treebuilder, type,
+			formatting_list_append(treebuilder, 
+					token->data.tag.ns, type,
 					treebuilder->context.element_stack[
 					treebuilder->context.current_node].node,
 					treebuilder->context.current_node);

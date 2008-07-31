@@ -120,15 +120,13 @@ static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
 {
 	size_t i;
 
-	const uint8_t *name = treebuilder->input_buffer + cdoc->name.data.off;
+	const uint8_t *name = cdoc->name.ptr;
 	size_t name_len = cdoc->name.len;
 
-	const uint8_t *public_id = treebuilder->input_buffer +
-			cdoc->public_id.data.off;
+	const uint8_t *public_id = cdoc->public_id.ptr;
 	size_t public_id_len = cdoc->public_id.len;
 
-	const uint8_t *system_id = treebuilder->input_buffer +
-			cdoc->system_id.data.off;
+	const uint8_t *system_id = cdoc->system_id.ptr;
 	size_t system_id_len = cdoc->system_id.len;
 
 #define S(s)	(uint8_t *) s, sizeof s
@@ -183,8 +181,7 @@ static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
 static bool lookup_limited_quirks(hubbub_treebuilder *treebuilder,
 		const hubbub_doctype *cdoc)
 {
-	const uint8_t *public_id = treebuilder->input_buffer +
-			cdoc->public_id.data.off;
+	const uint8_t *public_id = cdoc->public_id.ptr;
 	size_t public_id_len = cdoc->public_id.len;
 
 #define S(s)	(uint8_t *) s, sizeof s

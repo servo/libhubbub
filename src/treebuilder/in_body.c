@@ -185,12 +185,11 @@ void process_character(hubbub_treebuilder *treebuilder,
 	reconstruct_active_formatting_list(treebuilder);
 
 	if (treebuilder->context.strip_leading_lr) {
-		const uint8_t *str =
-				treebuilder->input_buffer + dummy.data.off;
+		const uint8_t *str = dummy.ptr;
 
 		/** \todo UTF-16 */
 		if (*str == '\n') {
-			dummy.data.off++;
+			dummy.ptr++;
 			dummy.len--;
 		}
 
@@ -627,12 +626,13 @@ void process_a_in_body(hubbub_treebuilder *treebuilder,
 
 		/* Remove from formatting list, if it's still there */
 		if (entry2 == entry && entry2->details.node == node) {
+			hubbub_ns ons;
 			element_type otype;
 			void *onode;
 			uint32_t oindex;
 
 			formatting_list_remove(treebuilder, entry,
-					&otype, &onode, &oindex);
+					&ons, &otype, &onode, &oindex);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx, onode);
@@ -657,7 +657,7 @@ void process_a_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node);
 
-	formatting_list_append(treebuilder, A, 
+	formatting_list_append(treebuilder, token->data.tag.ns, A, 
 		treebuilder->context.element_stack[
 			treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
@@ -682,7 +682,7 @@ void process_presentational_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node);
 
-	formatting_list_append(treebuilder, type, 
+	formatting_list_append(treebuilder, token->data.tag.ns, type, 
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
@@ -716,7 +716,7 @@ void process_nobr_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node);
 
-	formatting_list_append(treebuilder, NOBR, 
+	formatting_list_append(treebuilder, token->data.tag.ns, NOBR, 
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
@@ -756,7 +756,7 @@ void process_button_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node);
 
-	formatting_list_append(treebuilder, BUTTON, 
+	formatting_list_append(treebuilder, token->data.tag.ns, BUTTON, 
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node,
 		treebuilder->context.current_node);
@@ -781,7 +781,7 @@ void process_applet_marquee_object_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node);
 
-	formatting_list_append(treebuilder, type, 
+	formatting_list_append(treebuilder, token->data.tag.ns, type, 
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
@@ -816,8 +816,7 @@ void process_image_in_body(hubbub_treebuilder *treebuilder,
 
 	/** \todo UTF-16 */
 	tag.ns = HUBBUB_NS_HTML;
-	tag.name.type = HUBBUB_STRING_PTR;
-	tag.name.data.ptr = (const uint8_t *) "img";
+	tag.name.ptr = (const uint8_t *) "img";
 	tag.name.len = SLEN("img");
 
 	tag.n_attributes = token->data.tag.n_attributes;
@@ -883,7 +882,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 
 	/* First up, clone the token's attributes */
 	if (token->data.tag.n_attributes > 0) {
-		attrs = treebuilder->alloc(NULL, 
+		attrs = treebuilder->alloc(NULL,
 				(token->data.tag.n_attributes + 1) *
 						sizeof(hubbub_attribute),
 		       		treebuilder->alloc_pw);
@@ -894,12 +893,11 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 
 		for (uint32_t i = 0; i < token->data.tag.n_attributes; i++) {
 			hubbub_attribute *attr = &token->data.tag.attributes[i];
-			const uint8_t *name = treebuilder->input_buffer + 
-					attr->name.data.off;
+			const uint8_t *name = attr->name.ptr;
 
-			if (strncmp((const char *) name, "action", 
+			if (strncmp((const char *) name, "action",
 					attr->name.len) == 0) {
-				action = attr;	
+				action = attr;
 			} else if (strncmp((const char *) name, "prompt",
 					attr->name.len) == 0) {
 				prompt = attr;
@@ -911,11 +909,9 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 		}
 
 		attrs[n_attrs].ns = HUBBUB_NS_HTML;
-		attrs[n_attrs].name.type = HUBBUB_STRING_PTR;
-		attrs[n_attrs].name.data.ptr = (const uint8_t *) "name";
+		attrs[n_attrs].name.ptr = (const uint8_t *) "name";
 		attrs[n_attrs].name.len = SLEN("name");
-		attrs[n_attrs].value.type = HUBBUB_STRING_PTR;
-		attrs[n_attrs].value.data.ptr = (const uint8_t *) "isindex";
+		attrs[n_attrs].value.ptr = (const uint8_t *) "isindex";
 		attrs[n_attrs].value.len = SLEN("isindex");
 		n_attrs++;
 	}
@@ -925,10 +921,9 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	/* Set up dummy as a start tag token */
 	dummy.type = HUBBUB_TOKEN_START_TAG;
 	dummy.data.tag.ns = HUBBUB_NS_HTML;
-	dummy.data.tag.name.type = HUBBUB_STRING_PTR;
 
 	/* Act as if <form> were seen */
-	dummy.data.tag.name.data.ptr = (const uint8_t *) "form";
+	dummy.data.tag.name.ptr = (const uint8_t *) "form";
 	dummy.data.tag.name.len = SLEN("form");
 
 	dummy.data.tag.n_attributes = action != NULL ? 1 : 0;
@@ -937,7 +932,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	process_form_in_body(treebuilder, &dummy);
 
 	/* Act as if <hr> were seen */
-	dummy.data.tag.name.data.ptr = (const uint8_t *) "hr";
+	dummy.data.tag.name.ptr = (const uint8_t *) "hr";
 	dummy.data.tag.name.len = SLEN("hr");
 	dummy.data.tag.n_attributes = 0;
 	dummy.data.tag.attributes = NULL;
@@ -945,7 +940,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	process_hr_in_body(treebuilder, &dummy);
 
 	/* Act as if <p> were seen */
-	dummy.data.tag.name.data.ptr = (const uint8_t *) "p";
+	dummy.data.tag.name.ptr = (const uint8_t *) "p";
 	dummy.data.tag.name.len = SLEN("p");
 	dummy.data.tag.n_attributes = 0;
 	dummy.data.tag.attributes = NULL;
@@ -953,7 +948,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	process_container_in_body(treebuilder, &dummy);
 
 	/* Act as if <label> were seen */
-	dummy.data.tag.name.data.ptr = (const uint8_t *) "label";
+	dummy.data.tag.name.ptr = (const uint8_t *) "label";
 	dummy.data.tag.name.len = SLEN("label");
 	dummy.data.tag.n_attributes = 0;
 	dummy.data.tag.attributes = NULL;
@@ -967,8 +962,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	} else {
 		/** \todo Localisation */
 #define PROMPT "This is a searchable index. Insert your search keywords here: "
-		dummy.data.character.type = HUBBUB_STRING_PTR;
-		dummy.data.character.data.ptr = (const uint8_t *) PROMPT;
+		dummy.data.character.ptr = (const uint8_t *) PROMPT;
 		dummy.data.character.len = SLEN(PROMPT);
 #undef PROMPT
 	}
@@ -977,8 +971,8 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 
 	/* Act as if <input> was seen */
 	dummy.type = HUBBUB_TOKEN_START_TAG;
-	dummy.data.tag.name.type = HUBBUB_STRING_PTR;
-	dummy.data.tag.name.data.ptr = (const uint8_t *) "input";
+	dummy.data.tag.ns = HUBBUB_NS_HTML;
+	dummy.data.tag.name.ptr = (const uint8_t *) "input";
 	dummy.data.tag.name.len = SLEN("input");
 
 	dummy.data.tag.n_attributes = n_attrs;
@@ -993,7 +987,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	process_0p_in_body(treebuilder);
 
 	/* Act as if <hr> was seen */
-	dummy.data.tag.name.data.ptr = (const uint8_t *) "hr";
+	dummy.data.tag.name.ptr = (const uint8_t *) "hr";
 	dummy.data.tag.name.len = SLEN("hr");
 	dummy.data.tag.n_attributes = 0;
 	dummy.data.tag.attributes = NULL;
@@ -1171,9 +1165,8 @@ void process_0p_in_body(hubbub_treebuilder *treebuilder)
 
 		dummy.type = HUBBUB_TOKEN_START_TAG;
 		dummy.data.tag.ns = HUBBUB_NS_HTML;
-		dummy.data.tag.name.type = HUBBUB_STRING_PTR;
 		/** \todo UTF-16 */
-		dummy.data.tag.name.data.ptr = (const uint8_t *) "p";
+		dummy.data.tag.name.ptr = (const uint8_t *) "p";
 		dummy.data.tag.name.len = SLEN("p");
 		dummy.data.tag.n_attributes = 0;
 		dummy.data.tag.attributes = NULL;
@@ -1415,19 +1408,20 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		stack[furthest_block + 1].node = clone_appended;
 
 		/* 12 */
+		hubbub_ns ons;
 		element_type otype;
 		void *onode;
 		uint32_t oindex;
 
 		formatting_list_remove(treebuilder, entry,
-				&otype, &onode, &oindex);
+				&ons, &otype, &onode, &oindex);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,	onode);
 
 		formatting_list_insert(treebuilder,
 				bookmark.prev, bookmark.next,
-				otype, clone_appended, furthest_block + 1);
+				ons, otype, clone_appended, furthest_block + 1);
 
 		/* 14 */
 	}
@@ -1457,6 +1451,7 @@ bool aa_find_and_validate_formatting_element(hubbub_treebuilder *treebuilder,
 
 	if (entry->stack_index == 0) {
 		/* Not in element stack => remove from formatting list */
+		hubbub_ns ns;
 		element_type type;
 		void *node;
 		uint32_t index;
@@ -1464,7 +1459,7 @@ bool aa_find_and_validate_formatting_element(hubbub_treebuilder *treebuilder,
 		/** \todo parse error */
 
 		if (!formatting_list_remove(treebuilder, entry,
-				&type, &node, &index)) {
+				&ns, &type, &node, &index)) {
 			/** \todo errors */
 		}
 
@@ -1553,7 +1548,7 @@ bool aa_find_furthest_block(hubbub_treebuilder *treebuilder,
 
 		/* Remove the formatting element from the list */
 		if (!formatting_list_remove(treebuilder, formatting_element,
-				&type, &node, &index)) {
+				&ns, &type, &node, &index)) {
 			/* \todo errors */
 		}
 
@@ -1786,6 +1781,7 @@ void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 void aa_clone_and_replace_entries(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *element)
 {
+	hubbub_ns ons;
 	element_type otype;
 	uint32_t oindex;
 	void *clone, *onode;
@@ -1796,8 +1792,9 @@ void aa_clone_and_replace_entries(hubbub_treebuilder *treebuilder,
 
 	/* Replace formatting list entry for node with clone */
 	formatting_list_replace(treebuilder, element,
-			element->details.type, clone, element->stack_index,
-			&otype, &onode, &oindex);
+			element->details.ns, element->details.type, 
+			clone, element->stack_index,
+			&ons, &otype, &onode, &oindex);
 
 	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
 			onode);
@@ -1935,8 +1932,7 @@ void process_0br_in_body(hubbub_treebuilder *treebuilder)
 
 	/** \todo UTF-16 */
 	tag.ns = HUBBUB_NS_HTML;
-	tag.name.type = HUBBUB_STRING_PTR;
-	tag.name.data.ptr = (const uint8_t *) "br";
+	tag.name.ptr = (const uint8_t *) "br";
 	tag.name.len = SLEN("br");
 
 	tag.n_attributes = 0;

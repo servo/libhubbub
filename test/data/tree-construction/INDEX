@@ -17,3 +17,4 @@ tests12.dat		html5lib tests
 after-after-body.dat	Tests "after after body" mode
 after-after-frameset.dat	Tests "after after frameset" mode
 after-body.dat		Tests "after body" mode
+regression.dat		Regression tests

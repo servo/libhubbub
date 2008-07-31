@@ -78,8 +78,7 @@ bool handle_before_head(hubbub_treebuilder *treebuilder,
 		if (reprocess) {
 			/* Manufacture head tag */
 			tag.ns = HUBBUB_NS_HTML;
-			tag.name.type = HUBBUB_STRING_PTR;
-			tag.name.data.ptr = (const uint8_t *) "head";
+			tag.name.ptr = (const uint8_t *) "head";
 			tag.name.len = SLEN("head");
 
 			tag.n_attributes = 0;

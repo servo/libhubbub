@@ -147,16 +147,14 @@ void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
 	for (size_t i = 0; i < tag->n_attributes; i++) {
 		hubbub_attribute *attr = &tag->attributes[i];
 
-		const uint8_t *name = treebuilder->input_buffer +
-				attr->name.data.off;
+		const uint8_t *name = attr->name.ptr;
 		size_t len = attr->name.len;
 
 		for (size_t j = 0; j < N_ELEMENTS(svg_attributes); j++) {
 			if (hubbub_string_match(name, len,
 					(uint8_t *)svg_attributes[j].attr,
 					svg_attributes[j].len)) {
-				attr->name.type = HUBBUB_STRING_PTR;
-				attr->name.data.ptr =
+				attr->name.ptr =
 					(uint8_t *)svg_attributes[j].proper;
 			}
 		}
@@ -172,16 +170,14 @@ void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
 void adjust_svg_tagname(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag)
 {
-	uint8_t *name = (uint8_t *) treebuilder->input_buffer +
-			tag->name.data.off;
+	const uint8_t *name = tag->name.ptr;
 	size_t len = tag->name.len;
 
 	for (size_t i = 0; i < N_ELEMENTS(svg_tagnames); i++) {
 		if (hubbub_string_match(name, len,
 				(uint8_t *)svg_tagnames[i].attr,
 				svg_tagnames[i].len)) {
-			tag->name.type = HUBBUB_STRING_PTR;
-			tag->name.data.ptr =
+			tag->name.ptr =
 				(uint8_t *)svg_tagnames[i].proper;
 		}
 	}
@@ -202,8 +198,7 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 {
 	for (size_t i = 0; i < tag->n_attributes; i++) {
 		hubbub_attribute *attr = &tag->attributes[i];
-		const uint8_t *name = treebuilder->input_buffer +
-				attr->name.data.off;
+		const uint8_t *name = attr->name.ptr;
 
 		/* 10 == strlen("xlink:href") */
 		if (attr->name.len >= 10 &&
@@ -226,7 +221,7 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 					hubbub_string_match(name, len,
 							S("type"))) {
 				attr->ns = HUBBUB_NS_XLINK;
-				attr->name.data.off += 6;
+				attr->name.ptr += 6;
 				attr->name.len -= 6;
 			}
 		/* 8 == strlen("xml:base") */
@@ -241,7 +236,7 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 					hubbub_string_match(name, len,
 							S("space"))) {
 				attr->ns = HUBBUB_NS_XML;
-				attr->name.data.off += 4;
+				attr->name.ptr += 4;
 				attr->name.len -= 4;
 			}
 		} else if (hubbub_string_match(name, attr->name.len,
@@ -249,7 +244,7 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 				hubbub_string_match(name, attr->name.len,
 						S("xmlns:xlink"))) {
 			attr->ns = HUBBUB_NS_XMLNS;
-			attr->name.data.off += 6;
+			attr->name.ptr += 6;
 			attr->name.len -= 6;
 		}
 

@@ -35,20 +35,16 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (treebuilder->context.collect.string.len == 0) {
-			treebuilder->context.collect.string.data.off =
-					token->data.character.data.off;
-		}
-		treebuilder->context.collect.string.len += 
-				token->data.character.len;
+		treebuilder->context.collect.string =
+				token->data.character;
 
 		if (treebuilder->context.strip_leading_lr) {
-			const uint8_t *str = treebuilder->input_buffer + 
-				treebuilder->context.collect.string.data.off;
+			const uint8_t *str =
+				treebuilder->context.collect.string.ptr;
 
 			/** \todo UTF-16 */
 			if (*str == '\n') {
-				treebuilder->context.collect.string.data.off++;
+				treebuilder->context.collect.string.ptr++;
 				treebuilder->context.collect.string.len--;
 			}
 
@@ -79,7 +75,7 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		break;
 	}
 
-	if (done && treebuilder->context.collect.string.len) {
+	if (treebuilder->context.collect.string.len) {
 		int success;
 		void *text, *appended;
 
@@ -107,6 +103,7 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, text);
 
+		treebuilder->context.collect.string.len = 0;
 	}
 
 	if (done) {

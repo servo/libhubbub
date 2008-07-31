@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <parserutils/charset/mibenum.h>
+
 #include <hubbub/hubbub.h>
 
-#include "charset/aliases.h"
 #include "charset/detect.h"
 #include "utils/utils.h"
 
@@ -113,20 +114,21 @@ bool handle_line(const char *data, size_t datalen, void *pw)
 
 void run_test(const uint8_t *data, size_t len, char *expected)
 {
-	uint16_t mibenum;
-	hubbub_charset_source source;
+	uint16_t mibenum = 0;
+	hubbub_charset_source source = HUBBUB_CHARSET_UNKNOWN;
 	static int testnum;
 
-	assert(hubbub_charset_extract(&data, &len,
+	assert(hubbub_charset_extract(data, len,
 			&mibenum, &source) == HUBBUB_OK);
 
 	assert(mibenum != 0);
 
 	printf("%d: Detected charset %s (%d) Source %d Expected %s (%d)\n",
-			++testnum, hubbub_mibenum_to_name(mibenum),
+			++testnum, parserutils_charset_mibenum_to_name(mibenum),
 			mibenum, source, expected,
-			hubbub_mibenum_from_name(expected, strlen(expected)));
+			parserutils_charset_mibenum_from_name(
+					expected, strlen(expected)));
 
-	assert(mibenum ==
-		hubbub_mibenum_from_name(expected, strlen(expected)));
+	assert(mibenum == parserutils_charset_mibenum_from_name(
+			expected, strlen(expected)));
 }

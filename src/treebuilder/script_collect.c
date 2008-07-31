@@ -30,10 +30,10 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
 		if (treebuilder->context.collect.string.len == 0) {
-			treebuilder->context.collect.string.data.off =
-					token->data.character.data.off;
+			treebuilder->context.collect.string.ptr =
+					token->data.character.ptr;
 		}
-		treebuilder->context.collect.string.len += 
+		treebuilder->context.collect.string.len +=
 				token->data.character.len;
 		break;
 	case HUBBUB_TOKEN_END_TAG:

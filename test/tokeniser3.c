@@ -4,18 +4,17 @@
 
 #include <json.h>
 
+#include <parserutils/input/inputstream.h>
+
 #include <hubbub/hubbub.h>
 
 #include "utils/utils.h"
 
-#include "input/inputstream.h"
 #include "tokeniser/tokeniser.h"
 
 #include "testutils.h"
 
 typedef struct context {
-	const uint8_t *pbuffer;
-
 	const uint8_t *input;
 	size_t input_len;
 
@@ -29,7 +28,6 @@ typedef struct context {
 } context;
 
 static void run_test(context *ctx);
-static void buffer_handler(const uint8_t *buffer, size_t len, void *pw);
 static void token_handler(const hubbub_token *token, void *pw);
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
@@ -74,6 +72,7 @@ int main(int argc, char **argv)
 
 		ctx.last_start_tag = NULL;
 		ctx.content_model = NULL;
+		ctx.process_cdata = false;
 
 		/* Extract settings */
 		for (entry = json_object_get_object(test)->head; entry;
@@ -117,7 +116,7 @@ int main(int argc, char **argv)
 
 void run_test(context *ctx)
 {
-	hubbub_inputstream *stream;
+	parserutils_inputstream *stream;
 	hubbub_tokeniser *tok;
 	hubbub_tokeniser_optparams params;
 	int i, max_i;
@@ -137,7 +136,7 @@ void run_test(context *ctx)
 		ctx->output_index = 0;
 		ctx->char_off = 0;
 
-		stream = hubbub_inputstream_create("UTF-8", "UTF-8",
+		stream = parserutils_inputstream_create("UTF-8", 0, NULL,
 				myrealloc, NULL);
 		assert(stream != NULL);
 
@@ -151,7 +150,7 @@ void run_test(context *ctx)
 			snprintf((char *) buf, sizeof buf, "<%s>",
 					ctx->last_start_tag);
 
-			assert(hubbub_inputstream_append(stream,
+			assert(parserutils_inputstream_append(stream,
 				buf, strlen(ctx->last_start_tag) + 2) ==
 				HUBBUB_OK);
 
@@ -164,12 +163,6 @@ void run_test(context *ctx)
 					HUBBUB_TOKENISER_PROCESS_CDATA,
 					&params) == HUBBUB_OK);
 		}
-
-		params.buffer_handler.handler = buffer_handler;
-		params.buffer_handler.pw = ctx;
-		assert(hubbub_tokeniser_setopt(tok,
-				HUBBUB_TOKENISER_BUFFER_HANDLER,
-				&params) == HUBBUB_OK);
 
 		params.token_handler.handler = token_handler;
 		params.token_handler.pw = ctx;
@@ -208,31 +201,22 @@ void run_test(context *ctx)
 				(int) ctx->input_len);
 
 		for (j = 0; j < ctx->input_len; j++) {
-			assert(hubbub_inputstream_append(stream,
+			assert(parserutils_inputstream_append(stream,
 					ctx->input + j, 1) ==
 							HUBBUB_OK);
 
 			assert(hubbub_tokeniser_run(tok) == HUBBUB_OK);
 		}
 
-		assert(hubbub_inputstream_append(stream, NULL, 0) ==
+		assert(parserutils_inputstream_append(stream, NULL, 0) ==
 				HUBBUB_OK);
 
 		assert(hubbub_tokeniser_run(tok) == HUBBUB_OK);
 
 		hubbub_tokeniser_destroy(tok);
 
-		hubbub_inputstream_destroy(stream);
+		parserutils_inputstream_destroy(stream);
 	}
-}
-
-void buffer_handler(const uint8_t *buffer, size_t len, void *pw)
-{
-	context *ctx = (context *) pw;
-
-	UNUSED(len);
-
-	ctx->pbuffer = buffer;
 }
 
 void token_handler(const hubbub_token *token, void *pw)
@@ -301,9 +285,9 @@ void token_handler(const hubbub_token *token, void *pw)
 				array_list_get_idx(items, 3));
 		bool expquirks = !json_object_get_boolean(
 				array_list_get_idx(items, 4));
-		char *gotname = (char *) (ctx->pbuffer +
-				token->data.doctype.name.data.off);
-		char *gotpub, *gotsys;
+		const char *gotname = (const char *)
+				token->data.doctype.name.ptr;
+		const char *gotpub, *gotsys;
 
 		printf("'%.*s' %sids:\n",
 				(int) token->data.doctype.name.len,
@@ -315,34 +299,38 @@ void token_handler(const hubbub_token *token, void *pw)
 			gotpub = NULL;
 			printf("\tpublic: missing\n");
 		} else {
-			gotpub = (char *) (ctx->pbuffer +
-				token->data.doctype.public_id.data.off);
-			printf("\tpublic: '%.*s'\n",
+			gotpub = (const char *)
+				token->data.doctype.public_id.ptr;
+			printf("\tpublic: '%.*s' (%d)\n",
 				(int) token->data.doctype.public_id.len,
-				gotpub);
+				gotpub,
+				(int) token->data.doctype.public_id.len);
 		}
 
 		if (token->data.doctype.system_missing) {
 			gotsys = NULL;
 			printf("\tsystem: missing\n");
 		} else {
-			gotsys = (char *) (ctx->pbuffer +
-				token->data.doctype.system_id.data.off);
-			printf("\tsystem: '%.*s'\n",
+			gotsys = (const char *)
+				token->data.doctype.system_id.ptr;
+			printf("\tsystem: '%.*s' (%d)\n",
 				(int) token->data.doctype.system_id.len,
-				gotsys);
+				gotsys,
+				(int) token->data.doctype.system_id.len);
 		}
 
 		assert(token->data.doctype.name.len == strlen(expname));
 		assert(strncmp(gotname, expname, strlen(expname)) == 0);
 
-		assert((exppub == NULL) == (gotpub == NULL));
+		assert((exppub == NULL) ==
+				(token->data.doctype.public_missing == true));
 		if (exppub) {
 			assert(token->data.doctype.public_id.len == strlen(exppub));
 			assert(strncmp(gotpub, exppub, strlen(exppub)) == 0);
 		}
 
-		assert((expsys == NULL) == (gotsys == NULL));
+		assert((expsys == NULL) ==
+				(token->data.doctype.system_missing == true));
 		if (gotsys) {
 			assert(token->data.doctype.system_id.len == strlen(expsys));
 			assert(strncmp(gotsys, expsys, strlen(expsys)) == 0);
@@ -360,16 +348,22 @@ void token_handler(const hubbub_token *token, void *pw)
 		bool self_closing = json_object_get_boolean(
 				array_list_get_idx(items, 3));
 
-		char *tagname = (char *) (ctx->pbuffer +
-				token->data.tag.name.data.off);
+		const char *tagname = (const char *)
+				token->data.tag.name.ptr;
 
-		printf("'%.*s' %s%s\n",
+		printf("expected: '%s' %s\n",
+				expname,
+				(self_closing) ? "(self-closing) " : "");
+
+		printf("     got: '%.*s' %s\n",
 				(int) token->data.tag.name.len,
 				tagname,
 				(token->data.tag.self_closing) ?
-						"(self-closing) " : "",
-				(token->data.tag.n_attributes > 0) ?
-						"attributes:" : "");
+						"(self-closing) " : "");
+
+		if (token->data.tag.n_attributes > 0) {
+			printf("attributes:\n");
+		}
 
 		assert(token->data.tag.name.len == strlen(expname));
 		assert(strncmp(tagname, expname, strlen(expname)) == 0);
@@ -383,12 +377,12 @@ void token_handler(const hubbub_token *token, void *pw)
 			char *expname = (char *) expattrs->k;
 			char *expval = json_object_get_string(
 					(struct json_object *) expattrs->v);
-			char *gotname = (char *) (ctx->pbuffer +
-				token->data.tag.attributes[i].name.data.off);
+			const char *gotname = (const char *)
+				token->data.tag.attributes[i].name.ptr;
 			size_t namelen =
 				token->data.tag.attributes[i].name.len;
-			char *gotval = (char *) (ctx->pbuffer +
-				token->data.tag.attributes[i].value.data.off);
+			const char *gotval = (const char *)
+				token->data.tag.attributes[i].value.ptr;
 			size_t vallen =
 				token->data.tag.attributes[i].value.len;
 
@@ -412,8 +406,8 @@ void token_handler(const hubbub_token *token, void *pw)
 	{
 		char *expname = json_object_get_string(
 				array_list_get_idx(items, 1));
-		char *tagname = (char *) (ctx->pbuffer +
-				token->data.tag.name.data.off);
+		const char *tagname = (const char *)
+				token->data.tag.name.ptr;
 
 		printf("'%.*s' %s\n",
 				(int) token->data.tag.name.len,
@@ -429,10 +423,12 @@ void token_handler(const hubbub_token *token, void *pw)
 	{
 		char *expstr = json_object_get_string(
 				array_list_get_idx(items, 1));
-		char *gotstr = (char *) (ctx->pbuffer +
-				token->data.comment.data.off);
+		const char *gotstr = (const char *)
+				token->data.comment.ptr;
 
-		printf("'%.*s'\n", (int) token->data.comment.len, gotstr);
+		printf("expected: '%s'\n", expstr);
+		printf("     got: '%.*s'\n",
+				(int) token->data.comment.len, gotstr);
 
 		assert(token->data.comment.len == strlen(expstr));
 		assert(strncmp(gotstr, expstr, strlen(expstr)) == 0);
@@ -443,8 +439,8 @@ void token_handler(const hubbub_token *token, void *pw)
 		int expstrlen;
 		char *expstr = json_object_get_string_len(
 				array_list_get_idx(items, 1), &expstrlen);
-		char *gotstr = (char *) (ctx->pbuffer +
-				token->data.character.data.off);
+		const char *gotstr = (const char *)
+				token->data.character.ptr;
 		size_t len = min(token->data.character.len,
 				expstrlen - ctx->char_off);
 
@@ -462,7 +458,7 @@ void token_handler(const hubbub_token *token, void *pw)
 			hubbub_token t;
 
 			t.type = HUBBUB_TOKEN_CHARACTER;
-			t.data.character.data.off += len;
+			t.data.character.ptr += len;
 			t.data.character.len -= len;
 
 			ctx->char_off = 0;

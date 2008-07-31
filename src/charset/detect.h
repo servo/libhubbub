@@ -10,13 +10,11 @@
 
 #include <inttypes.h>
 
-#include <hubbub/errors.h>
-#include <hubbub/functypes.h>
-#include <hubbub/types.h>
+#include <parserutils/errors.h>
 
 /* Extract a charset from a chunk of data */
-hubbub_error hubbub_charset_extract(const uint8_t **data, size_t *len,
-		uint16_t *mibenum, hubbub_charset_source *source);
+parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
+		uint16_t *mibenum, uint32_t *source);
 
 #endif
 

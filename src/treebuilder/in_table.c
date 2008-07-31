@@ -49,10 +49,8 @@ static inline bool process_input_in_table(hubbub_treebuilder *treebuilder,
 	for (size_t i = 0; i < token->data.tag.n_attributes; i++) {
 		hubbub_attribute *attr = &token->data.tag.attributes[i];
 
-		if (!hubbub_string_match_ci(treebuilder->input_buffer +
-						attr->value.data.off,
-				attr->value.len, (uint8_t *) "hidden",
-				SLEN("hidden"))) {
+		if (!hubbub_string_match_ci(attr->value.ptr, attr->value.len,
+				(uint8_t *) "hidden", SLEN("hidden"))) {
 			continue;
 		}
 
@@ -120,7 +118,8 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 				treebuilder->tree_handler->ctx,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
-			formatting_list_append(treebuilder, type,
+			formatting_list_append(treebuilder, 
+					token->data.tag.ns, type,
 					treebuilder->context.element_stack[
 					treebuilder->context.current_node].node,
 					treebuilder->context.current_node);
@@ -132,9 +131,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 
 			if (type == COL) {
 				/* Insert colgroup and reprocess */
-				tag.name.type = HUBBUB_STRING_PTR;
-				tag.name.data.ptr =
-						(const uint8_t *) "colgroup";
+				tag.name.ptr = (const uint8_t *) "colgroup";
 				tag.name.len = SLEN("colgroup");
 
 				reprocess = true;
@@ -149,8 +146,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 
 			if (type == TD || type == TH || type == TR) {
 				/* Insert tbody and reprocess */
-				tag.name.type = HUBBUB_STRING_PTR;
-				tag.name.data.ptr = (const uint8_t *) "tbody";
+				tag.name.ptr = (const uint8_t *) "tbody";
 				tag.name.len = SLEN("tbody");
 
 				reprocess = true;

@@ -102,15 +102,9 @@ struct hubbub_treebuilder
 {
 	hubbub_tokeniser *tokeniser;	/**< Underlying tokeniser */
 
-	const uint8_t *input_buffer;	/**< Start of tokeniser's buffer */
-	size_t input_buffer_len;	/**< Length of input buffer */
-
 	hubbub_treebuilder_context context;
 
 	hubbub_tree_handler *tree_handler;
-
-	hubbub_buffer_handler buffer_handler;
-	void *buffer_pw;
 
 	hubbub_error_handler error_handler;
 	void *error_pw;
@@ -163,17 +157,22 @@ element_type current_node(hubbub_treebuilder *treebuilder);
 element_type prev_node(hubbub_treebuilder *treebuilder);
 
 bool formatting_list_append(hubbub_treebuilder *treebuilder,
-		element_type type, void *node, uint32_t stack_index);
+		hubbub_ns ns, element_type type, void *node, 
+		uint32_t stack_index);
 bool formatting_list_insert(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *prev, formatting_list_entry *next,
-		element_type type, void *node, uint32_t stack_index);
+		hubbub_ns ns, element_type type, void *node, 
+		uint32_t stack_index);
 bool formatting_list_remove(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry,
-		element_type *type, void **node, uint32_t *stack_index);
+		hubbub_ns *ns, element_type *type, void **node, 
+		uint32_t *stack_index);
 bool formatting_list_replace(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry,
-		element_type type, void *node, uint32_t stack_index,
-		element_type *otype, void **onode, uint32_t *ostack_index);
+		hubbub_ns ns, element_type type, void *node, 
+		uint32_t stack_index,
+		hubbub_ns *ons, element_type *otype, void **onode, 
+		uint32_t *ostack_index);
 
 /* in_foreign_content.c */
 void adjust_svg_attributes(hubbub_treebuilder *treebuilder,

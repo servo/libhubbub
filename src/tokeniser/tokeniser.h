@@ -15,7 +15,7 @@
 #include <hubbub/functypes.h>
 #include <hubbub/types.h>
 
-#include "input/inputstream.h"
+#include <parserutils/input/inputstream.h>
 
 typedef struct hubbub_tokeniser hubbub_tokeniser;
 
@@ -24,7 +24,6 @@ typedef struct hubbub_tokeniser hubbub_tokeniser;
  */
 typedef enum hubbub_tokeniser_opttype {
 	HUBBUB_TOKENISER_TOKEN_HANDLER,
-	HUBBUB_TOKENISER_BUFFER_HANDLER,
 	HUBBUB_TOKENISER_ERROR_HANDLER,
 	HUBBUB_TOKENISER_CONTENT_MODEL,
 	HUBBUB_TOKENISER_PROCESS_CDATA
@@ -40,11 +39,6 @@ typedef union hubbub_tokeniser_optparams {
 	} token_handler;
 
 	struct {
-		hubbub_buffer_handler handler;
-		void *pw;
-	} buffer_handler;
-
-	struct {
 		hubbub_error_handler handler;
 		void *pw;
 	} error_handler;
@@ -57,7 +51,7 @@ typedef union hubbub_tokeniser_optparams {
 } hubbub_tokeniser_optparams;
 
 /* Create a hubbub tokeniser */
-hubbub_tokeniser *hubbub_tokeniser_create(hubbub_inputstream *input,
+hubbub_tokeniser *hubbub_tokeniser_create(parserutils_inputstream *input,
 		hubbub_alloc alloc, void *pw);
 /* Destroy a hubbub tokeniser */
 void hubbub_tokeniser_destroy(hubbub_tokeniser *tokeniser);

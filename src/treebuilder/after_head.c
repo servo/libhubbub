@@ -100,8 +100,7 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 		if (reprocess) {
 			/* Manufacture body */
 			tag.ns = HUBBUB_NS_HTML;
-			tag.name.type = HUBBUB_STRING_PTR;
-			tag.name.data.ptr = (const uint8_t *) "body";
+			tag.name.ptr = (const uint8_t *) "body";
 			tag.name.len = SLEN("body");
 
 			tag.n_attributes = 0;

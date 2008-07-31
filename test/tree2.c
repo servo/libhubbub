@@ -74,10 +74,6 @@ node_t *Document;
 
 static void node_print(buf_t *buf, node_t *node, unsigned depth);
 
-
-static const uint8_t *pbuffer;
-
-static void buffer_handler(const uint8_t *buffer, size_t len, void *pw);
 static int create_comment(void *ctx, const hubbub_string *data, void **result);
 static int create_doctype(void *ctx, const hubbub_doctype *doctype,
 		void **result);
@@ -123,27 +119,21 @@ static hubbub_tree_handler tree_handler = {
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
+	void *ret;
+
 	UNUSED(pw);
 
-	return realloc(ptr, len);
-}
-
-static const uint8_t *ptr_from_hubbub_string(const hubbub_string *string)
-{
-	const uint8_t *data;
-
-	switch (string->type) {
-	case HUBBUB_STRING_OFF:
-		data = pbuffer + string->data.off;
-		break;
-	case HUBBUB_STRING_PTR:
-		data = string->data.ptr;
-		break;
+	/* A half-arsed attempt at filling freshly allocated space with junk. */
+	if (ptr == NULL) {
+		ret = malloc(len);
+		if (ret != NULL)
+			memset(ret, 0xdf, len);
+	} else {
+		ret = realloc(ptr, len);
 	}
 
-	return data;
+	return ret;
 }
-
 
 
 /*
@@ -157,11 +147,6 @@ static hubbub_parser *setup_parser(void)
 	parser = hubbub_parser_create("UTF-8", "UTF-8", myrealloc, NULL);
 	assert(parser != NULL);
 
-	params.buffer_handler.handler = buffer_handler;
-	params.buffer_handler.pw = NULL;
-	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_BUFFER_HANDLER,
-			&params) == HUBBUB_OK);
-
 	params.tree_handler = &tree_handler;
 	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_TREE_HANDLER,
 			&params) == HUBBUB_OK);
@@ -173,14 +158,6 @@ static hubbub_parser *setup_parser(void)
 	return parser;
 }
 
-
-void buffer_handler(const uint8_t *buffer, size_t len, void *pw)
-{
-	UNUSED(len);
-	UNUSED(pw);
-
-	pbuffer = buffer;
-}
 
 
 /*** Buffer handling bits ***/
@@ -371,8 +348,8 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 	node_t *node = calloc(1, sizeof *node);
 
 	node->type = COMMENT;
-	node->data.content = strndup((char *)ptr_from_hubbub_string(data),
-			data->len);
+	node->data.content = strndup((const char *) data->ptr, data->len);
+	node->refcnt = 1;
 	node->refcnt = 1;
 
 	*result = node;
@@ -386,20 +363,18 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 
 	node->type = DOCTYPE;
 	node->data.doctype.name = strndup(
-			(char *)ptr_from_hubbub_string(&doctype->name),
+			(const char *) doctype->name.ptr,
 			doctype->name.len);
 
 	if (!doctype->public_missing) {
 		node->data.doctype.public_id = strndup(
-				(char *)ptr_from_hubbub_string(
-					&doctype->public_id),
+				(const char *) doctype->public_id.ptr,
 				doctype->public_id.len);
 	}
 
 	if (!doctype->system_missing) {
 		node->data.doctype.system_id = strndup(
-				(char *)ptr_from_hubbub_string(
-					&doctype->system_id),
+				(const char *) doctype->system_id.ptr,
 				doctype->system_id.len);
 	}
 	node->refcnt = 1;
@@ -418,7 +393,7 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 	node->type = ELEMENT;
 	node->data.element.ns = tag->ns;
 	node->data.element.name = strndup(
-			(char *)ptr_from_hubbub_string(&tag->name),
+			(const char *) tag->name.ptr,
 			tag->name.len);
 	node->data.element.n_attrs = tag->n_attributes;
 
@@ -432,12 +407,12 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 
 		attr->ns = tag->attributes[i].ns;
 
-		attr->name = strndup((char *)ptr_from_hubbub_string(
-						&tag->attributes[i].name),
+		attr->name = strndup(
+				(const char *) tag->attributes[i].name.ptr,
 				tag->attributes[i].name.len);
 
-		attr->value = strndup((char *)ptr_from_hubbub_string(
-						&tag->attributes[i].value),
+		attr->value = strndup(
+				(const char *) tag->attributes[i].value.ptr,
 				tag->attributes[i].value.len);
 	}
 	node->refcnt = 1;
@@ -452,8 +427,8 @@ int create_text(void *ctx, const hubbub_string *data, void **result)
 	node_t *node = calloc(1, sizeof *node);
 
 	node->type = CHARACTER;
-	node->data.content = strndup((char *)ptr_from_hubbub_string(data),
-			data->len);
+	node->data.content = strndup((const char *) data->ptr, data->len);
+	node->refcnt = 1;
 	node->refcnt = 1;
 
 	*result = node;
@@ -778,12 +753,12 @@ int add_attributes(void *ctx, void *vnode,
 
 		attr->ns = attributes[i].ns;
 
-		attr->name = strndup((char *)ptr_from_hubbub_string(
-						&attributes[i].name),
+		attr->name = strndup(
+				(const char *) attributes[i].name.ptr,
 				attributes[i].name.len);
 
-		attr->value = strndup((char *)ptr_from_hubbub_string(
-						&attributes[i].value),
+		attr->value = strndup(
+				(const char *) attributes[i].value.ptr,
 				attributes[i].value.len);
 	}
 

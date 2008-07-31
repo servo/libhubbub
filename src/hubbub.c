@@ -5,9 +5,10 @@
  * Copyright 2007 John-Mark Bell <jmb@netsurf-browser.org>
  */
 
+#include <parserutils/parserutils.h>
+
 #include <hubbub/hubbub.h>
 
-#include "charset/aliases.h"
 #include "tokeniser/entities.h"
 
 /**
@@ -28,13 +29,12 @@ hubbub_error hubbub_initialise(const char *aliases_file,
 	if (aliases_file == NULL || alloc == NULL)
 		return HUBBUB_BADPARM;
 
-	error = hubbub_aliases_create(aliases_file, alloc, pw);
-	if (error != HUBBUB_OK)
-		return error;
+	if (parserutils_initialise(aliases_file, alloc, pw) != PARSERUTILS_OK)
+		return !HUBBUB_OK;
 
 	error = hubbub_entities_create(alloc, pw);
 	if (error != HUBBUB_OK) {
-		hubbub_aliases_destroy(alloc, pw);
+		parserutils_finalise(alloc, pw);
 		return error;
 	}
 
@@ -55,7 +55,7 @@ hubbub_error hubbub_finalise(hubbub_alloc alloc, void *pw)
 
 	hubbub_entities_destroy(alloc, pw);
 
-	hubbub_aliases_destroy(alloc, pw);
+	parserutils_finalise(alloc, pw);
 
 	return HUBBUB_OK;
 }

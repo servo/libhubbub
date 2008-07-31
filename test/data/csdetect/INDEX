@@ -7,3 +7,4 @@ non-ascii-meta.dat	Tests for meta charsets claiming to be non-ASCII
 test-yahoo-jp.dat	Yahoo! Japan, from html5lib testcases
 tests1.dat		Assorted tests, including edge cases, from html5lib
 tests2.dat		Further tests from html5lib
+regression.dat		Regression tests

@@ -8,12 +8,15 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "charset/aliases.h"
+#include <parserutils/charset/mibenum.h>
+
+#include <hubbub/types.h>
+
 #include "utils/utils.h"
 
 #include "detect.h"
 
-static uint16_t hubbub_charset_read_bom(const uint8_t **data, size_t *len);
+static uint16_t hubbub_charset_read_bom(const uint8_t *data, size_t len);
 static uint16_t hubbub_charset_scan_meta(const uint8_t *data, size_t len);
 static uint16_t hubbub_charset_parse_attributes(const uint8_t **pos,
 		const uint8_t *end);
@@ -27,31 +30,31 @@ static bool hubbub_charset_get_attribute(const uint8_t **data,
 /**
  * Extract a charset from a chunk of data
  *
- * \param data     Pointer to pointer to buffer containing data
- * \param len      Pointer to buffer length
- * \param mibenum  Pointer to location to store MIB enum representing charset
- * \param source   Pointer to location to receive charset source
- * \return HUBBUB_OK on success, appropriate error otherwise
+ * \param data     Pointer to buffer containing data
+ * \param len      Buffer length
+ * \param mibenum  Pointer to location containing current MIB enum
+ * \param source   Pointer to location containint current charset source
+ * \return PARSERUTILS_OK on success, appropriate error otherwise
  *
- * The data pointer and length will be modified by this function if
- * a byte order mark is encountered at the start of the buffer. The updated
- * data pointer will point to the first byte in the buffer after the BOM.
- * The length will be modified appropriately.
+ * ::mibenum and ::source will be updated on exit
  *
  * The larger a chunk of data fed to this routine, the better, as it allows
  * charset autodetection access to a larger dataset for analysis.
  */
-hubbub_error hubbub_charset_extract(const uint8_t **data, size_t *len,
-		uint16_t *mibenum, hubbub_charset_source *source)
+parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
+		uint16_t *mibenum, uint32_t *source)
 {
 	uint16_t charset = 0;
 
-	if (data == NULL || *data == NULL || len == NULL ||
-			mibenum == NULL || source == NULL)
-		return HUBBUB_BADPARM;
+	if (data == NULL || mibenum == NULL || source == NULL)
+		return PARSERUTILS_BADPARM;
+
+	/* If the source is dictated, there's nothing for us to do */
+	if (*source == HUBBUB_CHARSET_DICTATED)
+		return PARSERUTILS_OK;
 
 	/* We need at least 4 bytes of data */
-	if (*len < 4)
+	if (len < 4)
 		goto default_encoding;
 
 	/* First, look for a BOM */
@@ -60,21 +63,21 @@ hubbub_error hubbub_charset_extract(const uint8_t **data, size_t *len,
 		*mibenum = charset;
 		*source = HUBBUB_CHARSET_DOCUMENT;
 
-		return HUBBUB_OK;
+		return PARSERUTILS_OK;
 	}
 
 	/* No BOM was found, so we must look for a meta charset within
 	 * the document itself. */
-	charset = hubbub_charset_scan_meta(*data, *len);
+	charset = hubbub_charset_scan_meta(data, len);
 	if (charset != 0) {
 		/* ISO-8859-1 becomes Windows-1252 */
-		if (charset == hubbub_mibenum_from_name("ISO-8859-1",
-				SLEN("ISO-8859-1"))) {
-			charset = hubbub_mibenum_from_name("Windows-1252",
-					SLEN("Windows-1252"));
+		if (charset == parserutils_charset_mibenum_from_name(
+				"ISO-8859-1", SLEN("ISO-8859-1"))) {
+			charset = parserutils_charset_mibenum_from_name(
+					"Windows-1252", SLEN("Windows-1252"));
 			/* Fallback to 8859-1 if that failed */
 			if (charset == 0)
-				charset = hubbub_mibenum_from_name(
+				charset = parserutils_charset_mibenum_from_name(
 					"ISO-8859-1", SLEN("ISO-8859-1"));
 		}
 
@@ -94,23 +97,23 @@ hubbub_error hubbub_charset_extract(const uint8_t **data, size_t *len,
 		 * autodetection routines (or the fallback case if they
 		 * fail).
 		 */
-		if (charset != hubbub_mibenum_from_name("UTF-16",
+		if (charset != parserutils_charset_mibenum_from_name("UTF-16",
 					SLEN("UTF-16")) &&
-			charset != hubbub_mibenum_from_name("UTF-16LE",
-					SLEN("UTF-16LE")) &&
-			charset != hubbub_mibenum_from_name("UTF-16BE",
-					SLEN("UTF-16BE")) &&
-			charset != hubbub_mibenum_from_name("UTF-32",
-					SLEN("UTF-32")) &&
-			charset != hubbub_mibenum_from_name("UTF-32LE",
-					SLEN("UTF-32LE")) &&
-			charset != hubbub_mibenum_from_name("UTF-32BE",
-					SLEN("UTF-32BE"))) {
+			charset != parserutils_charset_mibenum_from_name(
+					"UTF-16LE", SLEN("UTF-16LE")) &&
+			charset != parserutils_charset_mibenum_from_name(
+					"UTF-16BE", SLEN("UTF-16BE")) &&
+			charset != parserutils_charset_mibenum_from_name(
+					"UTF-32", SLEN("UTF-32")) &&
+			charset != parserutils_charset_mibenum_from_name(
+					"UTF-32LE", SLEN("UTF-32LE")) &&
+			charset != parserutils_charset_mibenum_from_name(
+					"UTF-32BE", SLEN("UTF-32BE"))) {
 
 			*mibenum = charset;
 			*source = HUBBUB_CHARSET_DOCUMENT;
 
-			return HUBBUB_OK;
+			return PARSERUTILS_OK;
 		}
 	}
 
@@ -122,16 +125,16 @@ hubbub_error hubbub_charset_extract(const uint8_t **data, size_t *len,
 	/* We failed to autodetect a charset, so use the default fallback */
 default_encoding:
 
-	charset = hubbub_mibenum_from_name("Windows-1252",
+	charset = parserutils_charset_mibenum_from_name("Windows-1252",
 			SLEN("Windows-1252"));
 	if (charset == 0)
-		charset = hubbub_mibenum_from_name("ISO-8859-1",
+		charset = parserutils_charset_mibenum_from_name("ISO-8859-1",
 				SLEN("ISO-8859-1"));
 
 	*mibenum = charset;
 	*source = HUBBUB_CHARSET_DEFAULT;
 
-	return HUBBUB_OK;
+	return PARSERUTILS_OK;
 }
 
 
@@ -139,64 +142,37 @@ default_encoding:
  * Inspect the beginning of a buffer of data for the presence of a
  * UTF Byte Order Mark.
  *
- * \param data  Pointer to pointer to buffer containing data
- * \param len   Pointer to buffer length
+ * \param data  Pointer to buffer containing data
+ * \param len   Buffer length
  * \return MIB enum representing encoding described by BOM, or 0 if not found
- *
- * If a BOM is found, the data pointer will be modified to point to the first
- * byte in the buffer after the BOM. The length will also be modified
- * appropriately.
  */
-uint16_t hubbub_charset_read_bom(const uint8_t **data, size_t *len)
+uint16_t hubbub_charset_read_bom(const uint8_t *data, size_t len)
 {
-	if (data == NULL || *data == NULL || len == NULL)
+	if (data == NULL)
 		return 0;
 
 	/* We require at least 4 bytes of data */
-	if (*len < 4)
+	if (len < 4)
 		return 0;
 
-#define UTF32BOM_LEN (4)
-#define UTF16BOM_LEN (2)
-#define UTF8BOM_LEN  (3)
-
-	if ((*data)[0] == 0x00 && (*data)[1] == 0x00 &&
-			(*data)[2] == 0xFE && (*data)[3] == 0xFF) {
-		*data += UTF32BOM_LEN;
-		*len  -= UTF32BOM_LEN;
-
-		return hubbub_mibenum_from_name("UTF-32BE",
+	if (data[0] == 0x00 && data[1] == 0x00 &&
+			data[2] == 0xFE && data[3] == 0xFF) {
+		return parserutils_charset_mibenum_from_name("UTF-32BE",
 				SLEN("UTF-32BE"));
-	} else if ((*data)[0] == 0xFF && (*data)[1] == 0xFE &&
-			(*data)[2] == 0x00 && (*data)[3] == 0x00) {
-		*data += UTF32BOM_LEN;
-		*len  -= UTF32BOM_LEN;
-
-		return hubbub_mibenum_from_name("UTF-32LE",
+	} else if (data[0] == 0xFF && data[1] == 0xFE &&
+			data[2] == 0x00 && data[3] == 0x00) {
+		return parserutils_charset_mibenum_from_name("UTF-32LE",
 				SLEN("UTF-32LE"));
-	} else if ((*data)[0] == 0xFE && (*data)[1] == 0xFF) {
-		*data += UTF16BOM_LEN;
-		*len  -= UTF16BOM_LEN;
-
-		return hubbub_mibenum_from_name("UTF-16BE",
+	} else if (data[0] == 0xFE && data[1] == 0xFF) {
+		return parserutils_charset_mibenum_from_name("UTF-16BE",
 				SLEN("UTF-16BE"));
-	} else if ((*data)[0] == 0xFF && (*data)[1] == 0xFE) {
-		*data += UTF16BOM_LEN;
-		*len  -= UTF16BOM_LEN;
-
-		return hubbub_mibenum_from_name("UTF-16LE",
+	} else if (data[0] == 0xFF && data[1] == 0xFE) {
+		return parserutils_charset_mibenum_from_name("UTF-16LE",
 				SLEN("UTF-16LE"));
-	} else if ((*data)[0] == 0xEF && (*data)[1] == 0xBB &&
-			(*data)[2] == 0xBF) {
-		*data += UTF8BOM_LEN;
-		*len  -= UTF8BOM_LEN;
-
-		return hubbub_mibenum_from_name("UTF-8", SLEN("UTF-8"));
+	} else if (data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF) {
+		return parserutils_charset_mibenum_from_name("UTF-8", 
+				SLEN("UTF-8"));
 	}
-
-#undef UTF32BOM_LEN
-#undef UTF16BOM_LEN
-#undef UTF8BOM_LEN
 
 	return 0;
 }
@@ -223,7 +199,7 @@ uint16_t hubbub_charset_read_bom(const uint8_t **data, size_t *len)
  * Search for a meta charset within a buffer of data
  *
  * \param data  Pointer to buffer containing data
- * \param len   Length of buffer in data
+ * \param len   Length of buffer
  * \return MIB enum representing encoding, or 0 if none found
  */
 uint16_t hubbub_charset_scan_meta(const uint8_t *data, size_t len)
@@ -344,7 +320,7 @@ uint16_t hubbub_charset_parse_attributes(const uint8_t **pos,
 			while (valuelen > 0 && ISSPACE(value[valuelen - 1]))
 				valuelen--;
 
-			mibenum = hubbub_mibenum_from_name(
+			mibenum = parserutils_charset_mibenum_from_name(
 					(const char *) value, valuelen);
 			if (mibenum != 0)
 				return mibenum;
@@ -478,8 +454,8 @@ uint16_t hubbub_charset_parse_content(const uint8_t *value,
 
 	/* 8 */
 	if (tentative != NULL) {
-		return hubbub_mibenum_from_name((const char *) tentative,
-				tentative_len);
+		return parserutils_charset_mibenum_from_name(
+				(const char *) tentative, tentative_len);
 	}
 
 	/* 9 */
@@ -555,6 +531,7 @@ bool hubbub_charset_get_attribute(const uint8_t **data, const uint8_t *end,
 
 		/* c */
 		if (*pos == '/' || *pos == '<' || *pos == '>') {
+			*data = pos;
 			return true;
 		}
 

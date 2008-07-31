@@ -1,0 +1,31 @@
+#data
+<html>
+ <body>
+  <table>
+   <tr>
+    <td>
+     <div>
+      <b>
+     </div>
+     <table></table>
+    </td>
+   </tr>
+  </table>
+  <table></table>
+  <script type="text/javascript"></script>
+ </body>
+</html>
+#errors
+#document
+| <html>
+|   <head>
+|   <body>
+|    <table>
+|     <tr>
+|      <td>
+|       <div>
+|        <b>
+|       <table>
+|    <table>
+|    <script>
+

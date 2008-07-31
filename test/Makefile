@@ -39,11 +39,8 @@ CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
 LDFLAGS := $(LDFLAGS) `$(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json` -liconv
 
 # Tests
-TESTS_$(d) := aliases cscodec csdetect dict entities filter hubbub \
-	inputstream parser parser-utf16 tokeniser tokeniser2 tokeniser3 \
-	tree tree2
-TESTS_$(d) := $(TESTS_$(d)) regression/cscodec-segv regression/filter-segv \
-	regression/stream-nomem
+TESTS_$(d) := csdetect dict entities hubbub parser \
+	tokeniser tokeniser2 tokeniser3 tree tree2
 
 # Items for top-level makefile to use
 ITEMS_CLEAN := $(ITEMS_CLEAN) \
@@ -80,7 +77,7 @@ define compile_test
 $(2): $(3) $(TOP)/$(COMPONENT)-debug.a
 	@$$(ECHO) $$(ECHOFLAGS) "==> $(1)"
 	@$$(CC) -c -g $$(DEBUGCFLAGS) -o $$@.o $(1)
-	@$$(LD) -g -o $$@ $$@.o $$(LDFLAGS) -lhubbub-debug -lgcov
+	@$$(LD) -g -o $$@ $$@.o -lhubbub-debug $$(LDFLAGS) -lgcov
 	@$$(RM) $$(RMFLAGS) $$@.o
 
 endef

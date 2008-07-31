@@ -32,7 +32,7 @@ dirstack_$(sp) := $(d)
 d              := $(DIR)
 
 # Sources
-SRCS_$(d) := dict.c errors.c utf8.c utf16.c string.c
+SRCS_$(d) := dict.c errors.c string.c
 
 # Append to sources for component
 SOURCES += $(addprefix $(d), $(SRCS_$(d)))

@@ -5,9 +5,11 @@
  * Copyright 2007-8 John-Mark Bell <jmb@netsurf-browser.org>
  */
 
+#include <parserutils/input/inputstream.h>
+
 #include <hubbub/parser.h>
 
-#include "input/inputstream.h"
+#include "charset/detect.h"
 #include "tokeniser/tokeniser.h"
 #include "treebuilder/treebuilder.h"
 
@@ -15,7 +17,7 @@
  * Hubbub parser object
  */
 struct hubbub_parser {
-	hubbub_inputstream *stream;	/**< Input stream instance */
+	parserutils_inputstream *stream;	/**< Input stream instance */
 	hubbub_tokeniser *tok;		/**< Tokeniser instance */
 	hubbub_treebuilder *tb;		/**< Treebuilder instance */
 
@@ -44,7 +46,9 @@ hubbub_parser *hubbub_parser_create(const char *enc, const char *int_enc,
 	if (parser == NULL)
 		return NULL;
 
-	parser->stream = hubbub_inputstream_create(enc, int_enc, alloc, pw);
+	parser->stream = parserutils_inputstream_create(enc, 
+		enc != NULL ? HUBBUB_CHARSET_DICTATED : HUBBUB_CHARSET_UNKNOWN, 
+		hubbub_charset_extract, alloc, pw);
 	if (parser->stream == NULL) {
 		alloc(parser, 0, pw);
 		return NULL;
@@ -52,7 +56,7 @@ hubbub_parser *hubbub_parser_create(const char *enc, const char *int_enc,
 
 	parser->tok = hubbub_tokeniser_create(parser->stream, alloc, pw);
 	if (parser->tok == NULL) {
-		hubbub_inputstream_destroy(parser->stream);
+		parserutils_inputstream_destroy(parser->stream);
 		alloc(parser, 0, pw);
 		return NULL;
 	}
@@ -60,7 +64,7 @@ hubbub_parser *hubbub_parser_create(const char *enc, const char *int_enc,
 	parser->tb = hubbub_treebuilder_create(parser->tok, alloc, pw);
 	if (parser->tb == NULL) {
 		hubbub_tokeniser_destroy(parser->tok);
-		hubbub_inputstream_destroy(parser->stream);
+		parserutils_inputstream_destroy(parser->stream);
 		alloc(parser, 0, pw);
 		return NULL;
 	}
@@ -85,7 +89,7 @@ void hubbub_parser_destroy(hubbub_parser *parser)
 
 	hubbub_tokeniser_destroy(parser->tok);
 
-	hubbub_inputstream_destroy(parser->stream);
+	parserutils_inputstream_destroy(parser->stream);
 
 	parser->alloc(parser, 0, parser->pw);
 }
@@ -118,19 +122,6 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 		result = hubbub_tokeniser_setopt(parser->tok,
 				HUBBUB_TOKENISER_TOKEN_HANDLER,
 				(hubbub_tokeniser_optparams *) params);
-		break;
-	case HUBBUB_PARSER_BUFFER_HANDLER:
-		/* The buffer handler cascades, so if there's a treebuilder, 
-		 * simply inform that. Otherwise, tell the tokeniser. */
-		if (parser->tb != NULL) {
-			result = hubbub_treebuilder_setopt(parser->tb,
-					HUBBUB_TREEBUILDER_BUFFER_HANDLER,
-					(hubbub_treebuilder_optparams *) params);
-		} else {
-			result = hubbub_tokeniser_setopt(parser->tok,
-					HUBBUB_TOKENISER_BUFFER_HANDLER,
-					(hubbub_tokeniser_optparams *) params);
-		}
 		break;
 	case HUBBUB_PARSER_ERROR_HANDLER:
 		/* The error handler does not cascade, so tell both the
@@ -183,14 +174,15 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
 		uint8_t *data, size_t len)
 {
+	parserutils_error perror;
 	hubbub_error error;
 
 	if (parser == NULL || data == NULL)
 		return HUBBUB_BADPARM;
 
-	error = hubbub_inputstream_append(parser->stream, data, len);
-	if (error != HUBBUB_OK)
-		return error;
+	perror = parserutils_inputstream_append(parser->stream, data, len);
+	if (perror != PARSERUTILS_OK)
+		return !HUBBUB_OK;
 
 	error = hubbub_tokeniser_run(parser->tok);
 	if (error != HUBBUB_OK)
@@ -221,7 +213,7 @@ hubbub_error hubbub_parser_parse_extraneous_chunk(hubbub_parser *parser,
 	if (parser == NULL || data == NULL)
 		return HUBBUB_BADPARM;
 
-	error = hubbub_inputstream_insert(parser->stream, data, len);
+	error = parserutils_inputstream_insert(parser->stream, data, len);
 	if (error != HUBBUB_OK)
 		return error;
 
@@ -240,14 +232,15 @@ hubbub_error hubbub_parser_parse_extraneous_chunk(hubbub_parser *parser,
  */
 hubbub_error hubbub_parser_completed(hubbub_parser *parser)
 {
+	parserutils_error perror;
 	hubbub_error error;
 
 	if (parser == NULL)
 		return HUBBUB_BADPARM;
 
-	error = hubbub_inputstream_append(parser->stream, NULL, 0);
-	if (error != HUBBUB_OK)
-		return error;
+	perror = parserutils_inputstream_append(parser->stream, NULL, 0);
+	if (perror != HUBBUB_OK)
+		return !HUBBUB_OK;
 
 	error = hubbub_tokeniser_run(parser->tok);
 	if (error != HUBBUB_OK)
@@ -264,32 +257,11 @@ hubbub_error hubbub_parser_completed(hubbub_parser *parser)
  * \return Pointer to charset name (constant; do not free), or NULL if unknown
  */
 const char *hubbub_parser_read_charset(hubbub_parser *parser,
-		hubbub_charset_source *source)
+		uint32_t *source)
 {
 	if (parser == NULL || source == NULL)
 		return NULL;
 
-	return hubbub_inputstream_read_charset(parser->stream, source);
+	return parserutils_inputstream_read_charset(parser->stream, source);
 }
 
-/**
- * Claim ownership of the document buffer
- *
- * \param parser  Parser whose buffer to claim
- * \param buffer  Pointer to location to receive buffer pointer
- * \param len     Pointer to location to receive byte length of buffer
- * \return HUBBUB_OK on success, appropriate error otherwise.
- *
- * Once the buffer has been claimed by a client, the parser disclaims
- * all ownership rights (and invalidates any internal references it may have
- * to the buffer). Therefore, the only parser call which may be made
- * after calling this function is to destroy the parser.
-  */
-hubbub_error hubbub_parser_claim_buffer(hubbub_parser *parser,
-		uint8_t **buffer, size_t *len)
-{
-	if (parser == NULL || buffer == NULL || len == NULL)
-		return HUBBUB_BADPARM;
-
-	return hubbub_inputstream_claim_buffer(parser->stream, buffer, len);
-}

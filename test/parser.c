@@ -10,9 +10,6 @@
 
 #include "testutils.h"
 
-static const uint8_t *pbuffer;
-
-static void buffer_handler(const uint8_t *buffer, size_t len, void *pw);
 static void token_handler(const hubbub_token *token, void *pw);
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
@@ -32,7 +29,6 @@ int main(int argc, char **argv)
 	uint8_t buf[CHUNK_SIZE];
 	const char *charset;
 	hubbub_charset_source cssource;
-	uint8_t *buffer;
 
 	if (argc != 3) {
 		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
@@ -44,11 +40,6 @@ int main(int argc, char **argv)
 
 	parser = hubbub_parser_create("UTF-8", "UTF-8", myrealloc, NULL);
 	assert(parser != NULL);
-
-	params.buffer_handler.handler = buffer_handler;
-	params.buffer_handler.pw = NULL;
-	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_BUFFER_HANDLER,
-			&params) == HUBBUB_OK);
 
 	params.token_handler.handler = token_handler;
 	params.token_handler.pw = NULL;
@@ -91,11 +82,6 @@ int main(int argc, char **argv)
 
 	printf("Charset: %s (from %d)\n", charset, cssource);
 
-	assert(hubbub_parser_claim_buffer(parser, &buffer, &len) ==
-			HUBBUB_OK);
-
-	free(buffer);
-
 	hubbub_parser_destroy(parser);
 
 	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
@@ -103,14 +89,6 @@ int main(int argc, char **argv)
 	printf("PASS\n");
 
 	return 0;
-}
-
-void buffer_handler(const uint8_t *buffer, size_t len, void *pw)
-{
-	UNUSED(len);
-	UNUSED(pw);
-
-	pbuffer = buffer;
 }
 
 void token_handler(const hubbub_token *token, void *pw)
@@ -129,7 +107,7 @@ void token_handler(const hubbub_token *token, void *pw)
 	case HUBBUB_TOKEN_DOCTYPE:
 		printf("'%.*s' %sids:\n",
 				(int) token->data.doctype.name.len,
-				pbuffer + token->data.doctype.name.data.off,
+				token->data.doctype.name.ptr,
 				token->data.doctype.force_quirks ?
 						"(force-quirks) " : "");
 
@@ -138,20 +116,20 @@ void token_handler(const hubbub_token *token, void *pw)
 		else
 			printf("\tpublic: '%.*s'\n",
 				(int) token->data.doctype.public_id.len,
-				pbuffer + token->data.doctype.public_id.data.off);
+				token->data.doctype.public_id.ptr);
 
 		if (token->data.doctype.system_missing)
 			printf("\tsystem: missing\n");
 		else
 			printf("\tsystem: '%.*s'\n",
 				(int) token->data.doctype.system_id.len,
-				pbuffer + token->data.doctype.system_id.data.off);
+				token->data.doctype.system_id.ptr);
 
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 		printf("'%.*s' %s%s\n",
 				(int) token->data.tag.name.len,
-				pbuffer + token->data.tag.name.data.off,
+				token->data.tag.name.ptr,
 				(token->data.tag.self_closing) ?
 						"(self-closing) " : "",
 				(token->data.tag.n_attributes > 0) ?
@@ -159,15 +137,15 @@ void token_handler(const hubbub_token *token, void *pw)
 		for (i = 0; i < token->data.tag.n_attributes; i++) {
 			printf("\t'%.*s' = '%.*s'\n",
 					(int) token->data.tag.attributes[i].name.len,
-					pbuffer + token->data.tag.attributes[i].name.data.off,
+					token->data.tag.attributes[i].name.ptr,
 					(int) token->data.tag.attributes[i].value.len,
-					pbuffer + token->data.tag.attributes[i].value.data.off);
+					token->data.tag.attributes[i].value.ptr);
 		}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
 		printf("'%.*s' %s%s\n",
 				(int) token->data.tag.name.len,
-				pbuffer + token->data.tag.name.data.off,
+				token->data.tag.name.ptr,
 				(token->data.tag.self_closing) ?
 						"(self-closing) " : "",
 				(token->data.tag.n_attributes > 0) ?
@@ -175,18 +153,18 @@ void token_handler(const hubbub_token *token, void *pw)
 		for (i = 0; i < token->data.tag.n_attributes; i++) {
 			printf("\t'%.*s' = '%.*s'\n",
 					(int) token->data.tag.attributes[i].name.len,
-					pbuffer + token->data.tag.attributes[i].name.data.off,
+					token->data.tag.attributes[i].name.ptr,
 					(int) token->data.tag.attributes[i].value.len,
-					pbuffer + token->data.tag.attributes[i].value.data.off);
+					token->data.tag.attributes[i].value.ptr);
 		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		printf("'%.*s'\n", (int) token->data.comment.len,
-				pbuffer + token->data.comment.data.off);
+				token->data.comment.ptr);
 		break;
 	case HUBBUB_TOKEN_CHARACTER:
 		printf("'%.*s'\n", (int) token->data.character.len,
-				pbuffer + token->data.character.data.off);
+				token->data.character.ptr);
 		break;
 	case HUBBUB_TOKEN_EOF:
 		printf("\n");

@@ -2,23 +2,13 @@
 #
 # Test		Description				DataDir
 
-aliases		Encoding alias handling
-cscodec		Charset codec implementation		cscodec
+tokeniser2	HTML tokeniser (again)			tokeniser2
 csdetect	Charset detection			csdetect
 dict		Generic string dictionary
 entities	Named entity dictionary
-filter		Input stream filtering
 hubbub		Library initialisation/finalisation
-inputstream	Buffered input stream			html
 parser		Public parser API			html
-parser-utf16	Public parser API (utf-16 internally)	html
 tokeniser	HTML tokeniser				html
-tokeniser2	HTML tokeniser (again)			tokeniser2
 tokeniser3	HTML tokeniser (byte-by-byte)		tokeniser2
 tree		Treebuilding API			html
 tree2		Treebuilding API			tree-construction
-
-# Regression tests
-regression/cscodec-segv	Segfault in charset codecs
-regression/filter-segv	Segfault in input filtering
-regression/stream-nomem	Inputstream buffer expansion

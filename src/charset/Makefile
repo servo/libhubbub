@@ -32,7 +32,7 @@ dirstack_$(sp) := $(d)
 d              := $(DIR)
 
 # Sources
-SRCS_$(d) := aliases.c codec.c codec_iconv.c codec_utf8.c codec_utf16.c detect.c
+SRCS_$(d) := detect.c
 
 # Append to sources for component
 SOURCES += $(addprefix $(d), $(SRCS_$(d)))

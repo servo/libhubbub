@@ -29,9 +29,6 @@ static uintptr_t node_counter;
 		node_ref_alloc += NODE_REF_CHUNK;			\
 	}
 
-static const uint8_t *pbuffer;
-
-static void buffer_handler(const uint8_t *buffer, size_t len, void *pw);
 static int create_comment(void *ctx, const hubbub_string *data, void **result);
 static int create_doctype(void *ctx, const hubbub_doctype *doctype,
 		void **result);
@@ -79,22 +76,6 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	return realloc(ptr, len);
 }
 
-static const uint8_t *ptr_from_hubbub_string(const hubbub_string *string)
-{
-	const uint8_t *data;
-
-	switch (string->type) {
-	case HUBBUB_STRING_OFF:
-		data = pbuffer + string->data.off;
-		break;
-	case HUBBUB_STRING_PTR:
-		data = string->data.ptr;
-		break;
-	}
-
-	return data;
-}
-
 int main(int argc, char **argv)
 {
 	hubbub_parser *parser;
@@ -105,7 +86,6 @@ int main(int argc, char **argv)
 	uint8_t buf[CHUNK_SIZE];
 	const char *charset;
 	hubbub_charset_source cssource;
-	uint8_t *buffer;
 	bool passed = true;
 
 	if (argc != 3) {
@@ -125,11 +105,6 @@ int main(int argc, char **argv)
 
 	parser = hubbub_parser_create("UTF-8", "UTF-8", myrealloc, NULL);
 	assert(parser != NULL);
-
-	params.buffer_handler.handler = buffer_handler;
-	params.buffer_handler.pw = NULL;
-	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_BUFFER_HANDLER,
-			&params) == HUBBUB_OK);
 
 	params.tree_handler = &tree_handler;
 	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_TREE_HANDLER,
@@ -176,11 +151,6 @@ int main(int argc, char **argv)
 
 	printf("Charset: %s (from %d)\n", charset, cssource);
 
-	assert(hubbub_parser_claim_buffer(parser, &buffer, &len) ==
-			HUBBUB_OK);
-
-	free(buffer);
-
 	hubbub_parser_destroy(parser);
 
 	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
@@ -200,18 +170,10 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void buffer_handler(const uint8_t *buffer, size_t len, void *pw)
-{
-	UNUSED(len);
-	UNUSED(pw);
-
-	pbuffer = buffer;
-}
-
 int create_comment(void *ctx, const hubbub_string *data, void **result)
 {
 	printf("Creating (%" PRIuPTR ") [comment '%.*s']\n", ++node_counter,
-			(int) data->len, ptr_from_hubbub_string(data));
+			(int) data->len, data->ptr);
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -226,8 +188,7 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 {
 	printf("Creating (%" PRIuPTR ") [doctype '%.*s']\n", ++node_counter,
-			(int) doctype->name.len,
-			ptr_from_hubbub_string(&doctype->name));
+			(int) doctype->name.len, doctype->name.ptr);
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -242,7 +203,7 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	printf("Creating (%" PRIuPTR ") [element '%.*s']\n", ++node_counter,
-			(int) tag->name.len, ptr_from_hubbub_string(&tag->name));
+			(int) tag->name.len, tag->name.ptr);
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -257,11 +218,11 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 int create_text(void *ctx, const hubbub_string *data, void **result)
 {
 	printf("Creating (%" PRIuPTR ") [text '%.*s']\n", ++node_counter,
-			(int) data->len, ptr_from_hubbub_string(data));
+			(int) data->len, data->ptr);
 
 	GROW_REF
 	node_ref[node_counter] = 0;
-	
+
 	ref_node(ctx, (void *) node_counter);
 
 	*result = (void *) node_counter;

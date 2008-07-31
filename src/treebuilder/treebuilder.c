@@ -76,9 +76,6 @@ static const struct {
 };
 
 
-static void hubbub_treebuilder_buffer_handler(const uint8_t *data,
-		size_t len, void *pw);
-
 
 /**
  * Create a hubbub treebuilder
@@ -103,9 +100,6 @@ hubbub_treebuilder *hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 
 	tb->tokeniser = tokeniser;
 
-	tb->input_buffer = NULL;
-	tb->input_buffer_len = 0;
-
 	tb->tree_handler = NULL;
 
 	memset(&tb->context, 0, sizeof(hubbub_treebuilder_context));
@@ -124,12 +118,7 @@ hubbub_treebuilder *hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 	assert(HTML != 0);
 	tb->context.element_stack[0].type = 0;
 
-	tb->context.collect.string.type = HUBBUB_STRING_OFF;
-
 	tb->context.strip_leading_lr = false;
-
-	tb->buffer_handler = NULL;
-	tb->buffer_pw = NULL;
 
 	tb->error_handler = NULL;
 	tb->error_pw = NULL;
@@ -147,17 +136,7 @@ hubbub_treebuilder *hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 		return NULL;
 	}
 
-	tokparams.buffer_handler.handler = hubbub_treebuilder_buffer_handler;
-	tokparams.buffer_handler.pw = tb;
-
-	if (hubbub_tokeniser_setopt(tokeniser, HUBBUB_TOKENISER_BUFFER_HANDLER,
-			&tokparams) != HUBBUB_OK) {
-		alloc(tb->context.element_stack, 0, pw);
-		alloc(tb, 0, pw);
-		return NULL;
-	}
-
-	return tb;	
+	return tb;
 }
 
 /**
@@ -172,12 +151,6 @@ void hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 
 	if (treebuilder == NULL)
 		return;
-
-	tokparams.buffer_handler.handler = treebuilder->buffer_handler;
-	tokparams.buffer_handler.pw = treebuilder->buffer_pw;
-
-	hubbub_tokeniser_setopt(treebuilder->tokeniser,
-			HUBBUB_TOKENISER_BUFFER_HANDLER, &tokparams);
 
 	tokparams.token_handler.handler = NULL;
 	tokparams.token_handler.pw = NULL;
@@ -253,13 +226,6 @@ hubbub_error hubbub_treebuilder_setopt(hubbub_treebuilder *treebuilder,
 		return HUBBUB_BADPARM;
 
 	switch (type) {
-	case HUBBUB_TREEBUILDER_BUFFER_HANDLER:
-		treebuilder->buffer_handler = params->buffer_handler.handler;
-		treebuilder->buffer_pw = params->buffer_handler.pw;
-		treebuilder->buffer_handler(treebuilder->input_buffer,
-				treebuilder->input_buffer_len,
-				treebuilder->buffer_pw);
-		break;
 	case HUBBUB_TREEBUILDER_ERROR_HANDLER:
 		treebuilder->error_handler = params->error_handler.handler;
 		treebuilder->error_pw = params->error_handler.pw;
@@ -273,29 +239,6 @@ hubbub_error hubbub_treebuilder_setopt(hubbub_treebuilder *treebuilder,
 	}
 
 	return HUBBUB_OK;
-}
-
-/**
- * Handle tokeniser buffer moving
- *
- * \param data  New location of buffer
- * \param len   Length of buffer in bytes
- * \param pw    Pointer to treebuilder instance
- */
-void hubbub_treebuilder_buffer_handler(const uint8_t *data,
-		size_t len, void *pw)
-{
-	hubbub_treebuilder *treebuilder = (hubbub_treebuilder *) pw;
-
-	treebuilder->input_buffer = data;
-	treebuilder->input_buffer_len = len;
-
-	/* Inform client buffer handler, too (if there is one) */
-	if (treebuilder->buffer_handler != NULL) {
-		treebuilder->buffer_handler(treebuilder->input_buffer,
-				treebuilder->input_buffer_len,
-				treebuilder->buffer_pw);
-	}
 }
 
 /**
@@ -418,8 +361,7 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool insert_into_current_node)
 {
-	const uint8_t *data = treebuilder->input_buffer +
-			token->data.character.data.off;
+	const uint8_t *data = token->data.character.ptr;
 	size_t len = token->data.character.len;
 	size_t c;
 
@@ -434,8 +376,7 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 	if (c > 0 && insert_into_current_node) {
 		hubbub_string temp;
 
-		temp.type = HUBBUB_STRING_OFF;
-		temp.data.off = token->data.character.data.off;
+		temp.ptr = data;
 		temp.len = c;
 
 		append_text(treebuilder, &temp);
@@ -444,7 +385,7 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 	/* Non-whitespace characters in token, so reprocess */
 	if (c != len) {
 		/* Update token data to strip leading whitespace */
-		((hubbub_token *) token)->data.character.data.off += c;
+		((hubbub_token *) token)->data.character.ptr += c;
 		((hubbub_token *) token)->data.character.len -= c;
 
 		return true;
@@ -566,7 +507,7 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 	treebuilder->context.collect.mode = treebuilder->context.mode;
 	treebuilder->context.collect.type = type;
 	treebuilder->context.collect.node = appended;
-	treebuilder->context.collect.string.data.off = 0;
+	treebuilder->context.collect.string.ptr = NULL;
 	treebuilder->context.collect.string.len = 0;
 
 	treebuilder->tree_handler->unref_node(
@@ -651,6 +592,7 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 	while (entry != NULL) {
 		int success;
 		void *clone, *appended;
+		hubbub_ns prev_ns;
 		element_type prev_type;
 		void *prev_node;
 		uint32_t prev_stack_index;
@@ -719,9 +661,9 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 		}
 
 		if (!formatting_list_replace(treebuilder, entry,
-				entry->details.type, appended,
-				treebuilder->context.current_node,
-				&prev_type, &prev_node,
+				entry->details.ns, entry->details.type, 
+				appended, treebuilder->context.current_node,
+				&prev_ns, &prev_type, &prev_node,
 				&prev_stack_index)) {
 			/** \todo handle errors */
 			treebuilder->tree_handler->unref_node(
@@ -748,6 +690,7 @@ void clear_active_formatting_list_to_marker(hubbub_treebuilder *treebuilder)
 	bool done = false;
 
 	while ((entry = treebuilder->context.formatting_list_end) != NULL) {
+		hubbub_ns ns;
 		element_type type;
 		void *node;
 		uint32_t stack_index;
@@ -756,7 +699,7 @@ void clear_active_formatting_list_to_marker(hubbub_treebuilder *treebuilder)
 			done = true;
 
 		if (!formatting_list_remove(treebuilder, entry, 
-				&type, &node, &stack_index)) {
+				&ns, &type, &node, &stack_index)) {
 			/** \todo handle errors */
 		}
 
@@ -1009,17 +952,8 @@ void append_text(hubbub_treebuilder *treebuilder,
 element_type element_type_from_name(hubbub_treebuilder *treebuilder,
 		const hubbub_string *tag_name)
 {
-	const uint8_t *name = NULL;
+	const uint8_t *name = tag_name->ptr;
 	size_t len = tag_name->len;
-
-	switch (tag_name->type) {
-	case HUBBUB_STRING_OFF:
-		name = treebuilder->input_buffer + tag_name->data.off;
-		break;
-	case HUBBUB_STRING_PTR:
-		name = tag_name->data.ptr;
-		break;
-	}
 
 
 	/** \todo UTF-16 support */
@@ -1249,13 +1183,15 @@ element_type prev_node(hubbub_treebuilder *treebuilder)
  * Append an element to the end of the list of active formatting elements
  *
  * \param treebuilder  Treebuilder instance containing list
+ * \param ns           Namespace of node being inserted
  * \param type         Type of node being inserted
  * \param node         Node being inserted
  * \param stack_index  Index into stack of open elements
  * \return True on success, false on memory exhaustion
  */
 bool formatting_list_append(hubbub_treebuilder *treebuilder,
-		element_type type, void *node, uint32_t stack_index)
+		hubbub_ns ns, element_type type, void *node, 
+		uint32_t stack_index)
 {
 	formatting_list_entry *entry;
 
@@ -1264,6 +1200,7 @@ bool formatting_list_append(hubbub_treebuilder *treebuilder,
 	if (entry == NULL)
 		return false;
 
+	entry->details.ns = ns;
 	entry->details.type = type;
 	entry->details.node = node;
 	entry->stack_index = stack_index;
@@ -1287,6 +1224,7 @@ bool formatting_list_append(hubbub_treebuilder *treebuilder,
  * \param treebuilder  Treebuilder instance containing list
  * \param prev         Previous entry
  * \param next         Next entry
+ * \param ns           Namespace of node being inserted
  * \param type         Type of node being inserted
  * \param node         Node being inserted
  * \param stack_index  Index into stack of open elements
@@ -1294,7 +1232,8 @@ bool formatting_list_append(hubbub_treebuilder *treebuilder,
  */
 bool formatting_list_insert(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *prev, formatting_list_entry *next,
-		element_type type, void *node, uint32_t stack_index)
+		hubbub_ns ns, element_type type, void *node, 
+		uint32_t stack_index)
 {
 	formatting_list_entry *entry;
 
@@ -1311,6 +1250,7 @@ bool formatting_list_insert(hubbub_treebuilder *treebuilder,
 	if (entry == NULL)
 		return false;
 
+	entry->details.ns = ns;
 	entry->details.type = type;
 	entry->details.node = node;
 	entry->stack_index = stack_index;
@@ -1337,6 +1277,7 @@ bool formatting_list_insert(hubbub_treebuilder *treebuilder,
  *
  * \param treebuilder  Treebuilder instance containing list
  * \param entry        The item to remove
+ * \param ns           Pointer to location to receive namespace of node
  * \param type         Pointer to location to receive type of node
  * \param node         Pointer to location to receive node
  * \param stack_index  Pointer to location to receive stack index
@@ -1344,8 +1285,10 @@ bool formatting_list_insert(hubbub_treebuilder *treebuilder,
  */
 bool formatting_list_remove(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry,
-		element_type *type, void **node, uint32_t *stack_index)
+		hubbub_ns *ns, element_type *type, void **node, 
+		uint32_t *stack_index)
 {
+	*ns = entry->details.ns;
 	*type = entry->details.type;
 	*node = entry->details.node;
 	*stack_index = entry->stack_index;
@@ -1370,9 +1313,11 @@ bool formatting_list_remove(hubbub_treebuilder *treebuilder,
  *
  * \param treebuilder   Treebuilder instance containing list
  * \param entry         The item to replace
+ * \param ns            Replacement node namespace
  * \param type          Replacement node type
  * \param node          Replacement node
  * \param stack_index   Replacement stack index
+ * \param ons           Pointer to location to receive old namespace
  * \param otype         Pointer to location to receive old type
  * \param onode         Pointer to location to receive old node
  * \param ostack_index  Pointer to location to receive old stack index
@@ -1380,15 +1325,19 @@ bool formatting_list_remove(hubbub_treebuilder *treebuilder,
  */
 bool formatting_list_replace(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry,
-		element_type type, void *node, uint32_t stack_index,
-		element_type *otype, void **onode, uint32_t *ostack_index)
+		hubbub_ns ns, element_type type, void *node, 
+		uint32_t stack_index,
+		hubbub_ns *ons, element_type *otype, void **onode, 
+		uint32_t *ostack_index)
 {
 	UNUSED(treebuilder);
 
+	*ons = entry->details.ns;
 	*otype = entry->details.type;
 	*onode = entry->details.node;
 	*ostack_index = entry->stack_index;
 
+	entry->details.ns = ns;
 	entry->details.type = type;
 	entry->details.node = node;
 	entry->stack_index = stack_index;

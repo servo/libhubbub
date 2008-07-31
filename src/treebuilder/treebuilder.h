@@ -24,7 +24,6 @@ typedef struct hubbub_treebuilder hubbub_treebuilder;
  * Hubbub treebuilder option types
  */
 typedef enum hubbub_treebuilder_opttype {
-	HUBBUB_TREEBUILDER_BUFFER_HANDLER,
 	HUBBUB_TREEBUILDER_ERROR_HANDLER,
 	HUBBUB_TREEBUILDER_TREE_HANDLER,
 	HUBBUB_TREEBUILDER_DOCUMENT_NODE,
@@ -34,11 +33,6 @@ typedef enum hubbub_treebuilder_opttype {
  * Hubbub treebuilder option parameters
  */
 typedef union hubbub_treebuilder_optparams {
-	struct {
-		hubbub_buffer_handler handler;
-		void *pw;
-	} buffer_handler;
-
 	struct {
 		hubbub_error_handler handler;
 		void *pw;

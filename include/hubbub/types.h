@@ -70,16 +70,7 @@ typedef enum hubbub_ns {
  * Tokeniser string type
  */
 typedef struct hubbub_string {
-	enum {
-		HUBBUB_STRING_OFF,
-		HUBBUB_STRING_PTR
-	} type;
-
-	union {
-		const uint8_t *ptr;	/**< Pointer to data */
-		uint32_t off;		/**< Byte offset of string start */
-	} data;
-
+	const uint8_t *ptr;		/**< Pointer to data */
 	size_t len;			/**< Byte length of string */
 } hubbub_string;
 
