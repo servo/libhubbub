@@ -1009,6 +1009,15 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 			ctag->n_attributes = 0;
 
 			tokeniser->state = STATE_TAG_NAME;
+		} else if (c == '\0') {
+			COLLECT_NOBUF(tokeniser->context.chars, len);
+			tokeniser->context.current_tag_type =
+					HUBBUB_TOKEN_START_TAG;
+
+			START_BUF(ctag->name, u_fffd, sizeof(u_fffd));
+			ctag->n_attributes = 0;
+
+			tokeniser->state = STATE_TAG_NAME;
 		} else if (c == '>') {
 			/** \todo parse error */
 
@@ -2072,12 +2081,10 @@ bool hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 		FINISH(cdoc->name);
 		emit_current_doctype(tokeniser, false);
 		tokeniser->state = STATE_DATA;
+	} else if (c == '\0') {
+		COLLECT_CHAR(cdoc->name, u_fffd, sizeof(u_fffd));
 	} else {
-		if (c == '\0') {
-			COLLECT_CHAR(cdoc->name, u_fffd, sizeof(u_fffd));
-		} else {
-			COLLECT(cdoc->name, cptr, len);
-		}
+		COLLECT(cdoc->name, cptr, len);
 	}
 
 	return true;
