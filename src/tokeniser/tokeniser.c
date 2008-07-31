@@ -1515,6 +1515,22 @@ bool hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeniser)
 		COLLECT_NOBUF(tokeniser->context.chars, len);
 		COLLECT_CHAR(ctag->attributes[ctag->n_attributes - 1].value,
 				u_fffd, sizeof(u_fffd));
+	} else if (c == '\r') {
+		cptr = parserutils_inputstream_peek(
+				tokeniser->input,
+				tokeniser->context.chars.len + len,
+				&len);
+
+		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
+			return false;
+		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
+				CHAR(cptr) != '\n') {
+			COLLECT_CHAR(ctag->attributes[
+					ctag->n_attributes - 1].value,
+					&lf, sizeof(lf));
+		}
+
+		COLLECT_NOBUF(tokeniser->context.chars, len);
 	} else {
 		COLLECT_NOBUF(tokeniser->context.chars, len);
 		COLLECT_MS(ctag->attributes[ctag->n_attributes - 1].value,
@@ -1557,6 +1573,22 @@ bool hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeniser)
 		COLLECT_NOBUF(tokeniser->context.chars, len);
 		COLLECT_CHAR(ctag->attributes[ctag->n_attributes - 1].value,
 				u_fffd, sizeof(u_fffd));
+	} else if (c == '\r') {
+		cptr = parserutils_inputstream_peek(
+				tokeniser->input,
+				tokeniser->context.chars.len + len,
+				&len);
+
+		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
+			return false;
+		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
+				CHAR(cptr) != '\n') {
+			COLLECT_CHAR(ctag->attributes[
+					ctag->n_attributes - 1].value,
+					&lf, sizeof(lf));
+		}
+
+		COLLECT_NOBUF(tokeniser->context.chars, len);
 	} else {
 		COLLECT_NOBUF(tokeniser->context.chars, len);
 		COLLECT_MS(ctag->attributes[ctag->n_attributes - 1].value,
@@ -1767,6 +1799,22 @@ bool hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 		parserutils_buffer_append(tokeniser->buffer,
 				u_fffd, sizeof(u_fffd));
 		comment->len += sizeof(u_fffd);
+	} else if (c == '\r') {
+		cptr = parserutils_inputstream_peek(
+				tokeniser->input,
+				tokeniser->context.chars.len + len,
+				&len);
+
+		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
+			return false;
+		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
+				CHAR(cptr) != '\n') {
+			parserutils_buffer_append(tokeniser->buffer,
+					&lf, sizeof(lf));
+			comment->len += sizeof(lf);
+		}
+
+		COLLECT_NOBUF(tokeniser->context.chars, len);
 	} else {
 		parserutils_buffer_append(tokeniser->buffer,
 				(uint8_t *)cptr, len);
@@ -1912,7 +1960,7 @@ bool hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 		} else if (c == '\r') {
 			cptr = parserutils_inputstream_peek(
 					tokeniser->input,
-					tokeniser->context.chars.len + 1,
+					tokeniser->context.chars.len + len,
 					&len);
 			if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 				return false;
@@ -2234,9 +2282,21 @@ bool hubbub_tokeniser_handle_doctype_public_dq(hubbub_tokeniser *tokeniser)
 		tokeniser->state = STATE_DATA;
 	} else if (c == '\0') {
 		if (cdoc->public_id.len == 0) {
-			START_BUF(cdoc->name, u_fffd, sizeof(u_fffd));
+			START_BUF(cdoc->public_id, u_fffd, sizeof(u_fffd));
 		} else {
-			COLLECT_CHAR(cdoc->name, u_fffd, sizeof(u_fffd));
+			COLLECT_CHAR(cdoc->public_id, u_fffd, sizeof(u_fffd));
+		}
+	} else if (c == '\r') {
+		cptr = parserutils_inputstream_peek(
+				tokeniser->input,
+				tokeniser->context.chars.len + len,
+				&len);
+
+		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
+			return false;
+		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
+				CHAR(cptr) != '\n') {
+			COLLECT_CHAR(cdoc->public_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->public_id, cptr, len);
@@ -2278,6 +2338,18 @@ bool hubbub_tokeniser_handle_doctype_public_sq(hubbub_tokeniser *tokeniser)
 		} else {
 			COLLECT_CHAR(cdoc->public_id,
 					u_fffd, sizeof(u_fffd));
+		}
+	} else if (c == '\r') {
+		cptr = parserutils_inputstream_peek(
+				tokeniser->input,
+				tokeniser->context.chars.len + len,
+				&len);
+
+		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
+			return false;
+		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
+				CHAR(cptr) != '\n') {
+			COLLECT_CHAR(cdoc->public_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->public_id, cptr, len);
@@ -2444,6 +2516,18 @@ bool hubbub_tokeniser_handle_doctype_system_dq(hubbub_tokeniser *tokeniser)
 			COLLECT_CHAR(cdoc->system_id,
 					u_fffd, sizeof(u_fffd));
 		}
+	} else if (c == '\r') {
+		cptr = parserutils_inputstream_peek(
+				tokeniser->input,
+				tokeniser->context.chars.len + len,
+				&len);
+
+		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
+			return false;
+		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
+				CHAR(cptr) != '\n') {
+			COLLECT_CHAR(cdoc->system_id, &lf, sizeof(lf));
+		}
 	} else {
 		COLLECT_MS(cdoc->system_id, cptr, len);
 	}
@@ -2483,6 +2567,18 @@ bool hubbub_tokeniser_handle_doctype_system_sq(hubbub_tokeniser *tokeniser)
 		} else {
 			COLLECT_CHAR(cdoc->system_id,
 					u_fffd, sizeof(u_fffd));
+		}
+	} else if (c == '\r') {
+		cptr = parserutils_inputstream_peek(
+				tokeniser->input,
+				tokeniser->context.chars.len + len,
+				&len);
+
+		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
+			return false;
+		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
+				CHAR(cptr) != '\n') {
+			COLLECT_CHAR(cdoc->system_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->system_id, cptr, len);
@@ -2639,6 +2735,30 @@ bool hubbub_tokeniser_handle_cdata_block(hubbub_tokeniser *tokeniser)
 		/* Perform NUL-byte replacement */
 		emit_character_token(tokeniser, &u_fffd_str);
 
+		parserutils_inputstream_advance(tokeniser->input, len);
+		tokeniser->context.match_cdata.end = 0;
+	} else if (c == '\r') {
+		cptr = parserutils_inputstream_peek(
+				tokeniser->input,
+				tokeniser->context.chars.len + len,
+				&len);
+
+		if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
+			break;
+		}
+
+		if (tokeniser->context.chars.len > 0) {
+			/* Emit any pending characters */
+			emit_current_chars(tokeniser);
+		}
+
+		c = CHAR(cptr);
+		if (c != '\n') {
+			/* Emit newline */
+			emit_character_token(tokeniser, &lf_str);
+		}
+
+		/* Advance over */
 		parserutils_inputstream_advance(tokeniser->input, len);
 		tokeniser->context.match_cdata.end = 0;
 	} else {
