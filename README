@@ -22,7 +22,8 @@ Requirements
   Hubbub also requires the following libraries to be installed:
 
     + An iconv implementation (e.g. libiconv)
-    + JSON-C (for the testcases) -- see json/README for further information
+    + LibParserUtils -- see below for further information
+    + JSON-C (for the testcases) -- see below for further information
 
   Hubbub can make use of the following, for debugging and testing purposes:
 
@@ -31,6 +32,18 @@ Requirements
 
 Compilation
 -----------
+
+  In order to compile Hubbub, you will need LibParserUtils.  This can be
+  obtained from SVN:
+  		$ svn co svn://svn.netsurf-browser.org/trunk/libparserutils/
+
+  In order to run tests, you will need JSON-C.  You can obtain the version
+  that Hubbub needs from SVN:
+  		$ svn co svn://svn.netsurf-browser.org/trunk/json-c/json-c/
+
+
+  Compile and install both of these before trying to make Hubbub.
+
 
   If necessary, modify the toolchain settings in the Makefile.
   Invoke make:
