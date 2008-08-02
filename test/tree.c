@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 	/* Initialise library */
 	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
 
-	parser = hubbub_parser_create("UTF-8", "UTF-8", myrealloc, NULL);
+	parser = hubbub_parser_create("UTF-8", myrealloc, NULL);
 	assert(parser != NULL);
 
 	params.tree_handler = &tree_handler;

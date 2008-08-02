@@ -29,12 +29,11 @@ struct hubbub_parser {
  * Create a hubbub parser
  *
  * \param enc      Source document encoding, or NULL to autodetect
- * \param int_enc  Desired encoding of document
  * \param alloc    Memory (de)allocation function
  * \param pw       Pointer to client-specific private data (may be NULL)
  * \return Pointer to parser instance, or NULL on error
  */
-hubbub_parser *hubbub_parser_create(const char *enc, const char *int_enc,
+hubbub_parser *hubbub_parser_create(const char *enc,
 		hubbub_alloc alloc, void *pw)
 {
 	hubbub_parser *parser;
