@@ -370,13 +370,13 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 	if (tokeniser == NULL)
 		return HUBBUB_BADPARM;
 
-#ifdef NDEBUG
-#define state(x) \
-		case x:
-#else
+#if 0
 #define state(x) \
 		case x: \
 			printf( #x "\n");
+#else
+#define state(x) \
+		case x:
 #endif
 
 	while (cont) {
@@ -455,7 +455,7 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 		case STATE_COMMENT:
 		case STATE_COMMENT_END_DASH:
 		case STATE_COMMENT_END:
-#ifndef NDEBUG
+#if 0
 			printf("COMMENT %d\n",
 					tokeniser->state - STATE_COMMENT_START + 1);
 #endif
@@ -577,16 +577,6 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 		tokeniser->context.to_buf = true; \
 	} while (0)
 
-#define START(str, cptr, length) \
-	do { \
-		if (tokeniser->context.to_buf) { \
-			START_BUF(str, (uint8_t *)(cptr), length); \
-		} else { \
-			(str).ptr = (uint8_t  *)(cptr); \
-			(str).len = (length); \
-		} \
-	} while (0)
-
 #define COLLECT(str, cptr, length) \
 	do { \
 		assert(str.len != 0); \
@@ -606,7 +596,7 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 #define COLLECT_MS(str, cptr, length) \
 	do { \
 		if ((str).len == 0) { \
-			START(str, cptr, length); \
+			START_BUF(str, (uint8_t *)cptr, length); \
 		} else { \
 			COLLECT(str, cptr, length); \
 		} \
@@ -614,9 +604,6 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 
 #define COLLECT_MS_NOBUF(str, cptr, length) \
 	do { \
-		if ((str).len == 0) { \
-			(str).ptr = (uint8_t *) cptr; \
-		} \
 		(str).len += (length); \
 	} while (0)
 
@@ -777,25 +764,24 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 			break;
 
 		} else if (c == '-') {
-			hubbub_string *chars = &tokeniser->context.chars;
-
 			if (tokeniser->escape_flag == false &&
 					(tokeniser->content_model ==
 						HUBBUB_CONTENT_MODEL_RCDATA ||
 					tokeniser->content_model ==
 						HUBBUB_CONTENT_MODEL_CDATA) &&
-					chars->len >= 3) {
+					tokeniser->context.chars.len >= 3) {
 
 				cptr = parserutils_inputstream_peek(
 						tokeniser->input,
-						chars->len - 3, &len);
+						tokeniser->context.chars.len - 3,
+						&len);
 
 				if (strncmp((char *)cptr,
 						"<!--", SLEN("<!--")) == 0)
 					tokeniser->escape_flag = true;
 			}
 
-			COLLECT_MS(tokeniser->context.chars, cptr, len);
+			COLLECT_MS_NOBUF(tokeniser->context.chars, cptr, len);
 		} else if (c == '<' && (tokeniser->content_model ==
 						HUBBUB_CONTENT_MODEL_PCDATA ||
 					((tokeniser->content_model ==
@@ -809,12 +795,10 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 			}
 
 			/* Buffer '<' */
-			START(tokeniser->context.chars, cptr, len);
+			tokeniser->context.chars.len = len;
 			tokeniser->state = STATE_TAG_OPEN;
 			break;
 		} else if (c == '>') {
-			hubbub_string *chars = &tokeniser->context.chars;
-
 			/* no need to check that there are enough characters,
 			 * since you can only run into this if the flag is
 			 * true in the first place, which requires four
@@ -827,7 +811,8 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 
 				cptr = parserutils_inputstream_peek(
 						tokeniser->input,
-						chars->len - 2, &len);
+						tokeniser->context.chars.len - 2,
+						&len);
 
 				if (strncmp((char *)cptr,
 						"-->", SLEN("-->")) == 0) {
@@ -835,7 +820,7 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 				}
 			}
 
-			COLLECT_MS(tokeniser->context.chars, cptr, len);
+			COLLECT_MS_NOBUF(tokeniser->context.chars, cptr, len);
 		} else if (c == '\0') {
 			if (tokeniser->context.chars.len > 0) {
 				/* Emit any pending characters */
@@ -872,7 +857,7 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 			parserutils_inputstream_advance(tokeniser->input, 1);
 		} else {
 			/* Just collect into buffer */
-			COLLECT_MS(tokeniser->context.chars, cptr, len);
+			COLLECT_MS_NOBUF(tokeniser->context.chars, cptr, len);
 		}
 	}
 
@@ -961,10 +946,7 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return false;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		/* Emit '<' */
-		emit_character_token(tokeniser,
-				&tokeniser->context.chars);
-
+		/* Return to data state with '<' still in "chars" */
 		tokeniser->state = STATE_DATA;
 		return true;
 	}
@@ -1033,10 +1015,7 @@ bool hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 
 			tokeniser->state = STATE_BOGUS_COMMENT;
 		} else {
-			/* Emit '<' */
-			emit_character_token(tokeniser,
-					&tokeniser->context.chars);
-
+			/* Return to data state with '<' still in "chars" */
 			tokeniser->state = STATE_DATA;
 		}
 	}
@@ -1688,7 +1667,7 @@ bool hubbub_tokeniser_handle_character_reference_in_attribute_value(
 					tokeniser->context.chars.len, &len);
 
 			/* Insert the ampersand */
-			COLLECT(tokeniser->context.chars, cptr, len);
+			COLLECT_NOBUF(tokeniser->context.chars, len);
 			COLLECT_MS(attr->value, cptr, len);
 		}
 
@@ -2703,7 +2682,7 @@ bool hubbub_tokeniser_handle_cdata_block(hubbub_tokeniser *tokeniser)
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return false;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		emit_character_token(tokeniser, &tokeniser->context.chars);
+		emit_current_chars(tokeniser);
 		tokeniser->state = STATE_DATA;
 		return true;
 	}
@@ -2712,14 +2691,14 @@ bool hubbub_tokeniser_handle_cdata_block(hubbub_tokeniser *tokeniser)
 
 	if (c == ']' && (tokeniser->context.match_cdata.end == 0 ||
 			tokeniser->context.match_cdata.end == 1)) {
-		COLLECT(tokeniser->context.chars, cptr, len);
+		COLLECT_NOBUF(tokeniser->context.chars, len);
 		tokeniser->context.match_cdata.end += len;
 	} else if (c == '>' && tokeniser->context.match_cdata.end == 2) {
 		/* Remove the previous two "]]" */
 		tokeniser->context.chars.len -= 2;
 
 		/* Emit any pending characters */
-		emit_character_token(tokeniser, &tokeniser->context.chars);
+		emit_current_chars(tokeniser);
 
 		/* Now move past the "]]>" bit */
 		parserutils_inputstream_advance(tokeniser->input, SLEN("]]>"));
@@ -2728,8 +2707,7 @@ bool hubbub_tokeniser_handle_cdata_block(hubbub_tokeniser *tokeniser)
 	} else if (c == '\0') {
 		if (tokeniser->context.chars.len > 0) {
 			/* Emit any pending characters */
-			emit_character_token(tokeniser,
-					&tokeniser->context.chars);
+			emit_current_chars(tokeniser);
 		}
 
 		/* Perform NUL-byte replacement */
