@@ -1,31 +1,31 @@
 #data
-<html>
- <body>
-  <table>
-   <tr>
-    <td>
-     <div>
-      <b>
-     </div>
-     <table></table>
-    </td>
-   </tr>
-  </table>
-  <table></table>
-  <script type="text/javascript"></script>
- </body>
-</html>
+<html><body><table><tr><td><div><b></div>X<table></table></td></tr></table><table></table><script type="text/javascript"></script></body></html>
 #errors
 #document
 | <html>
 |   <head>
 |   <body>
-|    <table>
-|     <tr>
-|      <td>
-|       <div>
-|        <b>
-|       <table>
-|    <table>
-|    <script>
+|     <table>
+|       <tbody>
+|         <tr>
+|           <td>
+|             <div>
+|               <b>
+|             <b>
+|               "X"
+|               <table>
+|     <table>
+|     <script>
+|       type="text/javascript"
+
+#data
+<font><center></font>
+#errors
+#document
+| <html>
+|   <head>
+|   <body>
+|     <font>
+|     <center>
+|       <font>
 
