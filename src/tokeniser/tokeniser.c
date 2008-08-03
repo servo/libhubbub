@@ -725,22 +725,22 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 			 * consumption */
 			break;
 
-		} else if (c == '-') {
-			if (tokeniser->escape_flag == false &&
-					(tokeniser->content_model ==
+		} else if (c == '-' &&
+				tokeniser->escape_flag == false &&
+				(tokeniser->content_model ==
 						HUBBUB_CONTENT_MODEL_RCDATA ||
-					tokeniser->content_model ==
+				tokeniser->content_model ==
 						HUBBUB_CONTENT_MODEL_CDATA) &&
-					tokeniser->context.chars.len >= 3) {
+				tokeniser->context.chars.len >= 3) {
 
-				cptr = parserutils_inputstream_peek(
-						tokeniser->input,
-						tokeniser->context.chars.len - 3,
-						&len);
+			cptr = parserutils_inputstream_peek(
+					tokeniser->input,
+					tokeniser->context.chars.len - 3,
+					&len);
 
-				if (strncmp((char *)cptr,
-						"<!--", SLEN("<!--")) == 0)
-					tokeniser->escape_flag = true;
+			if (strncmp((char *)cptr,
+					"<!--", SLEN("<!--")) == 0) {
+				tokeniser->escape_flag = true;
 			}
 
 			tokeniser->context.chars.len += len;
@@ -760,26 +760,22 @@ bool hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 			tokeniser->context.chars.len = len;
 			tokeniser->state = STATE_TAG_OPEN;
 			break;
-		} else if (c == '>') {
+		} else if (c == '>' && tokeniser->escape_flag == true &&
+				(tokeniser->content_model ==
+						HUBBUB_CONTENT_MODEL_RCDATA ||
+				tokeniser->content_model ==
+						HUBBUB_CONTENT_MODEL_CDATA)) {
 			/* no need to check that there are enough characters,
 			 * since you can only run into this if the flag is
 			 * true in the first place, which requires four
 			 * characters. */
-			if (tokeniser->escape_flag == true &&
-					(tokeniser->content_model ==
-						HUBBUB_CONTENT_MODEL_RCDATA ||
-					tokeniser->content_model ==
-						HUBBUB_CONTENT_MODEL_CDATA)) {
+			cptr = parserutils_inputstream_peek(
+					tokeniser->input,
+					tokeniser->context.chars.len - 2,
+					&len);
 
-				cptr = parserutils_inputstream_peek(
-						tokeniser->input,
-						tokeniser->context.chars.len - 2,
-						&len);
-
-				if (strncmp((char *)cptr,
-						"-->", SLEN("-->")) == 0) {
-					tokeniser->escape_flag = false;
-				}
+			if (strncmp((char *)cptr, "-->", SLEN("-->")) == 0) {
+				tokeniser->escape_flag = false;
 			}
 
 			tokeniser->context.chars.len += len;
