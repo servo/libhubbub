@@ -108,8 +108,6 @@ typedef struct hubbub_tokeniser_context {
 						 * emitted */
 	size_t last_start_tag_len;
 
-	bool to_buf;
-
 	struct {
 		uint32_t count;
 		bool match;
@@ -574,22 +572,13 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 				cptr, (lengt)); \
 		(str).ptr = data; \
 		(str).len = (lengt); \
-		tokeniser->context.to_buf = true; \
 	} while (0)
 
 #define COLLECT(str, cptr, length) \
 	do { \
 		assert(str.len != 0); \
-		if (tokeniser->context.to_buf == true) { \
-			parserutils_buffer_append(tokeniser->buffer, \
-					(uint8_t *) cptr, (length)); \
-		} \
-		(str).len += (length); \
-	} while (0)
-
-#define COLLECT_NOBUF(str, length) \
-	do { \
-		assert(str.len != 0); \
+		parserutils_buffer_append(tokeniser->buffer, \
+				(uint8_t *) cptr, (length)); \
 		(str).len += (length); \
 	} while (0)
 
@@ -602,35 +591,19 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 		} \
 	} while (0)
 
+#define COLLECT_NOBUF(str, length) \
+	do { \
+		assert(str.len != 0); \
+		(str).len += (length); \
+	} while (0)
+
 #define COLLECT_MS_NOBUF(str, cptr, length) \
 	do { \
 		(str).len += (length); \
 	} while (0)
 
 #define FINISH(str) \
-	tokeniser->context.to_buf = false
-
-#define SWITCH(str) \
-	do { \
-		uint8_t *data = tokeniser->buffer->data + \
-				tokeniser->buffer->length; \
-		parserutils_buffer_append( \
-				tokeniser->buffer, \
-				(str).ptr, (str).len); \
-		(str).ptr = data; \
-		tokeniser->context.to_buf = true; \
-	} while (0)
-
-#define COLLECT_CHAR(str, cptr, length) \
-	do { \
-		assert(str.len != 0); \
-		if (tokeniser->context.to_buf == false) { \
-			SWITCH(str); \
-		} \
-		parserutils_buffer_append(tokeniser->buffer, cptr, (length)); \
-		str.len += (length); \
-	} while (0)
-
+	/* no-op */
 
 
 /**
@@ -1211,13 +1184,13 @@ bool hubbub_tokeniser_handle_tag_name(hubbub_tokeniser *tokeniser)
 		emit_current_tag(tokeniser);
 		tokeniser->state = STATE_DATA;
 	} else if (c == '\0') {
-		COLLECT_CHAR(ctag->name, u_fffd, sizeof(u_fffd));
+		COLLECT(ctag->name, u_fffd, sizeof(u_fffd));
 	} else if (c == '/') {
 		FINISH(ctag->name);
 		tokeniser->state = STATE_SELF_CLOSING_START_TAG;
 	} else if ('A' <= c && c <= 'Z') {
 		uint8_t lc = (c + 0x20);
-		COLLECT_CHAR(ctag->name, &lc, len);
+		COLLECT(ctag->name, &lc, len);
 	} else {
 		COLLECT(ctag->name, cptr, len);
 	}
@@ -1328,11 +1301,11 @@ bool hubbub_tokeniser_handle_attribute_name(hubbub_tokeniser *tokeniser)
 		FINISH(ctag->attributes[ctag->n_attributes - 1].name);
 		tokeniser->state = STATE_SELF_CLOSING_START_TAG;
 	} else if (c == '\0') {
-		COLLECT_CHAR(ctag->attributes[ctag->n_attributes - 1].name,
+		COLLECT(ctag->attributes[ctag->n_attributes - 1].name,
 				u_fffd, sizeof(u_fffd));
 	} else if ('A' <= c && c <= 'Z') {
 		uint8_t lc = (c + 0x20);
-		COLLECT_CHAR(ctag->attributes[ctag->n_attributes - 1].name,
+		COLLECT(ctag->attributes[ctag->n_attributes - 1].name,
 				&lc, len);
 	} else {
 		COLLECT(ctag->attributes[ctag->n_attributes - 1].name,
@@ -1492,7 +1465,7 @@ bool hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeniser)
 		/* Don't eat the '&'; it'll be handled by entity consumption */
 	} else if (c == '\0') {
 		COLLECT_NOBUF(tokeniser->context.chars, len);
-		COLLECT_CHAR(ctag->attributes[ctag->n_attributes - 1].value,
+		COLLECT(ctag->attributes[ctag->n_attributes - 1].value,
 				u_fffd, sizeof(u_fffd));
 	} else if (c == '\r') {
 		cptr = parserutils_inputstream_peek(
@@ -1504,7 +1477,7 @@ bool hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeniser)
 			return false;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				CHAR(cptr) != '\n') {
-			COLLECT_CHAR(ctag->attributes[
+			COLLECT(ctag->attributes[
 					ctag->n_attributes - 1].value,
 					&lf, sizeof(lf));
 		}
@@ -1550,7 +1523,7 @@ bool hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeniser)
 		/* Don't eat the '&'; it'll be handled by entity consumption */
 	} else if (c == '\0') {
 		COLLECT_NOBUF(tokeniser->context.chars, len);
-		COLLECT_CHAR(ctag->attributes[ctag->n_attributes - 1].value,
+		COLLECT(ctag->attributes[ctag->n_attributes - 1].value,
 				u_fffd, sizeof(u_fffd));
 	} else if (c == '\r') {
 		cptr = parserutils_inputstream_peek(
@@ -1562,7 +1535,7 @@ bool hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeniser)
 			return false;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				CHAR(cptr) != '\n') {
-			COLLECT_CHAR(ctag->attributes[
+			COLLECT(ctag->attributes[
 					ctag->n_attributes - 1].value,
 					&lf, sizeof(lf));
 		}
@@ -1613,7 +1586,7 @@ bool hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeniser)
 		tokeniser->state = STATE_DATA;
 	} else if (c == '\0') {
 		COLLECT_NOBUF(tokeniser->context.chars, len);
-		COLLECT_CHAR(ctag->attributes[ctag->n_attributes - 1].value,
+		COLLECT(ctag->attributes[ctag->n_attributes - 1].value,
 				u_fffd, sizeof(u_fffd));
 	} else {
 		if (c == '"' || c == '\'' || c == '=') {
@@ -1657,7 +1630,6 @@ bool hubbub_tokeniser_handle_character_reference_in_attribute_value(
 				START_BUF(attr->value,
 						utf8, sizeof(utf8) - len);
 			} else {
-				SWITCH(attr->value);
 				COLLECT(attr->value, utf8, sizeof(utf8) - len);
 			}
 		} else {
@@ -2109,7 +2081,7 @@ bool hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 		emit_current_doctype(tokeniser, false);
 		tokeniser->state = STATE_DATA;
 	} else if (c == '\0') {
-		COLLECT_CHAR(cdoc->name, u_fffd, sizeof(u_fffd));
+		COLLECT(cdoc->name, u_fffd, sizeof(u_fffd));
 	} else {
 		COLLECT(cdoc->name, cptr, len);
 	}
@@ -2263,7 +2235,7 @@ bool hubbub_tokeniser_handle_doctype_public_dq(hubbub_tokeniser *tokeniser)
 		if (cdoc->public_id.len == 0) {
 			START_BUF(cdoc->public_id, u_fffd, sizeof(u_fffd));
 		} else {
-			COLLECT_CHAR(cdoc->public_id, u_fffd, sizeof(u_fffd));
+			COLLECT(cdoc->public_id, u_fffd, sizeof(u_fffd));
 		}
 	} else if (c == '\r') {
 		cptr = parserutils_inputstream_peek(
@@ -2275,7 +2247,7 @@ bool hubbub_tokeniser_handle_doctype_public_dq(hubbub_tokeniser *tokeniser)
 			return false;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				CHAR(cptr) != '\n') {
-			COLLECT_CHAR(cdoc->public_id, &lf, sizeof(lf));
+			COLLECT(cdoc->public_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->public_id, cptr, len);
@@ -2315,7 +2287,7 @@ bool hubbub_tokeniser_handle_doctype_public_sq(hubbub_tokeniser *tokeniser)
 			START_BUF(cdoc->public_id,
 					u_fffd, sizeof(u_fffd));
 		} else {
-			COLLECT_CHAR(cdoc->public_id,
+			COLLECT(cdoc->public_id,
 					u_fffd, sizeof(u_fffd));
 		}
 	} else if (c == '\r') {
@@ -2328,7 +2300,7 @@ bool hubbub_tokeniser_handle_doctype_public_sq(hubbub_tokeniser *tokeniser)
 			return false;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				CHAR(cptr) != '\n') {
-			COLLECT_CHAR(cdoc->public_id, &lf, sizeof(lf));
+			COLLECT(cdoc->public_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->public_id, cptr, len);
@@ -2492,7 +2464,7 @@ bool hubbub_tokeniser_handle_doctype_system_dq(hubbub_tokeniser *tokeniser)
 		if (cdoc->public_id.len == 0) {
 			START_BUF(cdoc->system_id, u_fffd, sizeof(u_fffd));
 		} else {
-			COLLECT_CHAR(cdoc->system_id,
+			COLLECT(cdoc->system_id,
 					u_fffd, sizeof(u_fffd));
 		}
 	} else if (c == '\r') {
@@ -2505,7 +2477,7 @@ bool hubbub_tokeniser_handle_doctype_system_dq(hubbub_tokeniser *tokeniser)
 			return false;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				CHAR(cptr) != '\n') {
-			COLLECT_CHAR(cdoc->system_id, &lf, sizeof(lf));
+			COLLECT(cdoc->system_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->system_id, cptr, len);
@@ -2544,7 +2516,7 @@ bool hubbub_tokeniser_handle_doctype_system_sq(hubbub_tokeniser *tokeniser)
 		if (cdoc->public_id.len == 0) {
 			START_BUF(cdoc->system_id, u_fffd, sizeof(u_fffd));
 		} else {
-			COLLECT_CHAR(cdoc->system_id,
+			COLLECT(cdoc->system_id,
 					u_fffd, sizeof(u_fffd));
 		}
 	} else if (c == '\r') {
@@ -2557,7 +2529,7 @@ bool hubbub_tokeniser_handle_doctype_system_sq(hubbub_tokeniser *tokeniser)
 			return false;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				CHAR(cptr) != '\n') {
-			COLLECT_CHAR(cdoc->system_id, &lf, sizeof(lf));
+			COLLECT(cdoc->system_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->system_id, cptr, len);
