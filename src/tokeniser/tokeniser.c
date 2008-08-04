@@ -2811,17 +2811,25 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 		return false;
 
 	cptr = parserutils_inputstream_peek(tokeniser->input,
-			ctx->match_entity.offset + ctx->match_entity.length - 1,
+			ctx->match_entity.offset + ctx->match_entity.length,
 			&len);
 	c = CHAR(cptr);
 
 	if ((tokeniser->context.match_entity.return_state ==
 			STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE) &&
-			(c != ';') &&
-			((0x0030 <= c && c <= 0x0039) ||
-			(0x0041 <= c && c <= 0x005A) ||
-			(0x0061 <= c && c <= 0x007A))) {
-		ctx->match_entity.codepoint = 0;
+			(c != ';')) {
+
+		cptr = parserutils_inputstream_peek(tokeniser->input,
+				ctx->match_entity.offset +
+						ctx->match_entity.length,
+				&len);
+		c = CHAR(cptr);
+
+		if ((0x0030 <= c && c <= 0x0039) ||
+				(0x0041 <= c && c <= 0x005A) ||
+				(0x0061 <= c && c <= 0x007A)) {
+			ctx->match_entity.codepoint = 0;
+		}
 	}
 
 	/* Flag completion */
