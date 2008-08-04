@@ -251,6 +251,13 @@ static bool hubbub_tokeniser_handle_numbered_entity(
 static bool hubbub_tokeniser_handle_named_entity(
 		hubbub_tokeniser *tokeniser);
 
+static inline bool emit_character_token(hubbub_tokeniser *tokeniser,
+		const hubbub_string *chars);
+static inline bool emit_current_chars(hubbub_tokeniser *tokeniser);
+static inline bool emit_current_tag(hubbub_tokeniser *tokeniser);
+static inline bool emit_current_comment(hubbub_tokeniser *tokeniser);
+static inline bool emit_current_doctype(hubbub_tokeniser *tokeniser,
+		bool force_quirks);
 static void hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 		hubbub_token *token);
 
@@ -594,168 +601,6 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 #define FINISH(str) \
 	/* no-op */
 
-
-/**
- * Emit a character token.
- *
- * \param tokeniser	Tokeniser instance
- * \param chars		Pointer to hubbub_string to emit
- * \return	true
- */
-static inline bool emit_character_token(hubbub_tokeniser *tokeniser,
-		const hubbub_string *chars)
-{
-	hubbub_token token;
-
-	token.type = HUBBUB_TOKEN_CHARACTER;
-	token.data.character = *chars;
-
-	hubbub_tokeniser_emit_token(tokeniser, &token);
-
-	return true;
-}
-
-/**
- * Emit the current pending characters being stored in the tokeniser context.
- *
- * \param tokeniser	Tokeniser instance
- * \return	true
- */
-static inline bool emit_current_chars(hubbub_tokeniser *tokeniser)
-{
-	hubbub_token token;
-
-	size_t len;
-	uintptr_t cptr = parserutils_inputstream_peek(
-			tokeniser->input, 0, &len);
-
-	token.type = HUBBUB_TOKEN_CHARACTER;
-	token.data.character.ptr = (uint8_t *) cptr;
-	token.data.character.len = tokeniser->context.pending;
-
-	hubbub_tokeniser_emit_token(tokeniser, &token);
-
-	return true;
-}
-
-/**
- * Emit the current tag token being stored in the tokeniser context.
- *
- * \param tokeniser	Tokeniser instance
- * \return	true
- */
-static inline bool emit_current_tag(hubbub_tokeniser *tokeniser)
-{
-	hubbub_token token;
-
-	/* Emit current tag */
-	token.type = tokeniser->context.current_tag_type;
-	token.data.tag = tokeniser->context.current_tag;
-	token.data.tag.ns = HUBBUB_NS_HTML;
-
-	/* Discard duplicate attributes */
-	uint32_t i, j;
-	uint32_t n_attributes = token.data.tag.n_attributes;
-	hubbub_attribute *attrs = token.data.tag.attributes;
-
-	/* Discard duplicate attributes */
-	for (i = 0; i < n_attributes; i++) {
-		for (j = 0; j < n_attributes; j++) {
-			uint32_t move;
-
-			if (j == i ||
-				attrs[i].name.len !=
-						attrs[j].name.len ||
-				strncmp((char *)attrs[i].name.ptr,
-					(char *)attrs[j].name.ptr,
-					attrs[i].name.len) != 0) {
-				/* Attributes don't match */
-				continue;
-			}
-
-			/* Calculate amount to move */
-			move = (n_attributes - 1 -
-					((i < j) ? j : i)) *
-					sizeof(hubbub_attribute);
-
-			if (move > 0) {
-				memmove((i < j) ? &attrs[j]
-						: &attrs[i],
-					(i < j) ? &attrs[j+1]
-						: &attrs[i+1],
-					move);
-			}
-
-			/* And reduce the number of attributes */
-			n_attributes--;
-		}
-	}
-
-	token.data.tag.n_attributes = n_attributes;
-
-	hubbub_tokeniser_emit_token(tokeniser, &token);
-
-	if (token.type == HUBBUB_TOKEN_START_TAG) {
-		/* Save start tag name for R?CDATA */
-		if (token.data.tag.name.len <
-			sizeof(tokeniser->context.last_start_tag_name)) {
-			strncpy((char *)tokeniser->context.last_start_tag_name,
-				(const char *)token.data.tag.name.ptr,
-				token.data.tag.name.len);
-			tokeniser->context.last_start_tag_len =
-					token.data.tag.name.len;
-		} else {
-			tokeniser->context.last_start_tag_name[0] = '\0';
-			tokeniser->context.last_start_tag_len = 0;
-		}
-	} else /* if (token->type == HUBBUB_TOKEN_END_TAG) */ {
-		/* Reset content model after R?CDATA elements */
-		tokeniser->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
-	}
-
-	return true;
-}
-
-/**
- * Emit the current comment token being stored in the tokeniser context.
- *
- * \param tokeniser	Tokeniser instance
- * \return	true
- */
-static inline bool emit_current_comment(hubbub_tokeniser *tokeniser)
-{
-	hubbub_token token;
-
-	token.type = HUBBUB_TOKEN_COMMENT;
-	token.data.comment = tokeniser->context.current_comment;
-
-	hubbub_tokeniser_emit_token(tokeniser, &token);
-
-	return true;
-}
-
-/**
- * Emit the current doctype token being stored in the tokeniser context.
- *
- * \param tokeniser	Tokeniser instance
- * \param force_qurirks	Force quirks mode on this document
- * \return	true
- */
-static inline bool emit_current_doctype(hubbub_tokeniser *tokeniser,
-		bool force_quirks)
-{
-	hubbub_token token;
-
-	/* Emit doctype */
-	token.type = HUBBUB_TOKEN_DOCTYPE;
-	token.data.doctype = tokeniser->context.current_doctype;
-	if (force_quirks == true)
-		token.data.doctype.force_quirks = true;
-
-	hubbub_tokeniser_emit_token(tokeniser, &token);
-
-	return true;
-}
 
 
 
@@ -2989,6 +2834,171 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 	return true;
 }
 
+
+
+/*** Token emitting bits ***/
+
+/**
+ * Emit a character token.
+ *
+ * \param tokeniser	Tokeniser instance
+ * \param chars		Pointer to hubbub_string to emit
+ * \return	true
+ */
+static inline bool emit_character_token(hubbub_tokeniser *tokeniser,
+		const hubbub_string *chars)
+{
+	hubbub_token token;
+
+	token.type = HUBBUB_TOKEN_CHARACTER;
+	token.data.character = *chars;
+
+	hubbub_tokeniser_emit_token(tokeniser, &token);
+
+	return true;
+}
+
+/**
+ * Emit the current pending characters being stored in the tokeniser context.
+ *
+ * \param tokeniser	Tokeniser instance
+ * \return	true
+ */
+static inline bool emit_current_chars(hubbub_tokeniser *tokeniser)
+{
+	hubbub_token token;
+
+	size_t len;
+	uintptr_t cptr = parserutils_inputstream_peek(
+			tokeniser->input, 0, &len);
+
+	token.type = HUBBUB_TOKEN_CHARACTER;
+	token.data.character.ptr = (uint8_t *) cptr;
+	token.data.character.len = tokeniser->context.pending;
+
+	hubbub_tokeniser_emit_token(tokeniser, &token);
+
+	return true;
+}
+
+/**
+ * Emit the current tag token being stored in the tokeniser context.
+ *
+ * \param tokeniser	Tokeniser instance
+ * \return	true
+ */
+static inline bool emit_current_tag(hubbub_tokeniser *tokeniser)
+{
+	hubbub_token token;
+
+	/* Emit current tag */
+	token.type = tokeniser->context.current_tag_type;
+	token.data.tag = tokeniser->context.current_tag;
+	token.data.tag.ns = HUBBUB_NS_HTML;
+
+	/* Discard duplicate attributes */
+	uint32_t i, j;
+	uint32_t n_attributes = token.data.tag.n_attributes;
+	hubbub_attribute *attrs = token.data.tag.attributes;
+
+	/* Discard duplicate attributes */
+	for (i = 0; i < n_attributes; i++) {
+		for (j = 0; j < n_attributes; j++) {
+			uint32_t move;
+
+			if (j == i ||
+				attrs[i].name.len !=
+						attrs[j].name.len ||
+				strncmp((char *)attrs[i].name.ptr,
+					(char *)attrs[j].name.ptr,
+					attrs[i].name.len) != 0) {
+				/* Attributes don't match */
+				continue;
+			}
+
+			/* Calculate amount to move */
+			move = (n_attributes - 1 -
+					((i < j) ? j : i)) *
+					sizeof(hubbub_attribute);
+
+			if (move > 0) {
+				memmove((i < j) ? &attrs[j]
+						: &attrs[i],
+					(i < j) ? &attrs[j+1]
+						: &attrs[i+1],
+					move);
+			}
+
+			/* And reduce the number of attributes */
+			n_attributes--;
+		}
+	}
+
+	token.data.tag.n_attributes = n_attributes;
+
+	hubbub_tokeniser_emit_token(tokeniser, &token);
+
+	if (token.type == HUBBUB_TOKEN_START_TAG) {
+		/* Save start tag name for R?CDATA */
+		if (token.data.tag.name.len <
+			sizeof(tokeniser->context.last_start_tag_name)) {
+			strncpy((char *)tokeniser->context.last_start_tag_name,
+				(const char *)token.data.tag.name.ptr,
+				token.data.tag.name.len);
+			tokeniser->context.last_start_tag_len =
+					token.data.tag.name.len;
+		} else {
+			tokeniser->context.last_start_tag_name[0] = '\0';
+			tokeniser->context.last_start_tag_len = 0;
+		}
+	} else /* if (token->type == HUBBUB_TOKEN_END_TAG) */ {
+		/* Reset content model after R?CDATA elements */
+		tokeniser->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
+	}
+
+	return true;
+}
+
+/**
+ * Emit the current comment token being stored in the tokeniser context.
+ *
+ * \param tokeniser	Tokeniser instance
+ * \return	true
+ */
+static inline bool emit_current_comment(hubbub_tokeniser *tokeniser)
+{
+	hubbub_token token;
+
+	token.type = HUBBUB_TOKEN_COMMENT;
+	token.data.comment = tokeniser->context.current_comment;
+
+	hubbub_tokeniser_emit_token(tokeniser, &token);
+
+	return true;
+}
+
+/**
+ * Emit the current doctype token being stored in the tokeniser context.
+ *
+ * \param tokeniser	Tokeniser instance
+ * \param force_qurirks	Force quirks mode on this document
+ * \return	true
+ */
+static inline bool emit_current_doctype(hubbub_tokeniser *tokeniser,
+		bool force_quirks)
+{
+	hubbub_token token;
+
+	/* Emit doctype */
+	token.type = HUBBUB_TOKEN_DOCTYPE;
+	token.data.doctype = tokeniser->context.current_doctype;
+	if (force_quirks == true)
+		token.data.doctype.force_quirks = true;
+
+	hubbub_tokeniser_emit_token(tokeniser, &token);
+
+	return true;
+}
 
 /**
  * Emit a token, performing sanity checks if necessary
