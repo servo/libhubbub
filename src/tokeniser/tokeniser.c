@@ -981,8 +981,7 @@ bool hubbub_tokeniser_handle_close_tag_open(hubbub_tokeniser *tokeniser)
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
 			/** \todo parse error */
 
-			/* Emit "</" */
-			emit_current_chars(tokeniser);
+			/* Return to data state with "</" pending */
 			tokeniser->state = STATE_DATA;
 			return true;
 		}
