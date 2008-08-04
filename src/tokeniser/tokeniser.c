@@ -651,8 +651,67 @@ static inline bool emit_current_tag(hubbub_tokeniser *tokeniser)
 	/* Emit current tag */
 	token.type = tokeniser->context.current_tag_type;
 	token.data.tag = tokeniser->context.current_tag;
+	token.data.tag.ns = HUBBUB_NS_HTML;
+
+	/* Discard duplicate attributes */
+	uint32_t i, j;
+	uint32_t n_attributes = token.data.tag.n_attributes;
+	hubbub_attribute *attrs = token.data.tag.attributes;
+
+	/* Discard duplicate attributes */
+	for (i = 0; i < n_attributes; i++) {
+		for (j = 0; j < n_attributes; j++) {
+			uint32_t move;
+
+			if (j == i ||
+				attrs[i].name.len !=
+						attrs[j].name.len ||
+				strncmp((char *)attrs[i].name.ptr,
+					(char *)attrs[j].name.ptr,
+					attrs[i].name.len) != 0) {
+				/* Attributes don't match */
+				continue;
+			}
+
+			/* Calculate amount to move */
+			move = (n_attributes - 1 -
+					((i < j) ? j : i)) *
+					sizeof(hubbub_attribute);
+
+			if (move > 0) {
+				memmove((i < j) ? &attrs[j]
+						: &attrs[i],
+					(i < j) ? &attrs[j+1]
+						: &attrs[i+1],
+					move);
+			}
+
+			/* And reduce the number of attributes */
+			n_attributes--;
+		}
+	}
+
+	token.data.tag.n_attributes = n_attributes;
 
 	hubbub_tokeniser_emit_token(tokeniser, &token);
+
+	if (token.type == HUBBUB_TOKEN_START_TAG) {
+		/* Save start tag name for R?CDATA */
+		if (token.data.tag.name.len <
+			sizeof(tokeniser->context.last_start_tag_name)) {
+			strncpy((char *)tokeniser->context.last_start_tag_name,
+				(const char *)token.data.tag.name.ptr,
+				token.data.tag.name.len);
+			tokeniser->context.last_start_tag_len =
+					token.data.tag.name.len;
+		} else {
+			tokeniser->context.last_start_tag_name[0] = '\0';
+			tokeniser->context.last_start_tag_len = 0;
+		}
+	} else /* if (token->type == HUBBUB_TOKEN_END_TAG) */ {
+		/* Reset content model after R?CDATA elements */
+		tokeniser->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
+	}
 
 	return true;
 }
@@ -2943,73 +3002,13 @@ void hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 	assert(tokeniser != NULL);
 	assert(token != NULL);
 
-	if (token->type == HUBBUB_TOKEN_START_TAG ||
-			token->type == HUBBUB_TOKEN_END_TAG) {
-		uint32_t i, j;
-		uint32_t n_attributes = token->data.tag.n_attributes;
-		hubbub_attribute *attrs =
-				token->data.tag.attributes;
-
-		token->data.tag.ns = HUBBUB_NS_HTML;
-
-		/* Discard duplicate attributes */
-		for (i = 0; i < n_attributes; i++) {
-			for (j = 0; j < n_attributes; j++) {
-				uint32_t move;
-
-				if (j == i ||
-					attrs[i].name.len !=
-							attrs[j].name.len ||
-					strncmp((char *)attrs[i].name.ptr,
-						(char *)attrs[j].name.ptr,
-						attrs[i].name.len) != 0) {
-					/* Attributes don't match */
-					continue;
-				}
-
-				/* Calculate amount to move */
-				move = (n_attributes - 1 -
-					((i < j) ? j : i)) *
-					sizeof(hubbub_attribute);
-
-				if (move > 0) {
-					memmove((i < j) ? &attrs[j]
-							: &attrs[i],
-						(i < j) ? &attrs[j+1]
-							: &attrs[i+1],
-						move);
-				}
-
-				/* And reduce the number of attributes */
-				n_attributes--;
-			}
-		}
-
-		token->data.tag.n_attributes = n_attributes;
-	}
-
-	/* Finally, emit token */
-	if (tokeniser->token_handler)
+	/* Emit the token */
+	if (tokeniser->token_handler) {
 		tokeniser->token_handler(token, tokeniser->token_pw);
-
-	if (token->type == HUBBUB_TOKEN_START_TAG) {
-		if (token->data.tag.name.len <
-			sizeof(tokeniser->context.last_start_tag_name)) {
-			strncpy((char *)tokeniser->context.last_start_tag_name,
-				(const char *)token->data.tag.name.ptr,
-				token->data.tag.name.len);
-			tokeniser->context.last_start_tag_len =
-					token->data.tag.name.len;
-		} else {
-			tokeniser->context.last_start_tag_name[0] = '\0';
-			tokeniser->context.last_start_tag_len = 0;
-		}
-	} else if (token->type == HUBBUB_TOKEN_END_TAG) {
-		tokeniser->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
 	}
 
+	/* Discard current buffer */
 	if (tokeniser->buffer->length) {
-		/* Discard current buffer */
 		parserutils_buffer_discard(tokeniser->buffer, 0,
 				tokeniser->buffer->length);
 	}
