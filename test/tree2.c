@@ -155,6 +155,10 @@ static hubbub_parser *setup_parser(void)
 	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_DOCUMENT_NODE,
 			&params) == HUBBUB_OK);
 
+	params.enable_scripting = true;
+	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_ENABLE_SCRIPTING,
+			&params) == HUBBUB_OK);
+
 	return parser;
 }
 
@@ -320,6 +324,16 @@ int main(int argc, char **argv)
 	}
 
 	if (Document != NULL) {
+		node_print(&got, Document, 0);
+
+		passed = !strcmp(got.buf, expected.buf);
+		if (!passed) {
+			printf("expected:\n");
+			printf("%s", expected.buf);
+			printf("got:\n");
+			printf("%s", got.buf);
+		}
+
 		hubbub_parser_destroy(parser);
 		while (Document) {
 			node_t *victim = Document;
@@ -813,13 +827,23 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 		buf_add(buf, "<!DOCTYPE ");
 		buf_add(buf, node->data.doctype.name);
 
-		if (node->data.doctype.public_id) {
-			buf_add(buf, " ");
-			buf_add(buf, node->data.doctype.public_id);
-		}
-		if (node->data.doctype.system_id) {
-			buf_add(buf, " ");
-			buf_add(buf, node->data.doctype.system_id);
+		if (node->data.doctype.public_id || 
+				node->data.doctype.system_id) {
+			if (node->data.doctype.public_id) {
+				buf_add(buf, " \"");
+				buf_add(buf, node->data.doctype.public_id);
+				buf_add(buf, "\" ");
+			} else {
+				buf_add(buf, "\"\" ");
+			}
+			
+			if (node->data.doctype.system_id) {
+				buf_add(buf, " \"");
+				buf_add(buf, node->data.doctype.system_id);
+				buf_add(buf, "\"");
+			} else {
+				buf_add(buf, "\"\"");
+			}
 		}
 
 		buf_add(buf, ">\n");
