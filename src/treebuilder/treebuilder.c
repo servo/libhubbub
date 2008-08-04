@@ -236,6 +236,10 @@ hubbub_error hubbub_treebuilder_setopt(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TREEBUILDER_DOCUMENT_NODE:
 		treebuilder->context.document = params->document_node;
 		break;
+	case HUBBUB_TREEBUILDER_ENABLE_SCRIPTING:
+		treebuilder->context.enable_scripting = 
+				params->enable_scripting;
+		break;
 	}
 
 	return HUBBUB_OK;

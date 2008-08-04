@@ -130,8 +130,7 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 		} else if (type == NOFRAMES || type == STYLE) {
 			parse_generic_rcdata(treebuilder, token, false);
 		} else if (type == NOSCRIPT) {
-			/** \todo determine if scripting is enabled */
-			if (false /*scripting_is_enabled*/) {
+			if (treebuilder->context.enable_scripting) {
 				parse_generic_rcdata(treebuilder, token, false);
 			} else {
 				insert_element(treebuilder, &token->data.tag);

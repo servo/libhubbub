@@ -297,7 +297,8 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 		process_textarea_in_body(treebuilder, token);
 	} else if (type == IFRAME || type == NOEMBED || 
 			type == NOFRAMES || 
-			(false /* scripting */ && type == NOSCRIPT)) {
+			(treebuilder->context.enable_scripting && 
+			type == NOSCRIPT)) {
 		parse_generic_rcdata(treebuilder, token, false);
 	} else if (type == SELECT) {
 		process_select_in_body(treebuilder, token);
@@ -411,7 +412,7 @@ bool process_end_tag(hubbub_treebuilder *treebuilder,
 			type == PARAM || type == SELECT ||
 			type == SPACER || type == TABLE ||
 			type == TEXTAREA || type == WBR ||
-			(false /* scripting enabled */ && 
+			(treebuilder->context.enable_scripting && 
 					type == NOSCRIPT)) {
 		/** \todo parse error */
 /*	} else if (type == EVENT_SOURCE || type == SECTION ||

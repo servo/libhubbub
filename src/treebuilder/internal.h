@@ -82,6 +82,8 @@ typedef struct hubbub_treebuilder_context
 
 	void *document;			/**< Pointer to the document node */
 
+	bool enable_scripting;		/**< Whether scripting is enabled */
+
 	struct {
 		insertion_mode mode;	/**< Insertion mode to return to */
 		void *node;		/**< Node to attach Text child to */
