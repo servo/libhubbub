@@ -2811,7 +2811,7 @@ bool hubbub_tokeniser_handle_named_entity(hubbub_tokeniser *tokeniser)
 		return false;
 
 	cptr = parserutils_inputstream_peek(tokeniser->input,
-			ctx->match_entity.offset + ctx->match_entity.length,
+			ctx->match_entity.offset + ctx->match_entity.length - 1,
 			&len);
 	c = CHAR(cptr);
 

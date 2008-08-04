@@ -29,3 +29,13 @@
 |     <center>
 |       <font>
 
+#data
+<a href="a&amp;b&amp;c">Foo</a>
+#errors
+#document
+| <html>
+|   <head>
+|   <body>
+|     <a>
+|       href="a&b&c"
+|       "Foo"
