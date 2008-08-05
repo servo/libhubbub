@@ -84,9 +84,11 @@ int main(int argc, char **argv)
 				printf("Test: %s\n",
 					json_object_get_string(val));
 			} else if (strcmp(key, "input") == 0) {
+				int len;
 				ctx.input = (const uint8_t *)
 						json_object_get_string_len(val,
-						(int *) &ctx.input_len);
+						&len);
+				ctx.input_len = len;
 			} else if (strcmp(key, "output") == 0) {
 				ctx.output = json_object_get_array(val);
 				ctx.output_index = 0;
