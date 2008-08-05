@@ -311,7 +311,7 @@ void token_handler(const hubbub_token *token, void *pw)
 			printf("\tsystem: '%.*s' (%d)\n",
 				(int) token->data.doctype.system_id.len,
 				gotsys,
-				token->data.doctype.system_id.len);
+				(int) token->data.doctype.system_id.len);
 		}
 
 		assert(token->data.doctype.name.len == strlen(expname));

@@ -489,7 +489,7 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 	tchild->next = tchild->prev = NULL;
 
 #ifndef NDEBUG
-	printf("appending (%x):\n", (unsigned)tchild);
+	printf("appending (%p):\n", (void *) tchild);
 	node_print(NULL, tchild, 0);
 	printf("to:\n");
 	if (parent != (void *)1)
@@ -546,7 +546,7 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 	node_t *tref = ref_child;
 
 #ifndef NDEBUG
-	printf("inserting (%x):\n", (unsigned)tchild);
+	printf("inserting (%p):\n", (void *) tchild);
 	node_print(NULL, tchild, 0);
 	printf("before:\n");
 	node_print(NULL, tref, 0);
