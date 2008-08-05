@@ -26,6 +26,7 @@ typedef enum hubbub_parser_opttype {
 	HUBBUB_PARSER_CONTENT_MODEL,
 	HUBBUB_PARSER_TREE_HANDLER,
 	HUBBUB_PARSER_DOCUMENT_NODE,
+	HUBBUB_PARSER_ENABLE_SCRIPTING,
 } hubbub_parser_opttype;
 
 /**
@@ -49,6 +50,8 @@ typedef union hubbub_parser_optparams {
 	hubbub_tree_handler *tree_handler;
 
 	void *document_node;
+
+	bool enable_scripting;
 } hubbub_parser_optparams;
 
 /* Create a hubbub parser */
