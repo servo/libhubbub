@@ -30,7 +30,7 @@ typedef struct context {
 } context;
 
 static void run_test(context *ctx);
-static void token_handler(const hubbub_token *token, void *pw);
+static hubbub_error token_handler(const hubbub_token *token, void *pw);
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
@@ -219,7 +219,7 @@ void run_test(context *ctx)
 	}
 }
 
-void token_handler(const hubbub_token *token, void *pw)
+hubbub_error token_handler(const hubbub_token *token, void *pw)
 {
 	static const char *token_names[] = {
 		"DOCTYPE", "StartTag", "EndTag",
@@ -255,7 +255,7 @@ void token_handler(const hubbub_token *token, void *pw)
 
 	/* Got a terminating EOF -- no error */
 	if (ctx->output_index >= array_list_length(ctx->output))
-		return;
+		return HUBBUB_OK;
 
 	/* Now increment the output index so we don't re-expect this token */
 	ctx->output_index++;
@@ -477,4 +477,6 @@ void token_handler(const hubbub_token *token, void *pw)
 		printf("\n");
 		break;
 	}
+
+	return HUBBUB_OK;
 }

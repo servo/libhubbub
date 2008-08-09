@@ -115,7 +115,8 @@ struct hubbub_treebuilder
 	void *alloc_pw;			/**< Client private data */
 };
 
-void hubbub_treebuilder_token_handler(const hubbub_token *token, void *pw);
+hubbub_error hubbub_treebuilder_token_handler(
+		const hubbub_token *token, void *pw);
 
 bool process_characters_expect_whitespace(
 		hubbub_treebuilder *treebuilder, const hubbub_token *token,

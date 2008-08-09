@@ -3023,12 +3023,14 @@ hubbub_error emit_current_doctype(hubbub_tokeniser *tokeniser,
 hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 		hubbub_token *token)
 {
+	hubbub_error err = HUBBUB_OK;
+
 	assert(tokeniser != NULL);
 	assert(token != NULL);
 
 	/* Emit the token */
 	if (tokeniser->token_handler) {
-		tokeniser->token_handler(token, tokeniser->token_pw);
+		err = tokeniser->token_handler(token, tokeniser->token_pw);
 	}
 
 	/* Discard current buffer */
@@ -3044,5 +3046,5 @@ hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 		tokeniser->context.pending = 0;
 	}
 
-	return HUBBUB_OK;
+	return err;
 }

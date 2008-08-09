@@ -251,7 +251,7 @@ hubbub_error hubbub_treebuilder_setopt(hubbub_treebuilder *treebuilder,
  * \param token  The emitted token
  * \param pw     Pointer to treebuilder instance
  */
-void hubbub_treebuilder_token_handler(const hubbub_token *token, 
+hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token, 
 		void *pw)
 {
 	hubbub_treebuilder *treebuilder = (hubbub_treebuilder *) pw;
@@ -260,7 +260,7 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 	/* Do nothing if we have no document node or there's no tree handler */
 	if (treebuilder->context.document == NULL ||
 			treebuilder->tree_handler == NULL)
-		return;
+		return HUBBUB_OK;
 
 	assert((signed) treebuilder->context.current_node >= 0);
 
@@ -348,6 +348,8 @@ void hubbub_treebuilder_token_handler(const hubbub_token *token,
 			break;
 		}
 	}
+
+	return HUBBUB_OK;
 }
 
 

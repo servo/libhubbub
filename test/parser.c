@@ -10,7 +10,7 @@
 
 #include "testutils.h"
 
-static void token_handler(const hubbub_token *token, void *pw);
+static hubbub_error token_handler(const hubbub_token *token, void *pw);
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void token_handler(const hubbub_token *token, void *pw)
+hubbub_error token_handler(const hubbub_token *token, void *pw)
 {
 	static const char *token_names[] = {
 		"DOCTYPE", "START TAG", "END TAG",
@@ -170,4 +170,6 @@ void token_handler(const hubbub_token *token, void *pw)
 		printf("\n");
 		break;
 	}
+
+	return HUBBUB_OK;
 }

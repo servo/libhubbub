@@ -20,7 +20,8 @@ typedef void *(*hubbub_alloc)(void *ptr, size_t size, void *pw);
 /**
  * Type of token handling function
  */
-typedef void (*hubbub_token_handler)(const hubbub_token *token, void *pw);
+typedef hubbub_error (*hubbub_token_handler)(
+		const hubbub_token *token, void *pw);
 
 /**
  * Type of parse error handling function
