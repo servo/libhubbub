@@ -268,17 +268,9 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 	} else if (type == TABLE) {
 		process_container_in_body(treebuilder, token);
 
-		/** \todo Section 9.2.3.1 is really vague
-		 * Are we meant to reset the insertion mode all the time or 
-		 * only when we're actually in body? I'd inferred the latter 
-		 * interpretation from the spec, but that causes breakage on 
-		 * real-world pages. */
-/*		if (treebuilder->context.mode == IN_BODY) {*/
-			treebuilder->context.element_stack[
-					current_table(treebuilder)].
-					tainted = false;
-			treebuilder->context.mode = IN_TABLE;
-/*		}*/
+		treebuilder->context.element_stack[current_table(treebuilder)]
+				.tainted = false;
+		treebuilder->context.mode = IN_TABLE;
 	} else if (type == AREA || type == BASEFONT || 
 			type == BGSOUND || type == BR || 
 			type == EMBED || type == IMG || type == PARAM ||
