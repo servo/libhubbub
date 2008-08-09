@@ -74,8 +74,6 @@ static inline bool act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
 /**
  * Handle tokens in "in row" insertion mode
  *
- * Up to date with the spec as of 25 June 2008
- *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise

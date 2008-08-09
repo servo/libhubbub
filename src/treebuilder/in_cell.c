@@ -58,8 +58,6 @@ static inline void close_cell(hubbub_treebuilder *treebuilder)
 /**
  * Handle tokens in "in cell" insertion mode
  *
- * Up to date with the spec as of 25 June 2008
- *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise

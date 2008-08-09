@@ -3,8 +3,7 @@
  * Licensed under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
  * Copyright 2008 John-Mark Bell <jmb@netsurf-browser.org>
- *
- * Up-to-date with 19 June 2008 spec.
+ * Copyright 2008 Andrew Sidwell <takkaria@netsurf-browser.org>
  */
 
 #include <assert.h>

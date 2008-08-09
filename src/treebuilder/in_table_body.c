@@ -86,8 +86,6 @@ static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
 /**
  * Handle tokens in "in table body" insertion mode
  *
- * Up to date with the spec as of 25 June 2008
- *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
