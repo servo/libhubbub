@@ -5,6 +5,7 @@
  * Copyright 2007 John-Mark Bell <jmb@netsurf-browser.org>
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -26,6 +27,7 @@ static bool hubbub_charset_get_attribute(const uint8_t **data,
 		const uint8_t *end,
 		const uint8_t **name, uint32_t *namelen,
 		const uint8_t **value, uint32_t *valuelen);
+static void hubbub_charset_fix_charset(uint16_t *charset);
 
 /**
  * Extract a charset from a chunk of data
@@ -49,12 +51,22 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 	if (data == NULL || mibenum == NULL || source == NULL)
 		return PARSERUTILS_BADPARM;
 
-	/* If the source is dictated, there's nothing for us to do */
-	if (*source == HUBBUB_CHARSET_DICTATED)
-		return PARSERUTILS_OK;
+	/* 1 */
 
-	/* We need at least 4 bytes of data */
-	if (len < 4)
+	/* If the source is dictated, there's nothing for us to do */
+	if (*source == HUBBUB_CHARSET_DICTATED) {
+		/* confidence = certain; */
+		return PARSERUTILS_OK;
+	}
+
+	/* 2 */
+
+	/** \todo We probably want to wait for ~512 bytes of data / 500ms here */
+
+	/* 3 */
+
+	/* We need at least 3 bytes of data */
+	if (len < 3)
 		goto default_encoding;
 
 	/* First, look for a BOM */
@@ -62,24 +74,20 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 	if (charset != 0) {
 		*mibenum = charset;
 		*source = HUBBUB_CHARSET_DOCUMENT;
+		/* confidence = certain; */
 
 		return PARSERUTILS_OK;
 	}
+
+	/* 4 */
 
 	/* No BOM was found, so we must look for a meta charset within
 	 * the document itself. */
 	charset = hubbub_charset_scan_meta(data, len);
 	if (charset != 0) {
-		/* ISO-8859-1 becomes Windows-1252 */
-		if (charset == parserutils_charset_mibenum_from_name(
-				"ISO-8859-1", SLEN("ISO-8859-1"))) {
-			charset = parserutils_charset_mibenum_from_name(
-					"Windows-1252", SLEN("Windows-1252"));
-			/* Fallback to 8859-1 if that failed */
-			if (charset == 0)
-				charset = parserutils_charset_mibenum_from_name(
-					"ISO-8859-1", SLEN("ISO-8859-1"));
-		}
+		/* Fix charsets according to HTML5,
+		 * section 8.2.2.2. Character encoding requirements */
+		hubbub_charset_fix_charset(&charset);
 
 		/* If we've encountered a meta charset for a non-ASCII-
 		 * compatible encoding, don't trust it.
@@ -97,13 +105,7 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 		 * autodetection routines (or the fallback case if they
 		 * fail).
 		 */
-		if (charset != parserutils_charset_mibenum_from_name("UTF-16",
-					SLEN("UTF-16")) &&
-			charset != parserutils_charset_mibenum_from_name(
-					"UTF-16LE", SLEN("UTF-16LE")) &&
-			charset != parserutils_charset_mibenum_from_name(
-					"UTF-16BE", SLEN("UTF-16BE")) &&
-			charset != parserutils_charset_mibenum_from_name(
+		if (charset != parserutils_charset_mibenum_from_name(
 					"UTF-32", SLEN("UTF-32")) &&
 			charset != parserutils_charset_mibenum_from_name(
 					"UTF-32LE", SLEN("UTF-32LE")) &&
@@ -112,6 +114,7 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 
 			*mibenum = charset;
 			*source = HUBBUB_CHARSET_DOCUMENT;
+			/* confidence = tentative; */
 
 			return PARSERUTILS_OK;
 		}
@@ -124,6 +127,8 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 
 	/* We failed to autodetect a charset, so use the default fallback */
 default_encoding:
+
+	/* 7 */
 
 	charset = parserutils_charset_mibenum_from_name("Windows-1252",
 			SLEN("Windows-1252"));
@@ -151,26 +156,18 @@ uint16_t hubbub_charset_read_bom(const uint8_t *data, size_t len)
 	if (data == NULL)
 		return 0;
 
-	/* We require at least 4 bytes of data */
-	if (len < 4)
+	/* We require at least 3 bytes of data */
+	if (len < 3)
 		return 0;
 
-	if (data[0] == 0x00 && data[1] == 0x00 &&
-			data[2] == 0xFE && data[3] == 0xFF) {
-		return parserutils_charset_mibenum_from_name("UTF-32BE",
-				SLEN("UTF-32BE"));
-	} else if (data[0] == 0xFF && data[1] == 0xFE &&
-			data[2] == 0x00 && data[3] == 0x00) {
-		return parserutils_charset_mibenum_from_name("UTF-32LE",
-				SLEN("UTF-32LE"));
-	} else if (data[0] == 0xFE && data[1] == 0xFF) {
+	if (data[0] == 0xFE && data[1] == 0xFF) {
 		return parserutils_charset_mibenum_from_name("UTF-16BE",
 				SLEN("UTF-16BE"));
 	} else if (data[0] == 0xFF && data[1] == 0xFE) {
 		return parserutils_charset_mibenum_from_name("UTF-16LE",
 				SLEN("UTF-16LE"));
 	} else if (data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF) {
-		return parserutils_charset_mibenum_from_name("UTF-8", 
+		return parserutils_charset_mibenum_from_name("UTF-8",
 				SLEN("UTF-8"));
 	}
 
@@ -192,8 +189,8 @@ uint16_t hubbub_charset_read_bom(const uint8_t *data, size_t len)
 		return 0;
 
 #define ISSPACE(a)							\
-	(a == 0x09 || a == 0x0a || a == 0x0b || 			\
-		a == 0x0c || a == 0x0d || a == 0x20)
+	(a == 0x09 || a == 0x0a || a == 0x0c ||				\
+			a == 0x0d || a == 0x20 || a == 0x2f)
 
 /**
  * Search for a meta charset within a buffer of data
@@ -298,7 +295,7 @@ uint16_t hubbub_charset_parse_attributes(const uint8_t **pos,
 	const uint8_t *name;
 	const uint8_t *value;
 	uint32_t namelen, valuelen;
-	uint16_t mibenum;
+	uint16_t mibenum = 0;
 
 	if (pos == NULL || *pos == NULL || end == NULL)
 		return 0;
@@ -306,8 +303,9 @@ uint16_t hubbub_charset_parse_attributes(const uint8_t **pos,
 	/* 2 */
 	while (hubbub_charset_get_attribute(pos, end,
 			&name, &namelen, &value, &valuelen)) {
-		/* 3 */
-		/* a */
+		/* 3 done by default */
+
+		/* 4 */
 		if (namelen == SLEN("charset") && valuelen > 0 &&
 				strncasecmp((const char *) name, "charset",
 					SLEN("charset")) == 0) {
@@ -322,29 +320,31 @@ uint16_t hubbub_charset_parse_attributes(const uint8_t **pos,
 
 			mibenum = parserutils_charset_mibenum_from_name(
 					(const char *) value, valuelen);
-			if (mibenum != 0)
-				return mibenum;
-		/* b */
+		/* 5 */
 		} else if (namelen == SLEN("content") && valuelen > 0 &&
 				strncasecmp((const char *) name, "content",
 					SLEN("content")) == 0) {
 			mibenum = hubbub_charset_parse_content(value,
 					valuelen);
-			if (mibenum != 0)
-				return mibenum;
 		}
 
-		/* c - do nothing */
-
-		/* 1 */
-		while (*pos < end) {
-			if (ISSPACE(**pos))
-				break;
-			(*pos)++;
+		/* 6 */
+		if (mibenum == parserutils_charset_mibenum_from_name(
+				"UTF-16LE", SLEN("UTF-16LE")) ||
+			mibenum ==
+				parserutils_charset_mibenum_from_name(
+				"UTF-16BE", SLEN("UTF-16BE")) ||
+			mibenum ==
+				parserutils_charset_mibenum_from_name(
+				"UTF-16", SLEN("UTF-16"))) {
+			mibenum = parserutils_charset_mibenum_from_name(
+					"UTF-8", SLEN("UTF-8"));
 		}
 
-		if (*pos >= end) {
-			return 0;
+		/* 7 */
+		if (mibenum != 0) {
+			/* confidence = tentative; */
+			return mibenum;
 		}
 	}
 
@@ -647,4 +647,62 @@ bool hubbub_charset_get_attribute(const uint8_t **data, const uint8_t *end,
 	abort();
 
 	return false;
+}
+
+/**
+ * Fix charsets, according to the override table in HTML5,
+ * section 8.2.2.2. Character encoding requirements
+ * <http://www.whatwg.org/specs/web-apps/current-work/#character0>
+ *
+ * \param charset	Pointer to charset value to fix
+ */
+void hubbub_charset_fix_charset(uint16_t *charset)
+{
+	uint16_t tmp = 0;
+	assert(*charset != 0);
+
+	/* ISO-8859-1 -> Windows-1252 */
+	if (*charset == parserutils_charset_mibenum_from_name(
+			"ISO-8859-1", SLEN("ISO-8859-1"))) {
+		tmp = parserutils_charset_mibenum_from_name(
+				"Windows-1252", SLEN("Windows-1252"));
+		assert(tmp != 0 && "Windows-1252 MUST be supported");
+	/* ISO-8859-9 -> Windows-1254 */
+	} else if (*charset == parserutils_charset_mibenum_from_name(
+			"ISO-8859-9", SLEN("ISO-8859-9"))) {
+		tmp = parserutils_charset_mibenum_from_name(
+				"Windows-1254", SLEN("Windows-1254"));
+	/* ISO-8859-11 -> Windows-874 */
+	} else if (*charset == parserutils_charset_mibenum_from_name(
+			"ISO-8859-11", SLEN("ISO-8859-11"))) {
+		tmp = parserutils_charset_mibenum_from_name(
+				"Windows-874", SLEN("Windows-874"));
+	/* KS_C_5601-1987 and EUC-KR -> Windows-949 */
+	} else if (*charset == parserutils_charset_mibenum_from_name(
+			"KS_C_5601-1987", SLEN("KS_C_5601-1987")) ||
+			*charset == parserutils_charset_mibenum_from_name(
+					"EUC-KR", SLEN("EUR-KR"))) {
+		tmp = parserutils_charset_mibenum_from_name(
+				"Windows-949", SLEN("Windows-949"));
+	/* TIS-620 -> Windows-874 */
+	} else if (*charset == parserutils_charset_mibenum_from_name(
+			"TIS-620", SLEN("TIS-620"))) {
+		tmp = parserutils_charset_mibenum_from_name(
+				"Windows-847", SLEN("Windows-847"));
+	/* x-x-big5 -> Big5 */
+	} else if (*charset == parserutils_charset_mibenum_from_name(
+			"x-x-big5", SLEN("x-x-big5"))) {
+		tmp = parserutils_charset_mibenum_from_name(
+				"Big5", SLEN("Big5"));
+	/* GB2312 and GB_2312-80 -> GBK */
+	} else if (*charset == parserutils_charset_mibenum_from_name(
+			"GB2312", SLEN("GB2312")) ||
+			*charset == parserutils_charset_mibenum_from_name(
+					"GB_2312-80", SLEN("GB_2312-80"))) {
+		tmp = parserutils_charset_mibenum_from_name(
+				"GBK", SLEN("GBK"));
+	}
+
+	if (tmp != 0)
+		*charset = tmp;
 }
