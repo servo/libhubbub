@@ -23,6 +23,9 @@ const char *hubbub_error_to_string(hubbub_error error)
 	case HUBBUB_OK:
 		result = "No error";
 		break;
+	case HUBBUB_OOD:
+		result = "Out of data";
+		break;
 	case HUBBUB_NOMEM:
 		result = "Insufficient memory";
 		break;

@@ -45,8 +45,8 @@ hubbub_parser *hubbub_parser_create(const char *enc,
 	if (parser == NULL)
 		return NULL;
 
-	parser->stream = parserutils_inputstream_create(enc, 
-		enc != NULL ? HUBBUB_CHARSET_DICTATED : HUBBUB_CHARSET_UNKNOWN, 
+	parser->stream = parserutils_inputstream_create(enc,
+		enc != NULL ? HUBBUB_CHARSET_DICTATED : HUBBUB_CHARSET_UNKNOWN,
 		hubbub_charset_extract, alloc, pw);
 	if (parser->stream == NULL) {
 		alloc(parser, 0, pw);

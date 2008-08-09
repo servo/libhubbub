@@ -12,12 +12,13 @@
 
 typedef enum hubbub_error {
 	HUBBUB_OK               = 0,
+	HUBBUB_OOD		= 1, /**< Out of data */
 
-	HUBBUB_NOMEM            = 1,
-	HUBBUB_BADPARM          = 2,
-	HUBBUB_INVALID          = 3,
-	HUBBUB_FILENOTFOUND     = 4,
-	HUBBUB_NEEDDATA         = 5,
+	HUBBUB_NOMEM            = 5,
+	HUBBUB_BADPARM          = 6,
+	HUBBUB_INVALID          = 7,
+	HUBBUB_FILENOTFOUND     = 8,
+	HUBBUB_NEEDDATA         = 9,
 } hubbub_error;
 
 /* Convert a hubbub error value to a string */
