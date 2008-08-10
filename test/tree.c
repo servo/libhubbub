@@ -66,6 +66,7 @@ static hubbub_tree_handler tree_handler = {
 	form_associate,
 	add_attributes,
 	set_quirks_mode,
+	NULL,
 	NULL
 };
 

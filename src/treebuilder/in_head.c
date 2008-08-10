@@ -62,16 +62,20 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 
 	if (charset_enc != 0) {
 		if (treebuilder->tree_handler->encoding_change) {
+			const char *name = parserutils_charset_mibenum_to_name(
+					charset_enc);
 			treebuilder->tree_handler->encoding_change(
 					treebuilder->tree_handler->ctx,
-					charset_enc);
+					name);
 		}
 		return HUBBUB_ENCODINGCHANGE;
 	} else if (content_type_enc != 0) {
 		if (treebuilder->tree_handler->encoding_change) {
+			const char *name = parserutils_charset_mibenum_to_name(
+					content_type_enc);
 			treebuilder->tree_handler->encoding_change(
 					treebuilder->tree_handler->ctx,
-					content_type_enc);
+					name);
 		}
 		return HUBBUB_ENCODINGCHANGE;
 	}
