@@ -164,7 +164,7 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 
 			err = HUBBUB_REPROCESS;
 		} else if (!tainted && (type == STYLE || type == SCRIPT)) {
-			handle_in_head(treebuilder, token);
+			err = handle_in_head(treebuilder, token);
 		} else if (!tainted && type == INPUT) {
 			handled = process_input_in_table(treebuilder, token);
 		} else {

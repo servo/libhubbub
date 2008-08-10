@@ -14,23 +14,6 @@
 #include "utils/utils.h"
 
 
-/**
- * Process a <base>, <link>, or <meta> start tag as if in "in head"
- *
- * \param treebuilder  The treebuilder instance
- * \param token        The token to process
- * \param type         The type of element (BASE, LINK, or META)
- */
-static void process_base_link_meta_in_head(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token, element_type type)
-{
-	insert_element_no_push(treebuilder, &token->data.tag);
-
-	if (type == META) {
-		/** \todo charset extraction */
-	}
-}
-
 
 /**
  * Process a <script> start tag as if in "in head"
@@ -114,13 +97,11 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 			handle_in_body(treebuilder, token);
 		} else if (type == BASE || type == COMMAND ||
 				type == EVENTSOURCE || type == LINK) {
-			process_base_link_meta_in_head(treebuilder,
-					token, type);
+			insert_element_no_push(treebuilder, &token->data.tag);
 
 			/** \todo ack sc flag */
 		} else if (type == META) {
-			process_base_link_meta_in_head(treebuilder,
-					token, type);
+			insert_element_no_push(treebuilder, &token->data.tag);
 
 			/** \todo ack sc flag */
 

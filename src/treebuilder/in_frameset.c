@@ -54,7 +54,7 @@ hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 			insert_element_no_push(treebuilder, &token->data.tag);
 			/** \todo ack sc flag */
 		} else if (type == NOFRAMES) {
-			handle_in_head(treebuilder, token);
+			err = handle_in_head(treebuilder, token);
 		} else {
 			/** \todo parse error */
 		}
