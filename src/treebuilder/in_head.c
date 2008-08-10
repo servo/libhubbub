@@ -180,18 +180,3 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 
 	return reprocess;
 }
-
-
-
-/**
- * Process a tag as if in the "in head" state.
- *
- * \param treebuilder	The treebuilder instance
- * \param token		The token to process
- * \return True to reprocess the token, false otherwise
- */
-bool process_in_head(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token)
-{
-	return handle_in_head(treebuilder, token);
-}

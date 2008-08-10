@@ -221,7 +221,7 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 			type == META || type == NOFRAMES || type == SCRIPT ||
 			type == STYLE || type == TITLE) {
 		/* Process as "in head" */
-		process_in_head(treebuilder, token);
+		handle_in_head(treebuilder, token);
 	} else if (type == BODY) {
 		process_body_in_body(treebuilder, token);
 	} else if (type == ADDRESS || type == ARTICLE || type == ASIDE ||

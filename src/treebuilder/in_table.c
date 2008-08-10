@@ -164,7 +164,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 
 			reprocess = true;
 		} else if (!tainted && (type == STYLE || type == SCRIPT)) {
-			process_in_head(treebuilder, token);
+			handle_in_head(treebuilder, token);
 		} else if (!tainted && type == INPUT) {
 			handled = process_input_in_table(treebuilder, token);
 		} else {

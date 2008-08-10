@@ -70,7 +70,7 @@ bool handle_after_head(hubbub_treebuilder *treebuilder,
 			}
 
 			/* Process as "in head" */
-			reprocess = process_in_head(treebuilder, token);
+			reprocess = handle_in_head(treebuilder, token);
 
 			if (!element_stack_pop(treebuilder, &ns, &otype,
 					&node)) {

@@ -29,10 +29,10 @@ bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		reprocess = process_in_head(treebuilder, token);
+		reprocess = handle_in_head(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		reprocess = process_in_head(treebuilder, token);
+		reprocess = handle_in_head(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_DOCTYPE:
 		/** \todo parse error */
@@ -50,7 +50,7 @@ bool handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 		} else if (type == LINK || type == META || type == NOFRAMES ||
 				type == STYLE) {
 			/* Process as "in head" */
-			reprocess = process_in_head(treebuilder, token);
+			reprocess = handle_in_head(treebuilder, token);
 		} else if (type == HEAD || type == NOSCRIPT) {
 			/** \todo parse error */
 		} else {

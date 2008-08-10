@@ -88,11 +88,4 @@ bool handle_after_after_body(hubbub_treebuilder *treebuilder,
 bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 
-bool process_in_head(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token);
-bool process_in_table(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token);
-bool process_in_select(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token);
-
 #endif

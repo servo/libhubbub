@@ -49,7 +49,7 @@ bool handle_after_frameset(hubbub_treebuilder *treebuilder,
 		if (type == HTML) {
 			handle_in_body(treebuilder, token);
 		} else if (type == NOFRAMES) {
-			process_in_head(treebuilder, token);
+			handle_in_head(treebuilder, token);
 		} else {
 			/** \todo parse error */
 		}
