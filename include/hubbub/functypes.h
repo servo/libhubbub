@@ -121,5 +121,10 @@ typedef int (*hubbub_tree_add_attributes)(void *ctx, void *node,
  */
 typedef int (*hubbub_tree_set_quirks_mode)(void *ctx, hubbub_quirks_mode mode);
 
+/**
+ * Type of encoding change notification function
+ */
+typedef int (*hubbub_tree_encoding_change)(void *ctx, uint16_t mibenum);
+
 #endif
 

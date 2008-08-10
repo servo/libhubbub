@@ -30,6 +30,7 @@ typedef struct hubbub_tree_handler {
 	hubbub_tree_form_associate form_associate;
 	hubbub_tree_add_attributes add_attributes;
 	hubbub_tree_set_quirks_mode set_quirks_mode;
+	hubbub_tree_encoding_change encoding_change;
 	void *ctx;
 } hubbub_tree_handler;
 

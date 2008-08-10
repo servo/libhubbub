@@ -14,6 +14,7 @@ typedef enum hubbub_error {
 	HUBBUB_OK               = 0,
 	HUBBUB_OOD		= 1, /**< Out of data */
 	HUBBUB_REPROCESS	= 2,
+	HUBBUB_ENCODINGCHANGE	= 3,
 
 	HUBBUB_NOMEM            = 5,
 	HUBBUB_BADPARM          = 6,

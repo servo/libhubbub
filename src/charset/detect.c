@@ -21,8 +21,6 @@ static uint16_t hubbub_charset_read_bom(const uint8_t *data, size_t len);
 static uint16_t hubbub_charset_scan_meta(const uint8_t *data, size_t len);
 static uint16_t hubbub_charset_parse_attributes(const uint8_t **pos,
 		const uint8_t *end);
-static uint16_t hubbub_charset_parse_content(const uint8_t *value,
-		uint32_t valuelen);
 static bool hubbub_charset_get_attribute(const uint8_t **data,
 		const uint8_t *end,
 		const uint8_t **name, uint32_t *namelen,

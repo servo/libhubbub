@@ -8,10 +8,76 @@
 #include <assert.h>
 #include <string.h>
 
+#include <parserutils/charset/mibenum.h>
+
 #include "treebuilder/modes.h"
 #include "treebuilder/internal.h"
 #include "treebuilder/treebuilder.h"
+
+#include "charset/detect.h"
+
 #include "utils/utils.h"
+#include "utils/string.h"
+
+
+/**
+ * Process a <meta> tag as if "in head".
+ *
+ * \param treebuilder	The treebuilder instance
+ * \param token        The token to process
+ */
+static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	insert_element_no_push(treebuilder, &token->data.tag);
+
+	/** \todo ack sc flag */
+
+#if 0
+	if (confidence == certain)
+		return HUBBUB_OK;
+#endif
+
+	uint16_t charset_enc = 0;
+	uint16_t content_type_enc = 0;
+
+	for (size_t i = 0; i < token->data.tag.n_attributes; i++) {
+		hubbub_attribute *attr = &token->data.tag.attributes[i];
+
+		if (hubbub_string_match(attr->name.ptr, attr->name.len,
+				(const uint8_t *) "charset",
+				SLEN("charset")) == true) {
+			/* Extract charset */
+			charset_enc = parserutils_charset_mibenum_from_name(
+					(const char *) attr->value.ptr,
+					attr->value.len);
+		} else if (hubbub_string_match(attr->name.ptr, attr->name.len,
+				(const uint8_t *) "content",
+				SLEN("content")) == true) {
+			/* Extract charset from Content-Type */
+			content_type_enc = hubbub_charset_parse_content(
+					attr->value.ptr, attr->value.len);
+		}
+	}
+
+	if (charset_enc != 0) {
+		if (treebuilder->tree_handler->encoding_change) {
+			treebuilder->tree_handler->encoding_change(
+					treebuilder->tree_handler->ctx,
+					charset_enc);
+		}
+		return HUBBUB_ENCODINGCHANGE;
+	} else if (content_type_enc != 0) {
+		if (treebuilder->tree_handler->encoding_change) {
+			treebuilder->tree_handler->encoding_change(
+					treebuilder->tree_handler->ctx,
+					content_type_enc);
+		}
+		return HUBBUB_ENCODINGCHANGE;
+	}
+
+	return HUBBUB_OK;
+}
 
 
 
@@ -101,11 +167,7 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 
 			/** \todo ack sc flag */
 		} else if (type == META) {
-			insert_element_no_push(treebuilder, &token->data.tag);
-
-			/** \todo ack sc flag */
-
-			/** \todo detect charset */
+			err = process_meta_in_head(treebuilder, token);
 		} else if (type == TITLE) {
 			parse_generic_rcdata(treebuilder, token, true);
 		} else if (type == NOFRAMES || type == STYLE) {
