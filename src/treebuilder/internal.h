@@ -118,7 +118,7 @@ struct hubbub_treebuilder
 hubbub_error hubbub_treebuilder_token_handler(
 		const hubbub_token *token, void *pw);
 
-bool process_characters_expect_whitespace(
+hubbub_error process_characters_expect_whitespace(
 		hubbub_treebuilder *treebuilder, const hubbub_token *token,
 		bool insert_into_current_node);
 void process_comment_append(hubbub_treebuilder *treebuilder,

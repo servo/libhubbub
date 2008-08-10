@@ -21,15 +21,15 @@
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_before_head(hubbub_treebuilder *treebuilder, 
+hubbub_error handle_before_head(hubbub_treebuilder *treebuilder, 
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	bool handled = false;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		reprocess = process_characters_expect_whitespace(treebuilder,
+		err = process_characters_expect_whitespace(treebuilder,
 				token, false);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
@@ -51,7 +51,7 @@ bool handle_before_head(hubbub_treebuilder *treebuilder,
 		} else if (type == HEAD) {
 			handled = true;
 		} else {
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		}
 	}
 		break;
@@ -61,21 +61,21 @@ bool handle_before_head(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (type == HEAD || type == BR) {
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		} else {
 			/** \todo parse error */
 		}
 	}
 		break;
 	case HUBBUB_TOKEN_EOF:
-		reprocess = true;
+		err = HUBBUB_REPROCESS;
 		break;
 	}
 
-	if (handled || reprocess) {
+	if (handled || err == HUBBUB_REPROCESS) {
 		hubbub_tag tag;
 
-		if (reprocess) {
+		if (err == HUBBUB_REPROCESS) {
 			/* Manufacture head tag */
 			tag.ns = HUBBUB_NS_HTML;
 			tag.name.ptr = (const uint8_t *) "head";
@@ -101,6 +101,6 @@ bool handle_before_head(hubbub_treebuilder *treebuilder,
 		treebuilder->context.mode = IN_HEAD;
 	}
 
-	return reprocess;
+	return err;
 }
 

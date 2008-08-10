@@ -85,15 +85,15 @@ static void process_script_in_head(hubbub_treebuilder *treebuilder,
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_in_head(hubbub_treebuilder *treebuilder, 
+hubbub_error handle_in_head(hubbub_treebuilder *treebuilder, 
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	bool handled = false;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		reprocess = process_characters_expect_whitespace(treebuilder,
+		err = process_characters_expect_whitespace(treebuilder,
 				token, true);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
@@ -141,7 +141,7 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 		} else if (type == HEAD) {
 			/** \todo parse error */
 		} else {
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		}
 	}
 		break;
@@ -153,16 +153,16 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 		if (type == HEAD) {
 			handled = true;
 		} else if (type == BR) {
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		} /** \todo parse error */
 	}
 		break;
 	case HUBBUB_TOKEN_EOF:
-		reprocess = true;
+		err = HUBBUB_REPROCESS;
 		break;
 	}
 
-	if (handled || reprocess) {
+	if (handled || err == HUBBUB_REPROCESS) {
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
@@ -178,5 +178,5 @@ bool handle_in_head(hubbub_treebuilder *treebuilder,
 		treebuilder->context.mode = AFTER_HEAD;
 	}
 
-	return reprocess;
+	return err;
 }

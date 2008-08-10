@@ -21,17 +21,17 @@
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
+hubbub_error handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
 		if (process_characters_expect_whitespace(treebuilder,
 				token, true)) {
 			treebuilder->context.mode = IN_FRAMESET;
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
@@ -53,19 +53,19 @@ bool handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 		} else {
 			/** \todo parse error */
 			treebuilder->context.mode = IN_FRAMESET;
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		}
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
 		/** \todo parse error */
 		treebuilder->context.mode = IN_FRAMESET;
-		reprocess = true;
+		err = HUBBUB_REPROCESS;
 		break;
 	case HUBBUB_TOKEN_EOF:
 		break;
 	}
 
-	return reprocess;
+	return err;
 }
 

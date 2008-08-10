@@ -79,10 +79,10 @@ static inline bool process_input_in_table(hubbub_treebuilder *treebuilder,
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_in_table(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	bool handled = true;
 
 	switch (token->type) {
@@ -134,7 +134,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 				tag.name.ptr = (const uint8_t *) "colgroup";
 				tag.name.len = SLEN("colgroup");
 
-				reprocess = true;
+				err = HUBBUB_REPROCESS;
 			}
 
 			clear_stack_table_context(treebuilder);
@@ -149,7 +149,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 				tag.name.ptr = (const uint8_t *) "tbody";
 				tag.name.len = SLEN("tbody");
 
-				reprocess = true;
+				err = HUBBUB_REPROCESS;
 			}
 
 			clear_stack_table_context(treebuilder);
@@ -162,7 +162,7 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 			element_stack_pop_until(treebuilder, TABLE);
 			reset_insertion_mode(treebuilder);
 
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		} else if (!tainted && (type == STYLE || type == SCRIPT)) {
 			handle_in_head(treebuilder, token);
 		} else if (!tainted && type == INPUT) {
@@ -206,5 +206,5 @@ bool handle_in_table(hubbub_treebuilder *treebuilder,
 	}
 
 
-	return reprocess;
+	return err;
 }

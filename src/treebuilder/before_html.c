@@ -21,10 +21,10 @@
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_before_html(hubbub_treebuilder *treebuilder, 
+hubbub_error handle_before_html(hubbub_treebuilder *treebuilder, 
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	bool handled = false;
 
 	switch (token->type) {
@@ -36,7 +36,7 @@ bool handle_before_html(hubbub_treebuilder *treebuilder,
 				treebuilder->context.document);
 		break;
 	case HUBBUB_TOKEN_CHARACTER:
-		reprocess = process_characters_expect_whitespace(treebuilder,
+		err = process_characters_expect_whitespace(treebuilder,
 				token, false);
 		break;
 	case HUBBUB_TOKEN_START_TAG:
@@ -47,18 +47,18 @@ bool handle_before_html(hubbub_treebuilder *treebuilder,
 		if (type == HTML) {
 			handled = true;
 		} else {
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		}
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
 	case HUBBUB_TOKEN_EOF:
-		reprocess = true;
+		err = HUBBUB_REPROCESS;
 		break;
 	}
 
 
-	if (handled || reprocess) {
+	if (handled || err == HUBBUB_REPROCESS) {
 		int success;
 		void *html, *appended;
 
@@ -67,7 +67,7 @@ bool handle_before_html(hubbub_treebuilder *treebuilder,
 		 * no current_node to insert into at this point so
 		 * we get to do it manually. */
 
-		if (reprocess) {
+		if (err == HUBBUB_REPROCESS) {
 			/* Need to manufacture html element */
 			hubbub_tag tag;
 
@@ -121,6 +121,6 @@ bool handle_before_html(hubbub_treebuilder *treebuilder,
 		treebuilder->context.mode = BEFORE_HEAD;
 	}
 
-	return reprocess;
+	return err;
 }
 

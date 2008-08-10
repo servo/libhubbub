@@ -26,6 +26,9 @@ const char *hubbub_error_to_string(hubbub_error error)
 	case HUBBUB_OOD:
 		result = "Out of data";
 		break;
+	case HUBBUB_REPROCESS:
+		result = "Internal (reprocess token)";
+		break;
 	case HUBBUB_NOMEM:
 		result = "Insufficient memory";
 		break;

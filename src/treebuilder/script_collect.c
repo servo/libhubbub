@@ -21,10 +21,10 @@
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
+hubbub_error handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	bool done = false;
 
 	switch (token->type) {
@@ -55,7 +55,8 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_START_TAG:
 		/** \todo parse error */
 		/** \todo Mark script as "already executed" */
-		done = reprocess = true;
+		done = true;
+		err = HUBBUB_REPROCESS;
 		break;
 	}
 
@@ -143,6 +144,6 @@ bool handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 				treebuilder->context.collect.mode;
 	}
 
-	return reprocess;
+	return err;
 }
 

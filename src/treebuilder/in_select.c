@@ -21,10 +21,10 @@
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_in_select(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 	hubbub_ns ns;
 	element_type otype;
@@ -98,7 +98,7 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 				/** \todo parse error */
 			}
 
-			if (type != SELECT) reprocess = true;
+			if (type != SELECT) err = HUBBUB_REPROCESS;
 		} else {
 			/** \todo parse error */
 		}
@@ -162,6 +162,6 @@ bool handle_in_select(hubbub_treebuilder *treebuilder,
 		break;
 	}
 
-	return reprocess;
+	return err;
 }
 

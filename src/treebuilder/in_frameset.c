@@ -21,10 +21,10 @@
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_in_frameset(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
@@ -97,6 +97,6 @@ bool handle_in_frameset(hubbub_treebuilder *treebuilder,
 		break;
 	}
 
-	return reprocess;
+	return err;
 }
 

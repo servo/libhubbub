@@ -21,17 +21,17 @@
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_in_column_group(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_column_group(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	bool handled = false;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
 		if (process_characters_expect_whitespace(treebuilder,
 				token, true)) {
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
@@ -55,7 +55,7 @@ bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 
 			/** \todo ack sc flag */
 		} else {
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		}
 	}
 		break;
@@ -70,17 +70,17 @@ bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 		} else if (type == COL) {
 			/** \todo parse error */
 		} else {
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		}
 	}
 		break;
 	case HUBBUB_TOKEN_EOF:
 		/** \todo fragment case */
-		reprocess = true;
+		err = HUBBUB_REPROCESS;
 		break;
 	}
 
-	if (handled || reprocess) {
+	if (handled || err == HUBBUB_REPROCESS) {
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
@@ -97,6 +97,6 @@ bool handle_in_column_group(hubbub_treebuilder *treebuilder,
 		treebuilder->context.mode = IN_TABLE;
 	}
 
-	return reprocess;
+	return err;
 }
 

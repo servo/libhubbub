@@ -255,7 +255,7 @@ hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token,
 		void *pw)
 {
 	hubbub_treebuilder *treebuilder = (hubbub_treebuilder *) pw;
-	bool reprocess = true;
+	hubbub_error err = HUBBUB_REPROCESS;
 
 	/* Do nothing if we have no document node or there's no tree handler */
 	if (treebuilder->context.document == NULL ||
@@ -274,82 +274,82 @@ hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token,
 			printf( #x "\n");
 #endif
 
-	while (reprocess) {
+	while (err == HUBBUB_REPROCESS) {
 		switch (treebuilder->context.mode) {
 		mode(INITIAL)
-			reprocess = handle_initial(treebuilder, token);
+			err = handle_initial(treebuilder, token);
 			break;
 		mode(BEFORE_HTML)
-			reprocess = handle_before_html(treebuilder, token);
+			err = handle_before_html(treebuilder, token);
 			break;
 		mode(BEFORE_HEAD)
-			reprocess = handle_before_head(treebuilder, token);
+			err = handle_before_head(treebuilder, token);
 			break;
 		mode(IN_HEAD)
-			reprocess = handle_in_head(treebuilder, token);
+			err = handle_in_head(treebuilder, token);
 			break;
 		mode(IN_HEAD_NOSCRIPT)
-			reprocess = handle_in_head_noscript(treebuilder, token);
+			err = handle_in_head_noscript(treebuilder, token);
 			break;
 		mode(AFTER_HEAD)
-			reprocess = handle_after_head(treebuilder, token);
+			err = handle_after_head(treebuilder, token);
 			break;
 		mode(IN_BODY)
-			reprocess = handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 			break;
 		mode(IN_TABLE)
-			reprocess = handle_in_table(treebuilder, token);
+			err = handle_in_table(treebuilder, token);
 			break;
 		mode(IN_CAPTION)
-			reprocess = handle_in_caption(treebuilder, token);
+			err = handle_in_caption(treebuilder, token);
 			break;
 		mode(IN_COLUMN_GROUP)
-			reprocess = handle_in_column_group(treebuilder, token);
+			err = handle_in_column_group(treebuilder, token);
 			break;
 		mode(IN_TABLE_BODY)
-			reprocess = handle_in_table_body(treebuilder, token);
+			err = handle_in_table_body(treebuilder, token);
 			break;
 		mode(IN_ROW)
-			reprocess = handle_in_row(treebuilder, token);
+			err = handle_in_row(treebuilder, token);
 			break;
 		mode(IN_CELL)
-			reprocess = handle_in_cell(treebuilder, token);
+			err = handle_in_cell(treebuilder, token);
 			break;
 		mode(IN_SELECT)
-			reprocess = handle_in_select(treebuilder, token);
+			err = handle_in_select(treebuilder, token);
 			break;
 		mode(IN_SELECT_IN_TABLE)
-			reprocess = handle_in_select_in_table(treebuilder, token);
+			err = handle_in_select_in_table(treebuilder, token);
 			break;
 		mode(IN_FOREIGN_CONTENT)
-			reprocess = handle_in_foreign_content(treebuilder, token);
+			err = handle_in_foreign_content(treebuilder, token);
 			break;
 		mode(AFTER_BODY)
-			reprocess = handle_after_body(treebuilder, token);
+			err = handle_after_body(treebuilder, token);
 			break;
 		mode(IN_FRAMESET)
-			reprocess = handle_in_frameset(treebuilder, token);
+			err = handle_in_frameset(treebuilder, token);
 			break;
 		mode(AFTER_FRAMESET)
-			reprocess = handle_after_frameset(treebuilder, token);
+			err = handle_after_frameset(treebuilder, token);
 			break;
 		mode(AFTER_AFTER_BODY)
-			reprocess = handle_after_after_body(treebuilder, token);
+			err = handle_after_after_body(treebuilder, token);
 			break;
 		mode(AFTER_AFTER_FRAMESET)
-			reprocess = handle_after_after_frameset(treebuilder, token);
+			err = handle_after_after_frameset(treebuilder, token);
 			break;
 		mode(GENERIC_RCDATA)
-			reprocess = handle_generic_rcdata(treebuilder, token);
+			err = handle_generic_rcdata(treebuilder, token);
 			break;
 		mode(SCRIPT_COLLECT_CHARACTERS)
-			reprocess = handle_script_collect_characters(
+			err = handle_script_collect_characters(
 					treebuilder, token);
 			break;
 		}
 	}
 
-	return HUBBUB_OK;
+	return err;
 }
 
 
@@ -364,7 +364,7 @@ hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token,
  *              (token data updated to skip any leading whitespace), 
  *         false if it contained only whitespace
  */
-bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
+hubbub_error process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool insert_into_current_node)
 {
 	const uint8_t *data = token->data.character.ptr;
@@ -394,10 +394,10 @@ bool process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
 		((hubbub_token *) token)->data.character.ptr += c;
 		((hubbub_token *) token)->data.character.len -= c;
 
-		return true;
+		return HUBBUB_REPROCESS;
 	}
 
-	return false;
+	return HUBBUB_OK;
 }
 
 /**

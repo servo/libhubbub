@@ -50,7 +50,7 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
  * \param treebuilder	The treebuilder instance
  * \return Whether to reprocess the current token
  */
-static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
+static hubbub_error table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
 {
 	if (element_in_scope(treebuilder, TBODY, true) ||
 			element_in_scope(treebuilder, THEAD, true) ||
@@ -74,12 +74,12 @@ static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
 
 		treebuilder->context.mode = IN_TABLE;
 
-		return true;
+		return HUBBUB_REPROCESS;
 	} else {
 		/** \todo parse error */
 	}
 
-	return false;
+	return HUBBUB_OK;
 }
 
 
@@ -90,10 +90,10 @@ static bool table_sub_start_or_table_end(hubbub_treebuilder *treebuilder)
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_in_table_body(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_table_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_START_TAG:
@@ -122,13 +122,13 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 			insert_element(treebuilder, &tag);
 			treebuilder->context.mode = IN_ROW;
 
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		} else if (type == CAPTION || type == COL ||
 				type == COLGROUP || type == TBODY ||
 				type == TFOOT || type == THEAD) {
-			reprocess = table_sub_start_or_table_end(treebuilder);
+			err = table_sub_start_or_table_end(treebuilder);
 		} else {
-			reprocess = handle_in_table(treebuilder, token);
+			err = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -159,14 +159,14 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 				treebuilder->context.mode = IN_TABLE;
 			}
 		} else if (type == TABLE) {
-			reprocess = table_sub_start_or_table_end(treebuilder);
+			err = table_sub_start_or_table_end(treebuilder);
 		} else if (type == BODY || type == CAPTION || type == COL ||
 				type == COLGROUP || type == HTML ||
 				type == TD || type == TH || type == TR) {
 			/** \todo parse error */
 			/* Ignore the token */
 		} else {
-			reprocess = handle_in_table(treebuilder, token);
+			err = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -174,10 +174,10 @@ bool handle_in_table_body(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
-		reprocess = handle_in_table(treebuilder, token);
+		err = handle_in_table(treebuilder, token);
 		break;
 	}
 
-	return reprocess;
+	return err;
 }
 

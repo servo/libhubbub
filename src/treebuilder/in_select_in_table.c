@@ -21,11 +21,11 @@
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-bool handle_in_select_in_table(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_select_in_table(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
 	bool handled = false;
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 	if (token->type == HUBBUB_TOKEN_END_TAG ||
 			token->type == HUBBUB_TOKEN_START_TAG) {
@@ -47,14 +47,14 @@ bool handle_in_select_in_table(hubbub_treebuilder *treebuilder,
 
 				element_stack_pop_until(treebuilder, SELECT);
 				reset_insertion_mode(treebuilder);
-				reprocess = true;
+				err = HUBBUB_REPROCESS;
 			}
 		}
 	}
 
 	if (!handled) {
-		reprocess = handle_in_select(treebuilder, token);
+		err = handle_in_select(treebuilder, token);
 	}
 
-	return reprocess;
+	return err;
 }

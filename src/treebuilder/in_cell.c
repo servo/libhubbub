@@ -62,9 +62,9 @@ static inline void close_cell(hubbub_treebuilder *treebuilder)
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
+hubbub_error handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_START_TAG:
@@ -78,9 +78,9 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 				type == THEAD || type == TR) {
 			/** \todo fragment case */
 			close_cell(treebuilder);
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		} else {
-			reprocess = handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		}
 	}
 		break;
@@ -123,12 +123,12 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 				type == THEAD || type == TR) {
 			if (element_in_scope(treebuilder, type, true)) {
 				close_cell(treebuilder);
-				reprocess = true;
+				err = HUBBUB_REPROCESS;
 			} else {
 				/** \todo parse error */
 			}
 		} else {
-			reprocess = handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		}
 	}
 		break;
@@ -136,10 +136,10 @@ bool handle_in_cell(hubbub_treebuilder *treebuilder, const hubbub_token *token)
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
-		reprocess = handle_in_body(treebuilder, token);
+		err = handle_in_body(treebuilder, token);
 		break;
 	}
 
-	return reprocess;
+	return err;
 }
 

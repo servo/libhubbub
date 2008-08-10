@@ -344,10 +344,10 @@ static void foreign_break_out(hubbub_treebuilder *treebuilder)
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
@@ -400,7 +400,7 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 				type == TABLE || type == TT || type == U ||
 				type == UL || type == VAR) {
 			foreign_break_out(treebuilder);
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		} else {
 			hubbub_tag tag = token->data.tag;
 
@@ -428,9 +428,9 @@ bool handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 		break;
 	case HUBBUB_TOKEN_EOF:
 		foreign_break_out(treebuilder);
-		reprocess = true;
+		err = HUBBUB_REPROCESS;
 		break;
 	}
 
-	return reprocess;
+	return err;
 }

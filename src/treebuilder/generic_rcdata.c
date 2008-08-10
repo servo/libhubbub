@@ -21,10 +21,10 @@
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
+hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	bool done = false;
 
 	if (treebuilder->context.strip_leading_lr &&
@@ -65,7 +65,8 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		break;
 	case HUBBUB_TOKEN_EOF:
 		/** \todo parse error */
-		done = reprocess = true;
+		done = true;
+		err = HUBBUB_REPROCESS;
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
@@ -117,6 +118,6 @@ bool handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		treebuilder->context.mode = treebuilder->context.collect.mode;
 	}
 
-	return reprocess;
+	return err;
 }
 

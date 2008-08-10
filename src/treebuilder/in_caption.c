@@ -21,10 +21,10 @@
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_in_caption(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_caption(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	bool handled = false;
 
 	switch (token->type) {
@@ -37,7 +37,7 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 				type == TBODY || type == TD || type == TFOOT ||
 				type == TH || type == THEAD || type == TR) {
 			/** \todo parse error */
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		} else {
 			/* Process as if "in body" */
 			handle_in_body(treebuilder, token);
@@ -53,7 +53,7 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 			handled = true;
 		} else if (type == TABLE) {
 			/** \todo parse error if type == TABLE */
-			reprocess = true;
+			err = HUBBUB_REPROCESS;
 		} else if (type == BODY || type == COL || type == COLGROUP ||
 				type == HTML || type == TBODY || type == TD ||
 				type == TFOOT || type == TH ||
@@ -75,7 +75,7 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 		break;
 	}
 
-	if (handled || reprocess) {
+	if (handled || err == HUBBUB_REPROCESS) {
 		hubbub_ns ns;
 		element_type otype = UNKNOWN;
 		void *node;
@@ -103,6 +103,6 @@ bool handle_in_caption(hubbub_treebuilder *treebuilder,
 		treebuilder->context.mode = IN_TABLE;
 	}
 
-	return reprocess;
+	return err;
 }
 

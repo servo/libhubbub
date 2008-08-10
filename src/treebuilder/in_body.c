@@ -109,10 +109,10 @@ static void aa_clone_and_replace_entries(hubbub_treebuilder *treebuilder,
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_in_body(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 #if !defined(NDEBUG) && defined(DEBUG_IN_BODY)
 	fprintf(stdout, "Processing token %d\n", token->type);
@@ -139,10 +139,10 @@ bool handle_in_body(hubbub_treebuilder *treebuilder,
 		/** \todo parse error */
 		break;
 	case HUBBUB_TOKEN_START_TAG:
-		reprocess = process_start_tag(treebuilder, token);
+		err = process_start_tag(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_END_TAG:
-		reprocess = process_end_tag(treebuilder, token);
+		err = process_end_tag(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_EOF:
 		for (uint32_t i = treebuilder->context.current_node; 
@@ -168,7 +168,7 @@ bool handle_in_body(hubbub_treebuilder *treebuilder,
 	formatting_list_dump(treebuilder, stdout);
 #endif
 
-	return reprocess;
+	return err;
 }
 
 /**
@@ -210,7 +210,7 @@ void process_character(hubbub_treebuilder *treebuilder,
 bool process_start_tag(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	element_type type = element_type_from_name(treebuilder,
 			&token->data.tag.name);
 
@@ -339,7 +339,7 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 		process_phrasing_in_body(treebuilder, token);
 	}
 
-	return reprocess;
+	return err;
 }
 
 /**
@@ -352,7 +352,7 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 bool process_end_tag(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 	element_type type = element_type_from_name(treebuilder,
 			&token->data.tag.name);
 
@@ -368,7 +368,7 @@ bool process_end_tag(hubbub_treebuilder *treebuilder,
 				treebuilder->context.mode == IN_BODY) {
 			treebuilder->context.mode = AFTER_BODY;
 		}
-		reprocess = true;
+		err = HUBBUB_REPROCESS;
 	} else if (type == ADDRESS || type == BLOCKQUOTE || 
 			type == CENTER || type == DIR || type == DIV ||
 			type == DL || type == FIELDSET || 
@@ -416,7 +416,7 @@ bool process_end_tag(hubbub_treebuilder *treebuilder,
 		process_0generic_in_body(treebuilder, type);
 	}
 
-	return reprocess;
+	return err;
 }
 
 /**

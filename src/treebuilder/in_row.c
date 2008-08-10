@@ -49,7 +49,7 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
  * \param treebuilder	The treebuilder instance
  * \return True to reprocess the token, false otherwise
  */
-static inline bool act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
+static hubbub_error act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
 {
 	hubbub_ns ns;
 	element_type otype;
@@ -67,7 +67,7 @@ static inline bool act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
 
 	treebuilder->context.mode = IN_TABLE_BODY;
 
-	return true;
+	return HUBBUB_REPROCESS;
 }
 
 
@@ -78,10 +78,10 @@ static inline bool act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
  * \param token        The token to process
  * \return True to reprocess the token, false otherwise
  */
-bool handle_in_row(hubbub_treebuilder *treebuilder,
+hubbub_error handle_in_row(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	bool reprocess = false;
+	hubbub_error err = HUBBUB_OK;
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_START_TAG:
@@ -109,9 +109,9 @@ bool handle_in_row(hubbub_treebuilder *treebuilder,
 		} else if (type == CAPTION || type == COL ||
 				type == COLGROUP || type == TBODY ||
 				type == TFOOT || type == THEAD || type == TR) {
-			reprocess = act_as_if_end_tag_tr(treebuilder);
+			err = act_as_if_end_tag_tr(treebuilder);
 		} else {
-			reprocess = handle_in_table(treebuilder, token);
+			err = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -123,14 +123,14 @@ bool handle_in_row(hubbub_treebuilder *treebuilder,
 		if (type == TR) {
 			(void)act_as_if_end_tag_tr(treebuilder);
 		} else if (type == TABLE) {
-			reprocess = act_as_if_end_tag_tr(treebuilder);
+			err = act_as_if_end_tag_tr(treebuilder);
 		} else if (type == BODY || type == CAPTION || type == COL ||
 				type == COLGROUP || type == HTML ||
 				type == TD || type == TH) {
 			/** \todo parse error */
 			/* Ignore the token */
 		} else {
-			reprocess = handle_in_table(treebuilder, token);
+			err = handle_in_table(treebuilder, token);
 		}
 	}
 		break;
@@ -138,10 +138,10 @@ bool handle_in_row(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_COMMENT:
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
-		reprocess = handle_in_table(treebuilder, token);
+		err = handle_in_table(treebuilder, token);
 		break;
 	}
 
-	return reprocess;
+	return err;
 }
 
