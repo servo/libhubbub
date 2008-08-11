@@ -25,4 +25,7 @@
 #define UNUSED(x) ((x)=(x))
 #endif
 
+/* Useful for iterating over arrays */
+#define N_ELEMENTS(x)   sizeof((x)) / sizeof((x)[0])
+
 #endif

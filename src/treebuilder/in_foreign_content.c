@@ -132,8 +132,6 @@ static const case_changes svg_tagnames[] = {
 
 #undef S
 
-#define N_ELEMENTS(x)		(sizeof(x) / sizeof((x)[0]))
-
 
 /**
  * Adjust SVG attributes.
