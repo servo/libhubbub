@@ -2912,6 +2912,9 @@ hubbub_error emit_current_tag(hubbub_tokeniser *tokeniser)
 		tokeniser->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
 	}
 
+	/* Reset the self-closing flag */
+	tokeniser->context.current_tag.self_closing = false;
+
 	return err;
 }
 
