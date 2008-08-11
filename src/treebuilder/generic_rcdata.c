@@ -42,7 +42,6 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 			const uint8_t *str =
 				treebuilder->context.collect.string.ptr;
 
-			/** \todo UTF-16 */
 			if (*str == '\n') {
 				treebuilder->context.collect.string.ptr++;
 				treebuilder->context.collect.string.len--;

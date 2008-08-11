@@ -187,7 +187,6 @@ void process_character(hubbub_treebuilder *treebuilder,
 	if (treebuilder->context.strip_leading_lr) {
 		const uint8_t *str = dummy.ptr;
 
-		/** \todo UTF-16 */
 		if (*str == '\n') {
 			dummy.ptr++;
 			dummy.len--;
@@ -807,7 +806,6 @@ void process_image_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_tag tag;
 
-	/** \todo UTF-16 */
 	tag.ns = HUBBUB_NS_HTML;
 	tag.name.ptr = (const uint8_t *) "img";
 	tag.name.len = SLEN("img");
@@ -1158,7 +1156,6 @@ void process_0p_in_body(hubbub_treebuilder *treebuilder)
 
 		dummy.type = HUBBUB_TOKEN_START_TAG;
 		dummy.data.tag.ns = HUBBUB_NS_HTML;
-		/** \todo UTF-16 */
 		dummy.data.tag.name.ptr = (const uint8_t *) "p";
 		dummy.data.tag.name.len = SLEN("p");
 		dummy.data.tag.n_attributes = 0;
@@ -1923,7 +1920,6 @@ void process_0br_in_body(hubbub_treebuilder *treebuilder)
 
 	/* Act as if <br> has been seen. */
 
-	/** \todo UTF-16 */
 	tag.ns = HUBBUB_NS_HTML;
 	tag.name.ptr = (const uint8_t *) "br";
 	tag.name.len = SLEN("br");

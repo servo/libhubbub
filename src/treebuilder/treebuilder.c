@@ -371,8 +371,6 @@ hubbub_error process_characters_expect_whitespace(hubbub_treebuilder *treebuilde
 	size_t len = token->data.character.len;
 	size_t c;
 
-	/** \todo UTF-16 */
-
 	for (c = 0; c < len; c++) {
 		if (data[c] != 0x09 && data[c] != 0x0A &&
 				data[c] != 0x0C && data[c] != 0x20)
@@ -962,7 +960,6 @@ element_type element_type_from_name(hubbub_treebuilder *treebuilder,
 	size_t len = tag_name->len;
 
 
-	/** \todo UTF-16 support */
 	/** \todo optimise this */
 
 	for (uint32_t i = 0; 

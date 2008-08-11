@@ -40,6 +40,7 @@ typedef struct element_context
 {
 	hubbub_ns ns;			/**< Element namespace */
 	element_type type;		/**< Element type */
+	uint8_t *name;			/**< Element name (interned) */
 
 	bool tainted;			/**< Only for tables.  "Once the
 					 * current table has been tainted,

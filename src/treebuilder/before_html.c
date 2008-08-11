@@ -71,7 +71,6 @@ hubbub_error handle_before_html(hubbub_treebuilder *treebuilder,
 			/* Need to manufacture html element */
 			hubbub_tag tag;
 
-			/** \todo UTF-16 */
 			tag.ns = HUBBUB_NS_HTML;
 			tag.name.ptr = (const uint8_t *) "html";
 			tag.name.len = SLEN("html");
