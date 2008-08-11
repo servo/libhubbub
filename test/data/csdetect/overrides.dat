@@ -1,4 +1,9 @@
 #data
+<meta charset="EUC-KR">
+#encoding
+Windows-949
+
+#data
 <meta charset="gb2312">
 #encoding
 GBK
@@ -24,6 +29,16 @@ Windows-1254
 Windows-874
 
 #data
+<meta charset="KS_C_5601-1987">
+#encoding
+Windows-949
+
+#data
 <meta charset="TIS-620">
 #encoding
 Windows-874
+
+#data
+<meta charset="x-x-big5">
+#encoding
+Big5
