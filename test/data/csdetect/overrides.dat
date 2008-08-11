@@ -1,0 +1,29 @@
+#data
+<meta charset="gb2312">
+#encoding
+GBK
+
+#data
+<meta charset="gb2312-80">
+#encoding
+GBK
+
+#data
+<meta charset="iso-8859-1">
+#encoding
+Windows-1252
+
+#data
+<meta charset="iso-8859-9">
+#encoding
+Windows-1254
+
+#data
+<meta charset="iso-8859-11">
+#encoding
+Windows-874
+
+#data
+<meta charset="TIS-620">
+#encoding
+Windows-874

@@ -8,3 +8,4 @@ test-yahoo-jp.dat	Yahoo! Japan, from html5lib testcases
 tests1.dat		Assorted tests, including edge cases, from html5lib
 tests2.dat		Further tests from html5lib
 regression.dat		Regression tests
+overrides.dat		Character encoding overrides from 8.2.2.2.
