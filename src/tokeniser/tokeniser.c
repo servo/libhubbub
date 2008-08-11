@@ -607,13 +607,6 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 		} \
 	} while (0)
 
-#define FINISH(str) \
-	/* no-op */
-
-
-
-
-
 
 /* this should always be called with an empty "chars" buffer */
 hubbub_error hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
@@ -1076,18 +1069,13 @@ hubbub_error hubbub_tokeniser_handle_tag_name(hubbub_tokeniser *tokeniser)
 	tokeniser->context.pending += len;
 
 	if (c == '\t' || c == '\n' || c == '\f' || c == ' ' || c == '\r') {
-		FINISH(ctag->name);
-
 		tokeniser->state = STATE_BEFORE_ATTRIBUTE_NAME;
 	} else if (c == '>') {
-		FINISH(ctag->name);
-
 		tokeniser->state = STATE_DATA;
 		return emit_current_tag(tokeniser);
 	} else if (c == '\0') {
 		COLLECT(ctag->name, u_fffd, sizeof(u_fffd));
 	} else if (c == '/') {
-		FINISH(ctag->name);
 		tokeniser->state = STATE_SELF_CLOSING_START_TAG;
 	} else if ('A' <= c && c <= 'Z') {
 		uint8_t lc = (c + 0x20);
@@ -1188,18 +1176,13 @@ hubbub_error hubbub_tokeniser_handle_attribute_name(hubbub_tokeniser *tokeniser)
 	tokeniser->context.pending += len;
 
 	if (c == '\t' || c == '\n' || c == '\f' || c == ' ' || c == '\r') {
-		FINISH(ctag->attributes[ctag->n_attributes - 1].name);
 		tokeniser->state = STATE_AFTER_ATTRIBUTE_NAME;
 	} else if (c == '=') {
-		FINISH(ctag->attributes[ctag->n_attributes - 1].name);
 		tokeniser->state = STATE_BEFORE_ATTRIBUTE_VALUE;
 	} else if (c == '>') {
-		FINISH(ctag->attributes[ctag->n_attributes - 1].name);
-
 		tokeniser->state = STATE_DATA;
 		return emit_current_tag(tokeniser);
 	} else if (c == '/') {
-		FINISH(ctag->attributes[ctag->n_attributes - 1].name);
 		tokeniser->state = STATE_SELF_CLOSING_START_TAG;
 	} else if (c == '\0') {
 		COLLECT(ctag->attributes[ctag->n_attributes - 1].name,
@@ -1347,8 +1330,6 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeni
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		FINISH(ctag->attributes[ctag->n_attributes - 1].value);
-
 		tokeniser->state = STATE_DATA;
 		return emit_current_tag(tokeniser);
 	}
@@ -1357,7 +1338,6 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeni
 
 	if (c == '"') {
 		tokeniser->context.pending += len;
-		FINISH(ctag->attributes[ctag->n_attributes - 1].value);
 		tokeniser->state = STATE_AFTER_ATTRIBUTE_VALUE_Q;
 	} else if (c == '&') {
 		tokeniser->context.prev_state = tokeniser->state;
@@ -1404,8 +1384,6 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeni
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		FINISH(ctag->attributes[ctag->n_attributes - 1].value);
-
 		tokeniser->state = STATE_DATA;
 		return emit_current_tag(tokeniser);
 	}
@@ -1414,9 +1392,7 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeni
 
 	if (c == '\'') {
 		tokeniser->context.pending += len;
-		FINISH(ctag->attributes[ctag->n_attributes - 1].value);
-		tokeniser->state =
-				STATE_AFTER_ATTRIBUTE_VALUE_Q;
+		tokeniser->state = STATE_AFTER_ATTRIBUTE_VALUE_Q;
 	} else if (c == '&') {
 		tokeniser->context.prev_state = tokeniser->state;
 		tokeniser->state = STATE_CHARACTER_REFERENCE_IN_ATTRIBUTE_VALUE;
@@ -1463,8 +1439,6 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeni
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		FINISH(ctag->attributes[ctag->n_attributes - 1].value);
-
 		tokeniser->state = STATE_DATA;
 		return emit_current_tag(tokeniser);
 	}
@@ -1473,7 +1447,6 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeni
 
 	if (c == '\t' || c == '\n' || c == '\f' || c == ' ' || c == '\r') {
 		tokeniser->context.pending += len;
-		FINISH(ctag->attributes[ctag->n_attributes - 1].value);
 		tokeniser->state = STATE_BEFORE_ATTRIBUTE_NAME;
 	} else if (c == '&') {
 		tokeniser->context.prev_state = tokeniser->state;
@@ -1481,8 +1454,6 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_uq(hubbub_tokeniser *tokeni
 		/* Don't eat the '&'; it'll be handled by entity consumption */
 	} else if (c == '>') {
 		tokeniser->context.pending += len;
-		FINISH(ctag->attributes[ctag->n_attributes - 1].value);
-
 		tokeniser->state = STATE_DATA;
 		return emit_current_tag(tokeniser);
 	} else if (c == '\0') {
@@ -1957,8 +1928,6 @@ hubbub_error hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		FINISH(cdoc->name);
-
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	}
@@ -1967,10 +1936,8 @@ hubbub_error hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 	tokeniser->context.pending += len;
 
 	if (c == '\t' || c == '\n' || c == '\f' || c == ' ' || c == '\r') {
-		FINISH(cdoc->name);
 		tokeniser->state = STATE_AFTER_DOCTYPE_NAME;
 	} else if (c == '>') {
-		FINISH(cdoc->name);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, false);
 	} else if (c == '\0') {
@@ -2106,7 +2073,6 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_dq(hubbub_tokeniser *tokenis
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		FINISH(cdoc->public_id);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	}
@@ -2115,10 +2081,8 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_dq(hubbub_tokeniser *tokenis
 	tokeniser->context.pending += len;
 
 	if (c == '"') {
-		FINISH(cdoc->public_id);
 		tokeniser->state = STATE_AFTER_DOCTYPE_PUBLIC;
 	} else if (c == '>') {
-		FINISH(cdoc->public_id);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	} else if (c == '\0') {
@@ -2156,7 +2120,6 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_sq(hubbub_tokeniser *tokenis
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		FINISH(cdoc->public_id);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	}
@@ -2165,10 +2128,8 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_sq(hubbub_tokeniser *tokenis
 	tokeniser->context.pending += len;
 
 	if (c == '\'') {
-		FINISH(cdoc->public_id);
 		tokeniser->state = STATE_AFTER_DOCTYPE_PUBLIC;
 	} else if (c == '>') {
-		FINISH(cdoc->public_id);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	} else if (c == '\0') {
@@ -2331,7 +2292,6 @@ hubbub_error hubbub_tokeniser_handle_doctype_system_dq(hubbub_tokeniser *tokenis
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		FINISH(cdoc->system_id);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	}
@@ -2340,10 +2300,8 @@ hubbub_error hubbub_tokeniser_handle_doctype_system_dq(hubbub_tokeniser *tokenis
 	tokeniser->context.pending += len;
 
 	if (c == '"') {
-		FINISH(cdoc->system_id);
 		tokeniser->state = STATE_AFTER_DOCTYPE_SYSTEM;
 	} else if (c == '>') {
-		FINISH(cdoc->system_id);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	} else if (c == '\0') {
@@ -2382,7 +2340,6 @@ hubbub_error hubbub_tokeniser_handle_doctype_system_sq(hubbub_tokeniser *tokenis
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		FINISH(cdoc->system_id);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	}
@@ -2391,10 +2348,8 @@ hubbub_error hubbub_tokeniser_handle_doctype_system_sq(hubbub_tokeniser *tokenis
 	tokeniser->context.pending += len;
 
 	if (c == '\'') {
-		FINISH(cdoc->system_id);
 		tokeniser->state = STATE_AFTER_DOCTYPE_SYSTEM;
 	} else if (c == '>') {
-		FINISH(cdoc->system_id);
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	} else if (c == '\0') {

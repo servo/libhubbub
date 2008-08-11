@@ -676,14 +676,14 @@ void hubbub_charset_fix_charset(uint16_t *charset)
 	} else if (*charset == parserutils_charset_mibenum_from_name(
 			"KS_C_5601-1987", SLEN("KS_C_5601-1987")) ||
 			*charset == parserutils_charset_mibenum_from_name(
-					"EUC-KR", SLEN("EUR-KR"))) {
+					"EUC-KR", SLEN("EUC-KR"))) {
 		tmp = parserutils_charset_mibenum_from_name(
 				"Windows-949", SLEN("Windows-949"));
 	/* TIS-620 -> Windows-874 */
 	} else if (*charset == parserutils_charset_mibenum_from_name(
 			"TIS-620", SLEN("TIS-620"))) {
 		tmp = parserutils_charset_mibenum_from_name(
-				"Windows-847", SLEN("Windows-847"));
+				"Windows-874", SLEN("Windows-874"));
 	/* x-x-big5 -> Big5 */
 	} else if (*charset == parserutils_charset_mibenum_from_name(
 			"x-x-big5", SLEN("x-x-big5"))) {
