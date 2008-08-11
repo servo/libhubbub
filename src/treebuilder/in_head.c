@@ -64,20 +64,26 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 		if (treebuilder->tree_handler->encoding_change) {
 			const char *name = parserutils_charset_mibenum_to_name(
 					charset_enc);
-			treebuilder->tree_handler->encoding_change(
+
+			/* 1 indicates the encoding should actually change */
+			if (treebuilder->tree_handler->encoding_change(
 					treebuilder->tree_handler->ctx,
-					name);
+					name) == 1) {
+				return HUBBUB_ENCODINGCHANGE;
+			}
 		}
-		return HUBBUB_ENCODINGCHANGE;
 	} else if (content_type_enc != 0) {
 		if (treebuilder->tree_handler->encoding_change) {
 			const char *name = parserutils_charset_mibenum_to_name(
 					content_type_enc);
-			treebuilder->tree_handler->encoding_change(
+
+			/* 1 indicates the encoding should actually change */
+			if (treebuilder->tree_handler->encoding_change(
 					treebuilder->tree_handler->ctx,
-					name);
+					name) == 1) {
+				return HUBBUB_ENCODINGCHANGE;
+			}
 		}
-		return HUBBUB_ENCODINGCHANGE;
 	}
 
 	return HUBBUB_OK;

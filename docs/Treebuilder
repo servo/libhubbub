@@ -187,4 +187,16 @@ Callback behaviour
 
   This function must set the quirks mode flag of the document to "mode".
 
-
+  | int hubbub_tree_encoding_change(void *ctx,
+  |                                 const char *name);
+  
+  This function is called when a meta tag which specifies a charset is seen
+  in the treebuilder. [1]  The client is responsible for checking if the
+  encoding the document is being processed as should actually be changed, and
+  if it should, this function should return 1.  In this case, the parser
+  instance will return the error code HUBBUB_ENCODINGCHANGE when it returns
+  from parsing the chunk that triggered the encoding change.  The parser
+  instance should then be destroyed and a new one created with that encoding
+  specified.
+  
+  [1] http://www.whatwg.org/specs/web-apps/current-work/#in-head

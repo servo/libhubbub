@@ -558,7 +558,7 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 		}
 	}
 
-	return HUBBUB_OK;
+	return (cont == HUBBUB_OOD) ? HUBBUB_OK : cont;
 }
 
 

@@ -49,19 +49,18 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 	if (data == NULL || mibenum == NULL || source == NULL)
 		return PARSERUTILS_BADPARM;
 
-	/* 1 */
+	/* 1. */
 
 	/* If the source is dictated, there's nothing for us to do */
-	if (*source == HUBBUB_CHARSET_DICTATED) {
-		/* confidence = certain; */
+	if (*source == HUBBUB_CHARSET_CONFIDENT) {
 		return PARSERUTILS_OK;
 	}
 
-	/* 2 */
+	/* 2. */
 
 	/** \todo We probably want to wait for ~512 bytes of data / 500ms here */
 
-	/* 3 */
+	/* 3. */
 
 	/* We need at least 3 bytes of data */
 	if (len < 3)
@@ -71,13 +70,12 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 	charset = hubbub_charset_read_bom(data, len);
 	if (charset != 0) {
 		*mibenum = charset;
-		*source = HUBBUB_CHARSET_DOCUMENT;
-		/* confidence = certain; */
+		*source = HUBBUB_CHARSET_CONFIDENT;
 
 		return PARSERUTILS_OK;
 	}
 
-	/* 4 */
+	/* 4. */
 
 	/* No BOM was found, so we must look for a meta charset within
 	 * the document itself. */
@@ -111,8 +109,7 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 					"UTF-32BE", SLEN("UTF-32BE"))) {
 
 			*mibenum = charset;
-			*source = HUBBUB_CHARSET_DOCUMENT;
-			/* confidence = tentative; */
+			*source = HUBBUB_CHARSET_TENTATIVE;
 
 			return PARSERUTILS_OK;
 		}
@@ -126,7 +123,7 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 	/* We failed to autodetect a charset, so use the default fallback */
 default_encoding:
 
-	/* 7 */
+	/* 7. */
 
 	charset = parserutils_charset_mibenum_from_name("Windows-1252",
 			SLEN("Windows-1252"));
@@ -135,7 +132,7 @@ default_encoding:
 				SLEN("ISO-8859-1"));
 
 	*mibenum = charset;
-	*source = HUBBUB_CHARSET_DEFAULT;
+	*source = HUBBUB_CHARSET_TENTATIVE;
 
 	return PARSERUTILS_OK;
 }

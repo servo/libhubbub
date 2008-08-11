@@ -46,7 +46,7 @@ hubbub_parser *hubbub_parser_create(const char *enc,
 		return NULL;
 
 	parser->stream = parserutils_inputstream_create(enc,
-		enc != NULL ? HUBBUB_CHARSET_DICTATED : HUBBUB_CHARSET_UNKNOWN,
+		enc != NULL ? HUBBUB_CHARSET_CONFIDENT : HUBBUB_CHARSET_UNKNOWN,
 		hubbub_charset_extract, alloc, pw);
 	if (parser->stream == NULL) {
 		alloc(parser, 0, pw);
@@ -105,7 +105,7 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 		hubbub_parser_opttype type,
 		hubbub_parser_optparams *params)
 {
-	hubbub_error result = HUBBUB_OK;;
+	hubbub_error result = HUBBUB_OK;
 
 	if (parser == NULL || params == NULL)
 		return HUBBUB_BADPARM;

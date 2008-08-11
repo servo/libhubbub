@@ -15,11 +15,10 @@
  * A client-dictated charset will override all others.
  * A document-specified charset will override autodetection or the default */
 typedef enum hubbub_charset_source {
-	HUBBUB_CHARSET_UNKNOWN          = 0,	/**< Unknown */
-	HUBBUB_CHARSET_DEFAULT          = 1,	/**< Default setting */
-	HUBBUB_CHARSET_DETECTED         = 2,	/**< Autodetected */
-	HUBBUB_CHARSET_DOCUMENT         = 3,	/**< Defined in document */
-	HUBBUB_CHARSET_DICTATED         = 4,	/**< Dictated by client */
+	HUBBUB_CHARSET_UNKNOWN		= 0,	/**< Unknown */
+	HUBBUB_CHARSET_TENTATIVE	= 1,	/**< Charset may be changed
+						 * with further data */
+	HUBBUB_CHARSET_CONFIDENT	= 2,	/**< Charset definite */
 } hubbub_charset_source;
 
 /**
