@@ -176,6 +176,8 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 	printf("Creating (%" PRIuPTR ") [comment '%.*s']\n", ++node_counter,
 			(int) data->len, data->ptr);
 
+	assert(memchr(data->ptr, 0xff, data->len) == NULL);
+
 	GROW_REF
 	node_ref[node_counter] = 0;
 
@@ -190,6 +192,16 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 {
 	printf("Creating (%" PRIuPTR ") [doctype '%.*s']\n", ++node_counter,
 			(int) doctype->name.len, doctype->name.ptr);
+
+	assert(memchr(doctype->name.ptr, 0xff, doctype->name.len) == NULL);
+	if (doctype->public_missing == false) {
+		assert(memchr(doctype->public_id.ptr, 0xff,
+				doctype->public_id.len) == NULL);
+	}
+	if (doctype->system_missing == false) {
+		assert(memchr(doctype->system_id.ptr, 0xff,
+				doctype->system_id.len) == NULL);
+	}
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -206,6 +218,14 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 	printf("Creating (%" PRIuPTR ") [element '%.*s']\n", ++node_counter,
 			(int) tag->name.len, tag->name.ptr);
 
+	assert(memchr(tag->name.ptr, 0xff, tag->name.len) == NULL);
+	for (uint32_t i = 0; i < tag->n_attributes; i++) {
+		hubbub_attribute *attr = &tag->attributes[i];
+
+		assert(memchr(attr->name.ptr, 0xff, attr->name.len) == NULL);
+		assert(memchr(attr->value.ptr, 0xff, attr->value.len) == NULL);
+	}
+
 	GROW_REF
 	node_ref[node_counter] = 0;
 
@@ -220,6 +240,8 @@ int create_text(void *ctx, const hubbub_string *data, void **result)
 {
 	printf("Creating (%" PRIuPTR ") [text '%.*s']\n", ++node_counter,
 			(int) data->len, data->ptr);
+
+	assert(memchr(data->ptr, 0xff, data->len) == NULL);
 
 	GROW_REF
 	node_ref[node_counter] = 0;
@@ -348,6 +370,13 @@ int add_attributes(void *ctx, void *node,
 	UNUSED(n_attributes);
 
 	printf("Adding attributes to %" PRIuPTR "\n", (uintptr_t) node);
+
+	for (uint32_t i = 0; i < n_attributes; i++) {
+		const hubbub_attribute *attr = &attributes[i];
+
+		assert(memchr(attr->name.ptr, 0xff, attr->name.len) == NULL);
+		assert(memchr(attr->value.ptr, 0xff, attr->value.len) == NULL);
+	}
 
 	return 0;
 }

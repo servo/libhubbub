@@ -2969,6 +2969,45 @@ hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 	assert(tokeniser != NULL);
 	assert(token != NULL);
 
+#ifndef NDEBUG
+	/* Sanity checks */
+	switch (token->type) {
+	case HUBBUB_TOKEN_DOCTYPE:
+		assert(memchr(token->data.doctype.name.ptr, 0xff, 
+				token->data.doctype.name.len) == NULL);
+		if (token->data.doctype.public_missing == false)
+			assert(memchr(token->data.doctype.public_id.ptr, 0xff,
+				token->data.doctype.public_id.len) == NULL);
+		if (token->data.doctype.system_missing == false)
+			assert(memchr(token->data.doctype.system_id.ptr, 0xff,
+				token->data.doctype.system_id.len) == NULL);
+		break;
+	case HUBBUB_TOKEN_START_TAG:
+	case HUBBUB_TOKEN_END_TAG:
+		assert(memchr(token->data.tag.name.ptr, 0xff, 
+				token->data.tag.name.len) == NULL);
+		for (uint32_t i = 0; i < token->data.tag.n_attributes; i++) {
+			hubbub_attribute *attr = &token->data.tag.attributes[i];
+
+			assert(memchr(attr->name.ptr, 0xff, attr->name.len) == 
+					NULL);
+			assert(memchr(attr->value.ptr, 0xff, attr->value.len) ==
+					NULL);
+		}
+		break;
+	case HUBBUB_TOKEN_COMMENT:
+		assert(memchr(token->data.comment.ptr, 0xff, 
+				token->data.comment.len) == NULL);
+		break;
+	case HUBBUB_TOKEN_CHARACTER:
+		assert(memchr(token->data.character.ptr, 0xff,
+				token->data.character.len) == NULL);
+		break;
+	case HUBBUB_TOKEN_EOF:
+		break;
+	}
+#endif
+
 	/* Emit the token */
 	if (tokeniser->token_handler) {
 		err = tokeniser->token_handler(token, tokeniser->token_pw);
