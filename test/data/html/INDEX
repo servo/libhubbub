@@ -10,3 +10,4 @@ misnested.html		Misnested tags
 isindex.html		Test of <isindex> parsing
 #firmaer.phtml		http://www.danmarks.net/firmaer.phtml?idxno=1418&letter=F
 #d11MXs.2WQ9.d.htm	http://www.secinfo.com/d11MXs.2WQ9.d.htm
+regression-script-collect.html	Regression test for script collection
