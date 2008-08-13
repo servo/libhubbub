@@ -596,11 +596,9 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 
 #define COLLECT_MS(str, cptr, length) \
 	do { \
-		if ((str).len == 0) { \
-			START_BUF(str, (uint8_t *)cptr, length); \
-		} else { \
-			COLLECT(str, cptr, length); \
-		} \
+		parserutils_buffer_append(tokeniser->buffer, \
+				(uint8_t *) cptr, (length)); \
+		(str).len += (length); \
 	} while (0)
 
 
