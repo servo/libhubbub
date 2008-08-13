@@ -1587,8 +1587,6 @@ hubbub_error hubbub_tokeniser_handle_self_closing_start_tag(
 /* this state expects tokeniser->context.chars to be empty on first entry */
 hubbub_error hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 {
-	hubbub_string *comment = &tokeniser->context.current_comment;
-
 	size_t len;
 	uintptr_t cptr = parserutils_inputstream_peek(tokeniser->input,
 			tokeniser->context.pending, &len);
@@ -1597,8 +1595,6 @@ hubbub_error hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
 		tokeniser->state = STATE_DATA;
-		tokeniser->context.current_comment.ptr =
-					tokeniser->buffer->data;
 		return emit_current_comment(tokeniser);
 	}
 
@@ -1614,7 +1610,6 @@ hubbub_error hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 	} else if (c == '\0') {
 		parserutils_buffer_append(tokeniser->buffer,
 				u_fffd, sizeof(u_fffd));
-		comment->len += sizeof(u_fffd);
 	} else if (c == '\r') {
 		cptr = parserutils_inputstream_peek(
 				tokeniser->input,
@@ -1627,14 +1622,12 @@ hubbub_error hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 				CHAR(cptr) != '\n') {
 			parserutils_buffer_append(tokeniser->buffer,
 					&lf, sizeof(lf));
-			comment->len += sizeof(lf);
 		}
 
 		tokeniser->context.pending += len;
 	} else {
 		parserutils_buffer_append(tokeniser->buffer,
 				(uint8_t *)cptr, len);
-		comment->len += len;
 	}
 
 	return HUBBUB_OK;
@@ -1709,8 +1702,6 @@ hubbub_error hubbub_tokeniser_handle_match_comment(hubbub_tokeniser *tokeniser)
 
 hubbub_error hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 {
-	hubbub_string *comment = &tokeniser->context.current_comment;
-
 	size_t len;
 	uintptr_t cptr = parserutils_inputstream_peek(
 			tokeniser->input, tokeniser->context.pending, &len);
@@ -1718,8 +1709,6 @@ hubbub_error hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;
 	} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF) {
-		tokeniser->context.current_comment.ptr =
-					tokeniser->buffer->data;
 		tokeniser->state = STATE_DATA;
 		return emit_current_comment(tokeniser);
 	}
@@ -1732,8 +1721,6 @@ hubbub_error hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 		tokeniser->context.pending += len;
 
 		/** \todo parse error if state != COMMENT_END */
-		tokeniser->context.current_comment.ptr =
-					tokeniser->buffer->data;
 		tokeniser->state = STATE_DATA;
 		return emit_current_comment(tokeniser);
 	} else if (c == '-') {
@@ -1748,7 +1735,6 @@ hubbub_error hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 		} else if (tokeniser->state == STATE_COMMENT_END) {
 			parserutils_buffer_append(tokeniser->buffer,
 					(uint8_t *) "-", SLEN("-"));
-			comment->len += SLEN("-");
 		}
 
 		tokeniser->context.pending += len;
@@ -1757,17 +1743,14 @@ hubbub_error hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 				tokeniser->state == STATE_COMMENT_END_DASH) {
 			parserutils_buffer_append(tokeniser->buffer,
 					(uint8_t *) "-", SLEN("-"));
-			comment->len += SLEN("-");
 		} else if (tokeniser->state == STATE_COMMENT_END) {
 			parserutils_buffer_append(tokeniser->buffer,
 					(uint8_t *) "--", SLEN("--"));
-			comment->len += SLEN("--");
 		}
 
 		if (c == '\0') {
 			parserutils_buffer_append(tokeniser->buffer,
 					u_fffd, sizeof(u_fffd));
-			comment->len += sizeof(u_fffd);
 		} else if (c == '\r') {
 			cptr = parserutils_inputstream_peek(
 					tokeniser->input,
@@ -1779,12 +1762,10 @@ hubbub_error hubbub_tokeniser_handle_comment(hubbub_tokeniser *tokeniser)
 					CHAR(cptr) != '\n') {
 				parserutils_buffer_append(tokeniser->buffer,
 						&lf, sizeof(lf));
-				comment->len += sizeof(lf);
 			}
 		} else {
 			parserutils_buffer_append(tokeniser->buffer,
 					(uint8_t *)cptr, len);
-			comment->len += len;
 		}
 
 		tokeniser->context.pending += len;
@@ -2937,8 +2918,8 @@ hubbub_error emit_current_comment(hubbub_tokeniser *tokeniser)
 	hubbub_token token;
 
 	token.type = HUBBUB_TOKEN_COMMENT;
-	token.data.comment = tokeniser->context.current_comment;
 	token.data.comment.ptr = tokeniser->buffer->data;
+	token.data.comment.len = tokeniser->buffer->length;
 
 	return hubbub_tokeniser_emit_token(tokeniser, &token);
 }
