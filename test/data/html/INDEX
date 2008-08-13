@@ -13,3 +13,4 @@ isindex.html		Test of <isindex> parsing
 regression-script-collect.html	Regression test for script collection
 mangleme.1.html		Mangleme page which broke hubbub
 mangleme.2.html		Mangleme page which breaks hubbub
+mangleme.3.html		Mangleme page that causes assertion fixed in r5086
