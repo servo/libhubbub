@@ -1591,8 +1591,6 @@ hubbub_error hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 	tokeniser->context.pending += len;
 
 	if (c == '>') {
-		tokeniser->context.current_comment.ptr =
-					tokeniser->buffer->data;
 		tokeniser->state = STATE_DATA;
 		return emit_current_comment(tokeniser);
 	} else if (c == '\0') {
@@ -1611,8 +1609,6 @@ hubbub_error hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 			parserutils_buffer_append(tokeniser->buffer,
 					&lf, sizeof(lf));
 		}
-
-		tokeniser->context.pending += len;
 	} else {
 		parserutils_buffer_append(tokeniser->buffer,
 				(uint8_t *)cptr, len);
@@ -1628,6 +1624,8 @@ hubbub_error hubbub_tokeniser_handle_markup_declaration_open(
 	size_t len;
 	uintptr_t cptr = parserutils_inputstream_peek(tokeniser->input,
 			0, &len);
+
+	assert(tokeniser->context.pending == 0);
 
 	if (cptr == PARSERUTILS_INPUTSTREAM_OOD) {
 		return HUBBUB_OOD;

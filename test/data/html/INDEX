@@ -14,4 +14,5 @@ regression-script-collect.html	Regression test for script collection
 mangleme.1.html		Mangleme page (caused assertion, fixed in r5093).
 mangleme.2.html		Mangleme page (caused segfault, fixed in r5098).
 mangleme.3.html		Mangleme page (caused assertion, fixed in r5086).
-www.fhis.ubc.ca.html	Segfault page
+www.fhis.ubc.ca.html	Segfault page (fixed in r5104).
+ccr.coriell.org.html	Segfault page (fixed in r5106).
