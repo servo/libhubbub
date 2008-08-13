@@ -2861,18 +2861,19 @@ hubbub_error emit_current_tag(hubbub_tokeniser *tokeniser)
 				continue;
 			}
 
+			assert(i < j);
+
 			/* Calculate amount to move */
-			move = (n_attributes - 1 -
-					((i < j) ? j : i)) *
+			move = (n_attributes - 1 - j) *
 					sizeof(hubbub_attribute);
 
 			if (move > 0) {
-				memmove((i < j) ? &attrs[j]
-						: &attrs[i],
-					(i < j) ? &attrs[j+1]
-						: &attrs[i+1],
-					move);
+				memmove(&attrs[j],&attrs[j+1], move);
 			}
+
+			/* We've deleted an item, so we need to 
+			 * reprocess this index */
+			j--;
 
 			/* And reduce the number of attributes */
 			n_attributes--;
