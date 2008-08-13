@@ -29,12 +29,36 @@ hubbub_error handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (treebuilder->context.collect.string.len == 0) {
-			treebuilder->context.collect.string.ptr =
-					token->data.character.ptr;
+	{
+		int success;
+		void *text, *appended;
+
+		success = treebuilder->tree_handler->create_text(
+				treebuilder->tree_handler->ctx,
+				&token->data.character,
+				&text);
+		if (success != 0) {
+			/** \todo errors */
 		}
-		treebuilder->context.collect.string.len +=
-				token->data.character.len;
+
+		/** \todo fragment case -- skip this lot entirely */
+
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.collect.node,
+				text, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					text);
+		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, text);
+	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
 	{
@@ -62,35 +86,7 @@ hubbub_error handle_script_collect_characters(hubbub_treebuilder *treebuilder,
 
 	if (done) {
 		int success;
-		void *text, *appended;
-
-		if (treebuilder->context.collect.string.len) {
-			success = treebuilder->tree_handler->create_text(
-					treebuilder->tree_handler->ctx,
-					&treebuilder->context.collect.string,
-					&text);
-			if (success != 0) {
-				/** \todo errors */
-			}
-
-			/** \todo fragment case -- skip this lot entirely */
-
-			success = treebuilder->tree_handler->append_child(
-					treebuilder->tree_handler->ctx,
-					treebuilder->context.collect.node,
-					text, &appended);
-			if (success != 0) {
-				/** \todo errors */
-				treebuilder->tree_handler->unref_node(
-						treebuilder->tree_handler->ctx,
-						text);
-			}
-
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx, appended);
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx, text);
-		}
+		void *appended;
 
 		/** \todo insertion point manipulation */
 
