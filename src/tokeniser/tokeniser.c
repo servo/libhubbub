@@ -1346,7 +1346,7 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeni
 		/* Don't eat the '&'; it'll be handled by entity consumption */
 	} else if (c == '\0') {
 		tokeniser->context.pending += len;
-		COLLECT(ctag->attributes[ctag->n_attributes - 1].value,
+		COLLECT_MS(ctag->attributes[ctag->n_attributes - 1].value,
 				u_fffd, sizeof(u_fffd));
 	} else if (c == '\r') {
 		cptr = parserutils_inputstream_peek(
@@ -1358,7 +1358,7 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_dq(hubbub_tokeniser *tokeni
 			return HUBBUB_OOD;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				CHAR(cptr) != '\n') {
-			COLLECT(ctag->attributes[
+			COLLECT_MS(ctag->attributes[
 					ctag->n_attributes - 1].value,
 					&lf, sizeof(lf));
 		}
@@ -1400,7 +1400,7 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeni
 		/* Don't eat the '&'; it'll be handled by entity consumption */
 	} else if (c == '\0') {
 		tokeniser->context.pending += len;
-		COLLECT(ctag->attributes[ctag->n_attributes - 1].value,
+		COLLECT_MS(ctag->attributes[ctag->n_attributes - 1].value,
 				u_fffd, sizeof(u_fffd));
 	} else if (c == '\r') {
 		cptr = parserutils_inputstream_peek(
@@ -1412,7 +1412,7 @@ hubbub_error hubbub_tokeniser_handle_attribute_value_sq(hubbub_tokeniser *tokeni
 			return HUBBUB_OOD;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				CHAR(cptr) != '\n') {
-			COLLECT(ctag->attributes[
+			COLLECT_MS(ctag->attributes[
 					ctag->n_attributes - 1].value,
 					&lf, sizeof(lf));
 		}
