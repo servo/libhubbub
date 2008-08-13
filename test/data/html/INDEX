@@ -11,6 +11,7 @@ isindex.html		Test of <isindex> parsing
 #firmaer.phtml		http://www.danmarks.net/firmaer.phtml?idxno=1418&letter=F
 #d11MXs.2WQ9.d.htm	http://www.secinfo.com/d11MXs.2WQ9.d.htm
 regression-script-collect.html	Regression test for script collection
-mangleme.1.html		Mangleme page which broke hubbub (fixed in r5093).
-mangleme.2.html		Mangleme page which causes segfault fixed in r5098.
-mangleme.3.html		Mangleme page that causes assertion fixed in r5086.
+mangleme.1.html		Mangleme page (caused assertion, fixed in r5093).
+mangleme.2.html		Mangleme page (caused segfault, fixed in r5098).
+mangleme.3.html		Mangleme page (caused assertion, fixed in r5086).
+www.fhis.ubc.ca.html	Segfault page
