@@ -2047,11 +2047,7 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_dq(hubbub_tokeniser *tokenis
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	} else if (c == '\0') {
-		if (cdoc->public_id.len == 0) {
-			START_BUF(cdoc->public_id, u_fffd, sizeof(u_fffd));
-		} else {
-			COLLECT(cdoc->public_id, u_fffd, sizeof(u_fffd));
-		}
+		COLLECT_MS(cdoc->public_id, u_fffd, sizeof(u_fffd));
 	} else if (c == '\r') {
 		cptr = parserutils_inputstream_peek(
 				tokeniser->input,
@@ -2062,7 +2058,7 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_dq(hubbub_tokeniser *tokenis
 			return HUBBUB_OOD;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				*((uint8_t *) cptr) != '\n') {
-			COLLECT(cdoc->public_id, &lf, sizeof(lf));
+			COLLECT_MS(cdoc->public_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->public_id, cptr, len);
@@ -2094,13 +2090,7 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_sq(hubbub_tokeniser *tokenis
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	} else if (c == '\0') {
-		if (cdoc->public_id.len == 0) {
-			START_BUF(cdoc->public_id,
-					u_fffd, sizeof(u_fffd));
-		} else {
-			COLLECT(cdoc->public_id,
-					u_fffd, sizeof(u_fffd));
-		}
+		COLLECT_MS(cdoc->public_id, u_fffd, sizeof(u_fffd));
 	} else if (c == '\r') {
 		cptr = parserutils_inputstream_peek(
 				tokeniser->input,
@@ -2111,7 +2101,7 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_sq(hubbub_tokeniser *tokenis
 			return HUBBUB_OOD;
 		} else if (cptr == PARSERUTILS_INPUTSTREAM_EOF ||
 				*((uint8_t *) cptr) != '\n') {
-			COLLECT(cdoc->public_id, &lf, sizeof(lf));
+			COLLECT_MS(cdoc->public_id, &lf, sizeof(lf));
 		}
 	} else {
 		COLLECT_MS(cdoc->public_id, cptr, len);
