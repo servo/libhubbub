@@ -29,7 +29,8 @@ hubbub_error handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		err = handle_in_head(treebuilder, token);
+		err = process_characters_expect_whitespace(treebuilder,
+				token, true);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		err = handle_in_head(treebuilder, token);
