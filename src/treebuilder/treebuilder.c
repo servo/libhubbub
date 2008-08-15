@@ -515,8 +515,6 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 	treebuilder->context.collect.mode = treebuilder->context.mode;
 	treebuilder->context.collect.type = type;
 	treebuilder->context.collect.node = appended;
-	treebuilder->context.collect.string.ptr = NULL;
-	treebuilder->context.collect.string.len = 0;
 
 	treebuilder->tree_handler->unref_node(
 			treebuilder->tree_handler->ctx, appended);

@@ -35,20 +35,49 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		treebuilder->context.collect.string =
-				token->data.character;
+	{
+		hubbub_string chars = token->data.character;
 
 		if (treebuilder->context.strip_leading_lr) {
-			const uint8_t *str =
-				treebuilder->context.collect.string.ptr;
-
-			if (*str == '\n') {
-				treebuilder->context.collect.string.ptr++;
-				treebuilder->context.collect.string.len--;
+			if (chars.ptr[0] == '\n') {
+				chars.ptr++;
+				chars.len--;
 			}
 
 			treebuilder->context.strip_leading_lr = false;
 		}
+
+		if (chars.len == 0)
+			break;
+
+
+		int success;
+		void *text, *appended;
+
+		success = treebuilder->tree_handler->create_text(
+				treebuilder->tree_handler->ctx,
+				&chars,
+				&text);
+		if (success != 0) {
+			/** \todo errors */
+		}
+
+		success = treebuilder->tree_handler->append_child(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.collect.node,
+				text, &appended);
+		if (success != 0) {
+			/** \todo errors */
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					text);
+		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, appended);
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, text);
+	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
 	{
@@ -73,37 +102,6 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		/* Should never happen */
 		assert(0);
 		break;
-	}
-
-	if (treebuilder->context.collect.string.len) {
-		int success;
-		void *text, *appended;
-
-		success = treebuilder->tree_handler->create_text(
-				treebuilder->tree_handler->ctx,
-				&treebuilder->context.collect.string,
-				&text);
-		if (success != 0) {
-			/** \todo errors */
-		}
-
-		success = treebuilder->tree_handler->append_child(
-				treebuilder->tree_handler->ctx,
-				treebuilder->context.collect.node,
-				text, &appended);
-		if (success != 0) {
-			/** \todo errors */
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					text);
-		}
-
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, appended);
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, text);
-
-		treebuilder->context.collect.string.len = 0;
 	}
 
 	if (done) {

@@ -127,8 +127,6 @@ static void process_script_in_head(hubbub_treebuilder *treebuilder,
 	treebuilder->context.collect.mode = treebuilder->context.mode;
 	treebuilder->context.collect.node = script;
 	treebuilder->context.collect.type = SCRIPT;
-	treebuilder->context.collect.string.ptr = NULL;
-	treebuilder->context.collect.string.len = 0;
 
 	treebuilder->context.mode = SCRIPT_COLLECT_CHARACTERS;
 }

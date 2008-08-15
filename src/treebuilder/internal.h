@@ -89,7 +89,6 @@ typedef struct hubbub_treebuilder_context
 		insertion_mode mode;	/**< Insertion mode to return to */
 		void *node;		/**< Node to attach Text child to */
 		element_type type;	/**< Type of node */
-		hubbub_string string;	/**< Text data */
 	} collect;			/**< Context for character collecting */
 
 	bool strip_leading_lr;		/**< Whether to strip a LR from the
