@@ -17,3 +17,4 @@ mangleme.3.html		Mangleme page (caused assertion, fixed in r5086).
 www.fhis.ubc.ca.html	Segfault page (fixed in r5104).
 ccr.coriell.org.html	Segfault page (fixed in r5106).
 wbh.co.uk.html		Segfault in treebuilder
+www.directline.com.html	Segfault in current_node()
