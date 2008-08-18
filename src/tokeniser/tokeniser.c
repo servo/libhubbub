@@ -622,11 +622,14 @@ hubbub_error hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 				tokeniser->content_model ==
 						HUBBUB_CONTENT_MODEL_CDATA) &&
 				tokeniser->context.pending >= 3) {
-
+			size_t ignore;
 			cptr = parserutils_inputstream_peek(
 					tokeniser->input,
 					tokeniser->context.pending - 3,
-					&len);
+					&ignore);
+
+			assert(cptr != PARSERUTILS_INPUTSTREAM_OOD &&
+					cptr != PARSERUTILS_INPUTSTREAM_EOF);
 
 			if (strncmp((char *)cptr,
 					"<!--", SLEN("<!--")) == 0) {
@@ -663,6 +666,9 @@ hubbub_error hubbub_tokeniser_handle_data(hubbub_tokeniser *tokeniser)
 					tokeniser->input,
 					tokeniser->context.pending - 2,
 					&len);
+
+			assert(cptr != PARSERUTILS_INPUTSTREAM_OOD &&
+					cptr != PARSERUTILS_INPUTSTREAM_EOF);
 
 			if (strncmp((char *)cptr, "-->", SLEN("-->")) == 0) {
 				tokeniser->escape_flag = false;
