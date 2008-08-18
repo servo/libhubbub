@@ -45,7 +45,7 @@ endif
 
 # Tests
 TESTS_$(d) := csdetect dict entities hubbub parser \
-	tokeniser tokeniser2 tokeniser3 tree tree2
+	tokeniser tokeniser2 tokeniser3 tree tree2 tree-buf
 
 # Items for top-level makefile to use
 ITEMS_CLEAN := $(ITEMS_CLEAN) \
