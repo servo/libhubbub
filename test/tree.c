@@ -77,22 +77,16 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	return realloc(ptr, len);
 }
 
-int main(int argc, char **argv)
+static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 {
 	hubbub_parser *parser;
 	hubbub_parser_optparams params;
 	FILE *fp;
 	size_t len, origlen;
-#define CHUNK_SIZE (4096)
 	uint8_t buf[CHUNK_SIZE];
 	const char *charset;
 	hubbub_charset_source cssource;
 	bool passed = true;
-
-	if (argc != 3) {
-		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
-		return 1;
-	}
 
 	node_ref = calloc(NODE_REF_CHUNK, sizeof(uint16_t));
 	if (node_ref == NULL) {
@@ -168,7 +162,24 @@ int main(int argc, char **argv)
 
 	printf("%s\n", passed ? "PASS" : "FAIL");
 
-	return 0;
+	return passed ? 0 : 1;
+}
+
+int main(int argc, char **argv)
+{
+	int ret;
+        int shift;
+        int offset;
+	if (argc != 3) {
+		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
+		return 1;
+	}
+#define DO_TEST(n) if ((ret = run_test(argc, argv, (n))) != 0) return ret
+        for (shift = 0; (1 << shift) != 16384; shift++)
+        	for (offset = 0; offset < 10; offset += 3)
+	                DO_TEST((1 << shift) + offset);
+        return 0;
+#undef DO_TEST
 }
 
 int create_comment(void *ctx, const hubbub_string *data, void **result)
