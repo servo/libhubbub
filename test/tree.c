@@ -95,9 +95,6 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	}
 	node_ref_alloc = NODE_REF_CHUNK;
 
-	/* Initialise library */
-	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
-
 	parser = hubbub_parser_create("UTF-8", myrealloc, NULL);
 	assert(parser != NULL);
 
@@ -148,8 +145,6 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 
 	hubbub_parser_destroy(parser);
 
-	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
-
 	/* Ensure that all nodes have been released by the treebuilder */
 	for (uintptr_t n = 1; n <= node_counter; n++) {
 		if (node_ref[n] != 0) {
@@ -159,6 +154,7 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	}
 
 	free(node_ref);
+	node_counter = 0;
 
 	printf("%s\n", passed ? "PASS" : "FAIL");
 
@@ -174,10 +170,17 @@ int main(int argc, char **argv)
 		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
 		return 1;
 	}
+
+	/* Initialise library */
+	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
+
 #define DO_TEST(n) if ((ret = run_test(argc, argv, (n))) != 0) return ret
         for (shift = 0; (1 << shift) != 16384; shift++)
         	for (offset = 0; offset < 10; offset += 3)
 	                DO_TEST((1 << shift) + offset);
+
+	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
+
         return 0;
 #undef DO_TEST
 }
