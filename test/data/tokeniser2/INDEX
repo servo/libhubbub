@@ -10,3 +10,4 @@ contentModelFlags.test	html5lib content model tests
 entities.test		html5lib entity tests
 escapeFlag.test		html5lib escape flag tests
 cdata.test		CDATA section tests
+regression.test		Regression tests
