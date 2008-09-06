@@ -39,3 +39,20 @@
 |     <a>
 |       href="a&b&c"
 |       "Foo"
+
+#data
+<table><tr bgcolor="yellow"><td>yellow</td></tr><tr><td>transparent</td></tr></table>
+#errors
+#document
+| <html>
+|   <head>
+|   <body>
+|     <table>
+|       <tbody>
+|         <tr>
+|           bgcolor="yellow"
+|           <td>
+|             "yellow"
+|         <tr>
+|           <td>
+|             "transparent"
