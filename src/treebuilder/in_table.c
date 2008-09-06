@@ -118,7 +118,7 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 				treebuilder->tree_handler->ctx,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
-			formatting_list_append(treebuilder, 
+			formatting_list_append(treebuilder,
 					token->data.tag.ns, type,
 					treebuilder->context.element_stack[
 					treebuilder->context.current_node].node,
@@ -133,6 +133,8 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 				/* Insert colgroup and reprocess */
 				tag.name.ptr = (const uint8_t *) "colgroup";
 				tag.name.len = SLEN("colgroup");
+				tag.n_attributes = 0;
+				tag.attributes = NULL;
 
 				err = HUBBUB_REPROCESS;
 			}
@@ -148,6 +150,8 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 				/* Insert tbody and reprocess */
 				tag.name.ptr = (const uint8_t *) "tbody";
 				tag.name.len = SLEN("tbody");
+				tag.n_attributes = 0;
+				tag.attributes = NULL;
 
 				err = HUBBUB_REPROCESS;
 			}
