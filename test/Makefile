@@ -31,7 +31,7 @@ sp             := $(sp).x
 dirstack_$(sp) := $(d)
 d              := $(DIR)
 
-ifeq ($(findstring test,$(MAKECMDGOALS)),test)
+ifeq ($(MAKECMDGOALS),test)
 # Extend toolchain settings
 # We require the presence of libjson -- http://oss.metaparadigm.com/json-c/
 CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
@@ -98,7 +98,7 @@ endef
 $(eval $(foreach TEST,$(addprefix $(d), $(TESTS_$(d))), \
 	$(call dep_test,$(addsuffix .c, $(TEST)),$(addsuffix .d, $(TEST)),$(TEST))))
 
-ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
+ifeq ($(MAKECMDGOALS),test)
 -include $(sort $(DEP_$(d)))
 endif
 
