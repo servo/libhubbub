@@ -31,12 +31,14 @@ sp             := $(sp).x
 dirstack_$(sp) := $(d)
 d              := $(DIR)
 
+ifeq ($(findstring test,$(MAKECMDGOALS)),test)
 # Extend toolchain settings
 # We require the presence of libjson -- http://oss.metaparadigm.com/json-c/
 CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
 		$(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json) \
 		-Wno-unused-parameter
 LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json)
+endif
 
 ifdef PROFILE
 	CFLAGS := $(CFLAGS) -pg -fno-omit-frame-pointer
