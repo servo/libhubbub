@@ -128,6 +128,8 @@ static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
 	const uint8_t *system_id = cdoc->system_id.ptr;
 	size_t system_id_len = cdoc->system_id.len;
 
+	UNUSED(treebuilder);
+
 #define S(s)	(uint8_t *) s, sizeof s
 
 	/* Check the name is "HTML" (case-insensitively) */
@@ -182,6 +184,8 @@ static bool lookup_limited_quirks(hubbub_treebuilder *treebuilder,
 {
 	const uint8_t *public_id = cdoc->public_id.ptr;
 	size_t public_id_len = cdoc->public_id.len;
+
+	UNUSED(treebuilder);
 
 #define S(s)	(uint8_t *) s, sizeof s
 

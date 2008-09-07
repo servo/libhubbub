@@ -961,6 +961,7 @@ element_type element_type_from_name(hubbub_treebuilder *treebuilder,
 	const uint8_t *name = tag_name->ptr;
 	size_t len = tag_name->len;
 
+	UNUSED(treebuilder);
 
 	/** \todo optimise this */
 
