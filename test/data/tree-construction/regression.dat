@@ -41,6 +41,25 @@
 |       "Foo"
 
 #data
+<table><col width="400"><col><td>width</td><td>nowidth</td></table>
+#errors
+#document
+| <html>
+|   <head>
+|   <body>
+|     <table>
+|       <colgroup>
+|         <col>
+|           width="400"
+|         <col>
+|       <tbody>
+|         <tr>
+|           <td>
+|             "width"
+|           <td>
+|             "nowidth"
+
+#data
 <table><tr bgcolor="yellow"><td>yellow</td></tr><tr><td>transparent</td></tr></table>
 #errors
 #document
