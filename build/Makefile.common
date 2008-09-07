@@ -7,8 +7,8 @@ all: release
 COMPONENT := libhubbub
 
 # Environment
-EXPORT := $(CURDIR)/dist
-TOP := $(CURDIR)
+TOP ?= $(CURDIR)
+EXPORT := $(TOP)/dist
 RELEASEDIR := build/Release
 DEBUGDIR := build/Debug
 COVERAGEDIR := build/coverage

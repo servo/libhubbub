@@ -34,9 +34,9 @@ d              := $(DIR)
 # Extend toolchain settings
 # We require the presence of libjson -- http://oss.metaparadigm.com/json-c/
 CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
-		`$(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json` \
+		$(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json) \
 		-Wno-unused-parameter
-LDFLAGS := $(LDFLAGS) `$(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json`
+LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json)
 
 ifdef PROFILE
 	CFLAGS := $(CFLAGS) -pg -fno-omit-frame-pointer
@@ -78,8 +78,14 @@ $(2): $(1)
 endef
 
 # Build rules for each test binary -- they all depend on the debug library
+# Except when building on RISC OS, of course because then make utterly fails to
+# detect that the debug library exists.
 define compile_test
+ifeq ($(HOST),riscos)
+$(2): $(3)
+else
 $(2): $(3) $(TOP)/$(COMPONENT)-debug.a
+endif
 	@$$(ECHO) $$(ECHOFLAGS) "==> $(1)"
 	@$$(CC) -c -g $$(DEBUGCFLAGS) -o $$@.o $(1)
 	@$$(LD) -g -o $$@ $$@.o -lhubbub-debug $$(LDFLAGS) -lgcov

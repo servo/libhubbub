@@ -1,0 +1,57 @@
+# Toolchain definitions for building on RISC OS
+GCCSDK_INSTALL_ENV ?= <NSLibs$$Dir>
+
+CC := gcc
+AR := ar
+LD := gcc
+
+CP := cp
+RM := rm
+MKDIR := mkdir
+MV := mv
+ECHO := echo
+MAKE := make
+PERL := perl
+# As good a way of doing nothing as we get, really (FX 1 == set user flag, X ignores errors)
+PKGCONFIG := X FX 1
+INSTALL := echo
+SED := sed
+TOUCH := touch
+LCOV := echo
+GENHTML := echo
+
+# Toolchain flags
+WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
+	-Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
+	-Wmissing-declarations -Wnested-externs -Werror -pedantic
+CFLAGS = -std=c99 -D_BSD_SOURCE -I$(TOP)/include/ $(WARNFLAGS) \
+	-mpoke-function-name -I$(GCCSDK_INSTALL_ENV)/include
+RELEASECFLAGS = $(CFLAGS) -DNDEBUG -O2
+DEBUGCFLAGS = $(CFLAGS) -O0 -g
+ARFLAGS := -cru
+LDFLAGS = -L$(GCCSDK_INSTALL_ENV)/libs -L$(TOP)/
+
+CPFLAGS :=
+RMFLAGS := -f
+MKDIRFLAGS := -p
+MVFLAGS := 
+ECHOFLAGS := 
+MAKEFLAGS :=
+PKGCONFIGFLAGS :=
+TOUCHFLAGS :=
+
+EXEEXT :=
+
+# Default installation prefix
+PREFIX ?= $(GCCSDK_INSTALL_ENV)
+
+# This is nasty, but needed because $(CURDIR) will 
+# contain colons, and thus confuse make mightily
+$(shell SetMacro Alias$$Hubbubpwd Set %0 <FileSwitch$$CurrentFilingSystem>:|<FileSwitch$$<FileSwitch$$CurrentFilingSystem>$$CSD>|mUnset Alias$$Hubbubpwd)
+$(shell Hubbubpwd Hubbub$$Dir)
+TOP := <Hubbub$$Dir>
+
+# Tell everyone that we're building on RISC OS, so they can work around things.
+HOST := riscos
+
+include build/Makefile.common
