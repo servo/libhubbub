@@ -917,9 +917,6 @@ void append_text(hubbub_treebuilder *treebuilder,
 	int success;
 	void *text, *appended;
 
-	/** \todo Append to pre-existing text child, iff
-	 * one exists and it's the last in the child list */
-
 	success = treebuilder->tree_handler->create_text(
 			treebuilder->tree_handler->ctx, string, &text);
 	if (success != 0) {

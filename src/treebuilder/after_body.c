@@ -35,8 +35,6 @@ hubbub_error handle_after_body(hubbub_treebuilder *treebuilder,
 		size_t len = token->data.character.len;
 		size_t c;
 
-		/** \todo utf-16 */
-
 		/* Scan for whitespace */
 		for (c = 0; c < len; c++) {
 			if (data[c] != 0x09 && data[c] != 0x0A &&
