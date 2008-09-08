@@ -333,6 +333,8 @@ void hubbub_tokeniser_destroy(hubbub_tokeniser *tokeniser)
 				0, tokeniser->alloc_pw);
 	}
 
+	parserutils_buffer_destroy(tokeniser->buffer);
+
 	tokeniser->alloc(tokeniser, 0, tokeniser->alloc_pw);
 }
 
