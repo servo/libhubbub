@@ -93,9 +93,9 @@ install: release
 	@$(MKDIR) $(MKDIRFLAGS) -p $(DESTDIR)$(PREFIX)/lib/pkgconfig
 	@$(MKDIR) $(MKDIRFLAGS) -p $(DESTDIR)$(PREFIX)/include/hubbub
 	@$(SED) -e 's#PREFIX#$(PREFIX)#' $(COMPONENT).pc.in >$(COMPONENT).pc
-	$(INSTALL) --mode=644 -t $(DESTDIR)$(PREFIX)/lib $(COMPONENT).a
-	$(INSTALL) --mode=644 -t $(DESTDIR)$(PREFIX)/lib/pkgconfig $(COMPONENT).pc
-	$(INSTALL) --mode=644 -t $(DESTDIR)$(PREFIX)/include/hubbub $(filter %.h, $(wildcard include/hubbub/*))
+	$(INSTALL) -m 644 $(COMPONENT).a $(PREFIX)/lib 
+	$(INSTALL) -m 644 $(COMPONENT).pc $(PREFIX)/lib/pkgconfig 
+	$(INSTALL) -m 644 $(filter %.h, $(wildcard include/hubbub/*)) $(PREFIX)/include/hubbub
 
 uninstall:
 	$(RM) $(RMFLAGS) $(DESTDIR)$(PREFIX)/lib/$(COMPONENT).a
