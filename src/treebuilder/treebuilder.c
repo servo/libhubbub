@@ -182,6 +182,12 @@ void hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 					treebuilder->context.document);
 		}
 
+		if (treebuilder->context.collect.node != NULL) {
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					treebuilder->context.collect.node);
+		}
+
 		for (uint32_t n = treebuilder->context.current_node; 
 				n > 0; n--) {
 			treebuilder->tree_handler->unref_node(
