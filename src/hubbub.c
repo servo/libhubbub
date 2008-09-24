@@ -9,6 +9,7 @@
 
 #include <hubbub/hubbub.h>
 
+#include "utils/parserutilserror.h"
 #include "tokeniser/entities.h"
 
 /**
@@ -29,8 +30,10 @@ hubbub_error hubbub_initialise(const char *aliases_file,
 	if (aliases_file == NULL || alloc == NULL)
 		return HUBBUB_BADPARM;
 
-	if (parserutils_initialise(aliases_file, alloc, pw) != PARSERUTILS_OK)
-		return !HUBBUB_OK;
+	error = hubbub_error_from_parserutils_error(
+			parserutils_initialise(aliases_file, alloc, pw));
+	if (error != HUBBUB_OK)
+		return error;
 
 	error = hubbub_entities_create(alloc, pw);
 	if (error != HUBBUB_OK) {
@@ -59,5 +62,4 @@ hubbub_error hubbub_finalise(hubbub_alloc alloc, void *pw)
 
 	return HUBBUB_OK;
 }
-
 
