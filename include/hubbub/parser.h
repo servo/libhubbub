@@ -80,9 +80,5 @@ hubbub_error hubbub_parser_completed(hubbub_parser *parser);
 const char *hubbub_parser_read_charset(hubbub_parser *parser,
 		hubbub_charset_source *source);
 
-/* Claim ownership of the document buffer */
-hubbub_error hubbub_parser_claim_buffer(hubbub_parser *parser,
-		uint8_t **buffer, size_t *len);
-
 #endif
 
