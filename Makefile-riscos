@@ -2,9 +2,9 @@
 GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
 GCCSDK_INSTALL_ENV ?= /home/riscos/env
 
-CC := $(GCCSDK_INSTALL_CROSSBIN)/gcc
-AR := $(GCCSDK_INSTALL_CROSSBIN)/ar
-LD := $(GCCSDK_INSTALL_CROSSBIN)/gcc
+CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+AR := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*ar)
+LD := $(CC)
 
 CP := cp
 RM := rm
@@ -16,15 +16,15 @@ PERL := perl
 PKGCONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
 INSTALL := install
 SED := sed
+TOUCH := touch
 LCOV := echo
 GENHTML := echo
-TOUCH := touch
 
 # Toolchain flags
 WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
 	-Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wnested-externs -Werror -pedantic
-CFLAGS += -std=c99 -D_BSD_SOURCE -I$(TOP)/include/ $(WARNFLAGS) \
+CFLAGS = -std=c99 -D_BSD_SOURCE -I$(TOP)/include/ $(WARNFLAGS) \
 	-mpoke-function-name
 RELEASECFLAGS = $(CFLAGS) -DNDEBUG -O2
 DEBUGCFLAGS = $(CFLAGS) -O0 -g
@@ -40,7 +40,11 @@ MAKEFLAGS :=
 PKGCONFIGFLAGS :=
 TOUCHFLAGS :=
 
-EXEEXT := ,ff8
+ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
+  EXEEXT := ,e1f
+else
+  EXEEXT := ,ff8
+endif
 
 # Default installation prefix
 PREFIX ?= $(GCCSDK_INSTALL_ENV)
