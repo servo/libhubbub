@@ -8,6 +8,7 @@
 #ifndef hubbub_parser_h_
 #define hubbub_parser_h_
 
+#include <stdbool.h>
 #include <inttypes.h>
 
 #include <hubbub/errors.h>
@@ -55,7 +56,7 @@ typedef union hubbub_parser_optparams {
 } hubbub_parser_optparams;
 
 /* Create a hubbub parser */
-hubbub_parser *hubbub_parser_create(const char *enc,
+hubbub_parser *hubbub_parser_create(const char *enc, bool fix_enc,
 		hubbub_alloc alloc, void *pw);
 /* Destroy a hubbub parser */
 void hubbub_parser_destroy(hubbub_parser *parser);

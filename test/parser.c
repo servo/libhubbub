@@ -32,7 +32,7 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	/* Initialise library */
 	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
 
-	parser = hubbub_parser_create("UTF-8", myrealloc, NULL);
+	parser = hubbub_parser_create("UTF-8", false, myrealloc, NULL);
 	assert(parser != NULL);
 
 	params.token_handler.handler = token_handler;

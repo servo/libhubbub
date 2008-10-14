@@ -61,6 +61,8 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 	}
 
 	if (charset_enc != 0) {
+		hubbub_charset_fix_charset(&charset_enc);
+
 		if (treebuilder->tree_handler->encoding_change) {
 			const char *name = parserutils_charset_mibenum_to_name(
 					charset_enc);
@@ -73,6 +75,8 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 			}
 		}
 	} else if (content_type_enc != 0) {
+		hubbub_charset_fix_charset(&content_type_enc);
+
 		if (treebuilder->tree_handler->encoding_change) {
 			const char *name = parserutils_charset_mibenum_to_name(
 					content_type_enc);

@@ -5,6 +5,9 @@
  * Copyright 2007-8 John-Mark Bell <jmb@netsurf-browser.org>
  */
 
+#include <string.h>
+
+#include <parserutils/charset/mibenum.h>
 #include <parserutils/input/inputstream.h>
 
 #include <hubbub/parser.h>
@@ -29,11 +32,12 @@ struct hubbub_parser {
  * Create a hubbub parser
  *
  * \param enc      Source document encoding, or NULL to autodetect
+ * `param fix_enc  Permit fixing up of encoding if it's frequently misused
  * \param alloc    Memory (de)allocation function
  * \param pw       Pointer to client-specific private data (may be NULL)
  * \return Pointer to parser instance, or NULL on error
  */
-hubbub_parser *hubbub_parser_create(const char *enc,
+hubbub_parser *hubbub_parser_create(const char *enc, bool fix_enc,
 		hubbub_alloc alloc, void *pw)
 {
 	hubbub_parser *parser;
@@ -44,6 +48,19 @@ hubbub_parser *hubbub_parser_create(const char *enc,
 	parser = alloc(NULL, sizeof(hubbub_parser), pw);
 	if (parser == NULL)
 		return NULL;
+
+	/* If we have an encoding and we're permitted to fix up likely broken
+	 * ones, then attempt to do so. */
+	if (enc != NULL && fix_enc == true) {
+		uint16_t mibenum = parserutils_charset_mibenum_from_name(enc, 
+				strlen(enc));
+
+		if (mibenum != 0) {
+			hubbub_charset_fix_charset(&mibenum);
+
+			enc = parserutils_charset_mibenum_to_name(mibenum);
+		}
+	}
 
 	parser->stream = parserutils_inputstream_create(enc,
 		enc != NULL ? HUBBUB_CHARSET_CONFIDENT : HUBBUB_CHARSET_UNKNOWN,
@@ -201,7 +218,7 @@ hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
  * Pass a chunk of extraneous data to a hubbub parser for parsing
  *
  * \param parser  Parser instance to use
- * \param data    Data to parse (encoded in internal charset)
+ * \param data    Data to parse (encoded in UTF-8)
  * \param len     Length, in byte, of data
  * \return HUBBUB_OK on success, appropriate error otherwise
  */

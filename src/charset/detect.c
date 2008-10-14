@@ -25,7 +25,6 @@ static bool hubbub_charset_get_attribute(const uint8_t **data,
 		const uint8_t *end,
 		const uint8_t **name, uint32_t *namelen,
 		const uint8_t **value, uint32_t *valuelen);
-static void hubbub_charset_fix_charset(uint16_t *charset);
 
 /**
  * Extract a charset from a chunk of data

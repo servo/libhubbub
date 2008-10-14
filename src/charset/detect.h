@@ -20,5 +20,8 @@ parserutils_error hubbub_charset_extract(const uint8_t *data, size_t len,
 uint16_t hubbub_charset_parse_content(const uint8_t *value,
                 uint32_t valuelen);
 
+/* Fix up frequently misused character sets */
+void hubbub_charset_fix_charset(uint16_t *charset);
+
 #endif
 
