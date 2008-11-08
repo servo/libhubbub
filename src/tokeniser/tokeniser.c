@@ -281,6 +281,7 @@ static hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 hubbub_tokeniser *hubbub_tokeniser_create(parserutils_inputstream *input,
 		hubbub_alloc alloc, void *pw)
 {
+	parserutils_error perror;
 	hubbub_tokeniser *tok;
 
 	if (input == NULL || alloc == NULL)
@@ -290,8 +291,8 @@ hubbub_tokeniser *hubbub_tokeniser_create(parserutils_inputstream *input,
 	if (tok == NULL)
 		return NULL;
 
-	tok->buffer = parserutils_buffer_create(alloc, pw);
-	if (tok->buffer == NULL) {
+	perror = parserutils_buffer_create(alloc, pw, &tok->buffer);
+	if (perror != PARSERUTILS_OK) {
 		alloc(tok, 0, pw);
 		return NULL;
 	}

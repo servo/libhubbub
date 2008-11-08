@@ -38,9 +38,8 @@ int main(int argc, char **argv)
 	/* Initialise library */
 	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
 
-	stream = parserutils_inputstream_create("UTF-8", 0, NULL,
-			myrealloc, NULL);
-	assert(stream != NULL);
+	assert(parserutils_inputstream_create("UTF-8", 0, NULL,
+			myrealloc, NULL, &stream) == PARSERUTILS_OK);
 
 	tok = hubbub_tokeniser_create(stream, myrealloc, NULL);
 	assert(tok != NULL);

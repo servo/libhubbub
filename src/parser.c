@@ -40,6 +40,7 @@ struct hubbub_parser {
 hubbub_parser *hubbub_parser_create(const char *enc, bool fix_enc,
 		hubbub_alloc alloc, void *pw)
 {
+	parserutils_error perror;
 	hubbub_parser *parser;
 
 	if (alloc == NULL)
@@ -62,10 +63,10 @@ hubbub_parser *hubbub_parser_create(const char *enc, bool fix_enc,
 		}
 	}
 
-	parser->stream = parserutils_inputstream_create(enc,
+	perror = parserutils_inputstream_create(enc,
 		enc != NULL ? HUBBUB_CHARSET_CONFIDENT : HUBBUB_CHARSET_UNKNOWN,
-		hubbub_charset_extract, alloc, pw);
-	if (parser->stream == NULL) {
+		hubbub_charset_extract, alloc, pw, &parser->stream);
+	if (perror != PARSERUTILS_OK) {
 		alloc(parser, 0, pw);
 		return NULL;
 	}

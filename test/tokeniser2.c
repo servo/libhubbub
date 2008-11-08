@@ -141,9 +141,8 @@ void run_test(context *ctx)
 		ctx->output_index = 0;
 		ctx->char_off = 0;
 
-		stream = parserutils_inputstream_create("UTF-8", 0, NULL,
-				myrealloc, NULL);
-		assert(stream != NULL);
+		assert(parserutils_inputstream_create("UTF-8", 0, NULL,
+				myrealloc, NULL, &stream) == PARSERUTILS_OK);
 
 		tok = hubbub_tokeniser_create(stream, myrealloc, NULL);
 		assert(tok != NULL);
