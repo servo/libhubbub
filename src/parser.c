@@ -33,13 +33,14 @@ struct hubbub_parser {
  * Create a hubbub parser
  *
  * \param enc      Source document encoding, or NULL to autodetect
- * `param fix_enc  Permit fixing up of encoding if it's frequently misused
+ * \param fix_enc  Permit fixing up of encoding if it's frequently misused
  * \param alloc    Memory (de)allocation function
  * \param pw       Pointer to client-specific private data (may be NULL)
  * \param parser   Pointer to location to receive parser instance
  * \return HUBBUB_OK on success,
  *         HUBBUB_BADPARM on bad parameters,
- *         HUBBUB_NOMEM on memory exhaustion
+ *         HUBBUB_NOMEM on memory exhaustion,
+ *         HUBBUB_BADENCODING if ::enc is unsupported
  */
 hubbub_error hubbub_parser_create(const char *enc, bool fix_enc,
 		hubbub_alloc alloc, void *pw, hubbub_parser **parser)
