@@ -33,6 +33,8 @@ static inline hubbub_error hubbub_error_from_parserutils_error(
 		return HUBBUB_FILENOTFOUND;
 	else if (error == PARSERUTILS_NEEDDATA)
 		return HUBBUB_NEEDDATA;
+	else if (error == PARSERUTILS_BADENCODING)
+		return HUBBUB_BADENCODING;
 
 	return HUBBUB_UNKNOWN;
 }

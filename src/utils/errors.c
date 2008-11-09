@@ -47,6 +47,9 @@ const char *hubbub_error_to_string(hubbub_error error)
 	case HUBBUB_NEEDDATA:
 		result = "Insufficient data";
 		break;
+	case HUBBUB_BADENCODING:
+		result = "Unsupported charset";
+		break;
 	case HUBBUB_UNKNOWN:
 		result = "Unknown error";
 		break;

@@ -21,8 +21,9 @@ typedef enum hubbub_error {
 	HUBBUB_INVALID          = 7,
 	HUBBUB_FILENOTFOUND     = 8,
 	HUBBUB_NEEDDATA         = 9,
+	HUBBUB_BADENCODING      = 10,
 
-	HUBBUB_UNKNOWN		= 10
+	HUBBUB_UNKNOWN		= 11
 } hubbub_error;
 
 /* Convert a hubbub error value to a string */
