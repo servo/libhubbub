@@ -41,6 +41,7 @@ hubbub_parser *hubbub_parser_create(const char *enc, bool fix_enc,
 		hubbub_alloc alloc, void *pw)
 {
 	parserutils_error perror;
+	hubbub_error error;
 	hubbub_parser *parser;
 
 	if (alloc == NULL)
@@ -71,11 +72,12 @@ hubbub_parser *hubbub_parser_create(const char *enc, bool fix_enc,
 		return NULL;
 	}
 
-	parser->tok = hubbub_tokeniser_create(parser->stream, alloc, pw);
-	if (parser->tok == NULL) {
+	error = hubbub_tokeniser_create(parser->stream, alloc, pw, 
+			&parser->tok);
+	if (error != HUBBUB_OK) {
 		parserutils_inputstream_destroy(parser->stream);
 		alloc(parser, 0, pw);
-		return NULL;
+		return NULL; ///
 	}
 
 	parser->tb = hubbub_treebuilder_create(parser->tok, alloc, pw);

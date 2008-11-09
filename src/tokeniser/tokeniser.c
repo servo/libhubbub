@@ -13,6 +13,7 @@
 
 #include <parserutils/charset/utf8.h>
 
+#include "utils/parserutilserror.h"
 #include "utils/utils.h"
 
 #include "tokeniser/entities.h"
@@ -273,28 +274,31 @@ static hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 /**
  * Create a hubbub tokeniser
  *
- * \param input  Input stream instance
- * \param alloc  Memory (de)allocation function
- * \param pw     Pointer to client-specific private data (may be NULL)
- * \return Pointer to tokeniser instance, or NULL on failure
+ * \param input      Input stream instance
+ * \param alloc      Memory (de)allocation function
+ * \param pw         Pointer to client-specific private data (may be NULL)
+ * \param tokeniser  Pointer to location to receive tokeniser instance
+ * \return HUBBUB_OK on success,
+ *         HUBBUB_BADPARM on bad parameters,
+ *         HUBBUB_NOMEM on memory exhaustion
  */
-hubbub_tokeniser *hubbub_tokeniser_create(parserutils_inputstream *input,
-		hubbub_alloc alloc, void *pw)
+hubbub_error hubbub_tokeniser_create(parserutils_inputstream *input,
+		hubbub_alloc alloc, void *pw, hubbub_tokeniser **tokeniser)
 {
 	parserutils_error perror;
 	hubbub_tokeniser *tok;
 
-	if (input == NULL || alloc == NULL)
-		return NULL;
+	if (input == NULL || alloc == NULL || tokeniser == NULL)
+		return HUBBUB_BADPARM;
 
 	tok = alloc(NULL, sizeof(hubbub_tokeniser), pw);
 	if (tok == NULL)
-		return NULL;
+		return HUBBUB_NOMEM;
 
 	perror = parserutils_buffer_create(alloc, pw, &tok->buffer);
 	if (perror != PARSERUTILS_OK) {
 		alloc(tok, 0, pw);
-		return NULL;
+		return hubbub_error_from_parserutils_error(perror);
 	}
 
 	tok->state = STATE_DATA;
@@ -316,18 +320,21 @@ hubbub_tokeniser *hubbub_tokeniser_create(parserutils_inputstream *input,
 
 	memset(&tok->context, 0, sizeof(hubbub_tokeniser_context));
 
-	return tok;
+	*tokeniser = tok;
+
+	return HUBBUB_OK;
 }
 
 /**
  * Destroy a hubbub tokeniser
  *
  * \param tokeniser  The tokeniser instance to destroy
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-void hubbub_tokeniser_destroy(hubbub_tokeniser *tokeniser)
+hubbub_error hubbub_tokeniser_destroy(hubbub_tokeniser *tokeniser)
 {
 	if (tokeniser == NULL)
-		return;
+		return HUBBUB_BADPARM;
 
 	if (tokeniser->context.current_tag.attributes != NULL) {
 		tokeniser->alloc(tokeniser->context.current_tag.attributes,
@@ -337,6 +344,8 @@ void hubbub_tokeniser_destroy(hubbub_tokeniser *tokeniser)
 	parserutils_buffer_destroy(tokeniser->buffer);
 
 	tokeniser->alloc(tokeniser, 0, tokeniser->alloc_pw);
+
+	return HUBBUB_OK;
 }
 
 /**

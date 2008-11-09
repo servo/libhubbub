@@ -141,8 +141,8 @@ void run_test(context *ctx)
 		assert(parserutils_inputstream_create("UTF-8", 0, NULL,
 				myrealloc, NULL, &stream) == PARSERUTILS_OK);
 
-		tok = hubbub_tokeniser_create(stream, myrealloc, NULL);
-		assert(tok != NULL);
+		assert(hubbub_tokeniser_create(stream, myrealloc, NULL, &tok) ==
+				HUBBUB_OK);
 
 		if (ctx->last_start_tag != NULL) {
 			/* Fake up a start tag, in PCDATA state */

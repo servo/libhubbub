@@ -51,10 +51,10 @@ typedef union hubbub_tokeniser_optparams {
 } hubbub_tokeniser_optparams;
 
 /* Create a hubbub tokeniser */
-hubbub_tokeniser *hubbub_tokeniser_create(parserutils_inputstream *input,
-		hubbub_alloc alloc, void *pw);
+hubbub_error hubbub_tokeniser_create(parserutils_inputstream *input,
+		hubbub_alloc alloc, void *pw, hubbub_tokeniser **tokeniser);
 /* Destroy a hubbub tokeniser */
-void hubbub_tokeniser_destroy(hubbub_tokeniser *tokeniser);
+hubbub_error hubbub_tokeniser_destroy(hubbub_tokeniser *tokeniser);
 
 /* Configure a hubbub tokeniser */
 hubbub_error hubbub_tokeniser_setopt(hubbub_tokeniser *tokeniser,

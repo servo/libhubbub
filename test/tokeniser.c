@@ -41,8 +41,8 @@ int main(int argc, char **argv)
 	assert(parserutils_inputstream_create("UTF-8", 0, NULL,
 			myrealloc, NULL, &stream) == PARSERUTILS_OK);
 
-	tok = hubbub_tokeniser_create(stream, myrealloc, NULL);
-	assert(tok != NULL);
+	assert(hubbub_tokeniser_create(stream, myrealloc, NULL, &tok) ==
+			HUBBUB_OK);
 
 	params.token_handler.handler = token_handler;
 	params.token_handler.pw = NULL;
