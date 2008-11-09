@@ -95,8 +95,8 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	}
 	node_ref_alloc = NODE_REF_CHUNK;
 
-	parser = hubbub_parser_create("UTF-8", false, myrealloc, NULL);
-	assert(parser != NULL);
+	assert(hubbub_parser_create("UTF-8", false, myrealloc, NULL, &parser) ==
+			HUBBUB_OK);
 
 	params.tree_handler = &tree_handler;
 	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_TREE_HANDLER,

@@ -56,10 +56,10 @@ typedef union hubbub_parser_optparams {
 } hubbub_parser_optparams;
 
 /* Create a hubbub parser */
-hubbub_parser *hubbub_parser_create(const char *enc, bool fix_enc,
-		hubbub_alloc alloc, void *pw);
+hubbub_error hubbub_parser_create(const char *enc, bool fix_enc,
+		hubbub_alloc alloc, void *pw, hubbub_parser **parser);
 /* Destroy a hubbub parser */
-void hubbub_parser_destroy(hubbub_parser *parser);
+hubbub_error hubbub_parser_destroy(hubbub_parser *parser);
 
 /* Configure a hubbub parser */
 hubbub_error hubbub_parser_setopt(hubbub_parser *parser,

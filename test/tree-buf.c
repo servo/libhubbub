@@ -145,8 +145,8 @@ static hubbub_parser *setup_parser(void)
 	hubbub_parser *parser;
 	hubbub_parser_optparams params;
 
-	parser = hubbub_parser_create("UTF-8", false, myrealloc, NULL);
-	assert(parser != NULL);
+	assert(hubbub_parser_create("UTF-8", false, myrealloc, NULL, &parser) ==
+			HUBBUB_OK);
 
 	params.tree_handler = &tree_handler;
 	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_TREE_HANDLER,
