@@ -84,23 +84,27 @@ static const struct {
 /**
  * Create a hubbub treebuilder
  *
- * \param tokeniser  Underlying tokeniser instance
- * \param alloc      Memory (de)allocation function
- * \param pw         Pointer to client-specific private data
- * \return Pointer to treebuilder instance, or NULL on error.
+ * \param tokeniser    Underlying tokeniser instance
+ * \param alloc        Memory (de)allocation function
+ * \param pw           Pointer to client-specific private data
+ * \param treebuilder  Pointer to location to receive treebuilder instance
+ * \return HUBBUB_OK on success,
+ *         HUBBUB_BADPARM on bad parameters
+ *         HUBBUB_NOMEM on memory exhaustion
  */
-hubbub_treebuilder *hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
-		hubbub_alloc alloc, void *pw)
+hubbub_error hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
+		hubbub_alloc alloc, void *pw, hubbub_treebuilder **treebuilder)
 {
+	hubbub_error error;
 	hubbub_treebuilder *tb;
 	hubbub_tokeniser_optparams tokparams;
 
-	if (tokeniser == NULL || alloc == NULL)
-		return NULL;
+	if (tokeniser == NULL || alloc == NULL || treebuilder == NULL)
+		return HUBBUB_BADPARM;
 
 	tb = alloc(NULL, sizeof(hubbub_treebuilder), pw);
 	if (tb == NULL)
-		return NULL;
+		return HUBBUB_NOMEM;
 
 	tb->tokeniser = tokeniser;
 
@@ -114,7 +118,7 @@ hubbub_treebuilder *hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 			pw);
 	if (tb->context.element_stack == NULL) {
 		alloc(tb, 0, pw);
-		return NULL;
+		return HUBBUB_NOMEM;
 	}
 	tb->context.stack_alloc = ELEMENT_STACK_CHUNK;
 	/* We rely on HTML not being equal to zero to determine
@@ -133,28 +137,32 @@ hubbub_treebuilder *hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 	tokparams.token_handler.handler = hubbub_treebuilder_token_handler;
 	tokparams.token_handler.pw = tb;
 
-	if (hubbub_tokeniser_setopt(tokeniser, HUBBUB_TOKENISER_TOKEN_HANDLER,
-			&tokparams) != HUBBUB_OK) {
+	error = hubbub_tokeniser_setopt(tokeniser, 
+			HUBBUB_TOKENISER_TOKEN_HANDLER, &tokparams);
+	if (error != HUBBUB_OK) {
 		alloc(tb->context.element_stack, 0, pw);
 		alloc(tb, 0, pw);
-		return NULL;
+		return error;
 	}
 
-	return tb;
+	*treebuilder = tb;
+
+	return HUBBUB_OK;
 }
 
 /**
  * Destroy a hubbub treebuilder
  *
  * \param treebuilder  The treebuilder instance to destroy
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-void hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
+hubbub_error hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 {
 	formatting_list_entry *entry, *next;
 	hubbub_tokeniser_optparams tokparams;
 
 	if (treebuilder == NULL)
-		return;
+		return HUBBUB_BADPARM;
 
 	tokparams.token_handler.handler = NULL;
 	tokparams.token_handler.pw = NULL;
@@ -218,6 +226,8 @@ void hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 	}
 
 	treebuilder->alloc(treebuilder, 0, treebuilder->alloc_pw);
+
+	return HUBBUB_OK;
 }
 
 /**

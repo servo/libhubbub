@@ -80,12 +80,12 @@ hubbub_parser *hubbub_parser_create(const char *enc, bool fix_enc,
 		return NULL; ///
 	}
 
-	parser->tb = hubbub_treebuilder_create(parser->tok, alloc, pw);
-	if (parser->tb == NULL) {
+	error = hubbub_treebuilder_create(parser->tok, alloc, pw, &parser->tb);
+	if (error != HUBBUB_OK) {
 		hubbub_tokeniser_destroy(parser->tok);
 		parserutils_inputstream_destroy(parser->stream);
 		alloc(parser, 0, pw);
-		return NULL;
+		return NULL; ///
 	}
 
 	parser->alloc = alloc;
