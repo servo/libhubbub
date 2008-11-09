@@ -13,10 +13,10 @@
 #include <hubbub/errors.h>
 
 /**
- * Convert a ParserUtils error into a LibCSS error
+ * Convert a ParserUtils error into a Hubbub error
  *
  * \param error  The ParserUtils error to convert
- * \return The corresponding LibCSS error
+ * \return The corresponding Hubbub error
  */
 static inline hubbub_error hubbub_error_from_parserutils_error(
 		parserutils_error error)

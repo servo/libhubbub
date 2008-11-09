@@ -2171,9 +2171,9 @@ hubbub_error hubbub_entities_create(hubbub_alloc alloc, void *pw)
 	if (alloc == NULL)
 		return HUBBUB_BADPARM;
 
-	dict = hubbub_dict_create(alloc, pw);
-	if (dict == NULL)
-		return HUBBUB_NOMEM;
+	error = hubbub_dict_create(alloc, pw, &dict);
+	if (error != HUBBUB_OK)
+		return error;
 
 	for (i = 0; i < sizeof(entities) / sizeof(entities[0]); i++) {
 		error = hubbub_dict_insert(dict, entities[i].name,

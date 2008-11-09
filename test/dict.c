@@ -18,8 +18,7 @@ int main(int argc, char **argv)
 	UNUSED(argc);
 	UNUSED(argv);
 
-	dict = hubbub_dict_create(myrealloc, NULL);
-	assert(dict != NULL);
+	assert(hubbub_dict_create(myrealloc, NULL, &dict) == HUBBUB_OK);
 
 	assert(hubbub_dict_insert(dict, "Hello", (const void *) 123) ==
 			HUBBUB_OK);

@@ -16,9 +16,10 @@
 typedef struct hubbub_dict hubbub_dict;
 
 /* Create a dictionary */
-hubbub_dict *hubbub_dict_create(hubbub_alloc alloc, void *pw);
+hubbub_error hubbub_dict_create(hubbub_alloc alloc, void *pw, 
+		hubbub_dict **dict);
 /* Destroy a dictionary */
-void hubbub_dict_destroy(hubbub_dict *dict);
+hubbub_error hubbub_dict_destroy(hubbub_dict *dict);
 
 /* Insert a key-value pair into a dictionary */
 hubbub_error hubbub_dict_insert(hubbub_dict *dict, const char *key,

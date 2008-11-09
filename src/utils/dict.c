@@ -18,7 +18,7 @@ typedef struct hubbub_dict_node {
 	struct hubbub_dict_node *gt;	/**< Subtree for data greater than
 					 * split */
 
-	const void *value;			/**< Data for this node */
+	const void *value;		/**< Data for this node */
 } hubbub_dict_node;
 
 /** Dictionary object */
@@ -41,40 +41,49 @@ static hubbub_dict_node *hubbub_dict_insert_internal(hubbub_dict *dict,
  *
  * \param alloc  Memory (de)allocation function
  * \param pw     Pointer to client-specific private data (may be NULL)
- * \return Pointer to dictionary instance, or NULL on error
+ * \param dict   Pointer to location to receive dictionary instance
+ * \return HUBBUB_OK on success,
+ *         HUBBUB_BADPARM on bad parameters,
+ *         HUBBUB_NOMEM on memory exhaustion
  */
-hubbub_dict *hubbub_dict_create(hubbub_alloc alloc, void *pw)
+hubbub_error hubbub_dict_create(hubbub_alloc alloc, void *pw, 
+		hubbub_dict **dict)
 {
-	hubbub_dict *dict;
+	hubbub_dict *d;
 
-	if (alloc == NULL)
-		return NULL;
+	if (alloc == NULL || dict == NULL)
+		return HUBBUB_BADPARM;
 
-	dict = alloc(NULL, sizeof(hubbub_dict), pw);
-	if (dict == NULL)
-		return NULL;
+	d = alloc(NULL, sizeof(hubbub_dict), pw);
+	if (d == NULL)
+		return HUBBUB_NOMEM;
 
-	dict->dict = NULL;
+	d->dict = NULL;
 
-	dict->alloc = alloc;
-	dict->pw = pw;
+	d->alloc = alloc;
+	d->pw = pw;
 
-	return dict;
+	*dict = d;
+
+	return HUBBUB_OK;
 }
 
 /**
  * Destroy a dictionary
  *
  * \param dict  Dictionary to destroy
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-void hubbub_dict_destroy(hubbub_dict *dict)
+hubbub_error hubbub_dict_destroy(hubbub_dict *dict)
 {
 	if (dict == NULL)
-		return;
+		return HUBBUB_BADPARM;
 
 	hubbub_dict_destroy_internal(dict, dict->dict);
 
 	dict->alloc(dict, 0, dict->pw);
+
+	return HUBBUB_OK;
 }
 
 /**
