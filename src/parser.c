@@ -292,7 +292,7 @@ hubbub_error hubbub_parser_completed(hubbub_parser *parser)
  * \return Pointer to charset name (constant; do not free), or NULL if unknown
  */
 const char *hubbub_parser_read_charset(hubbub_parser *parser,
-		uint32_t *source)
+		hubbub_charset_source *source)
 {
 	if (parser == NULL || source == NULL)
 		return NULL;
