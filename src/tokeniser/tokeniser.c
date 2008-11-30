@@ -3037,7 +3037,6 @@ hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 		hubbub_token *token)
 {
 	hubbub_error err = HUBBUB_OK;
-	uint32_t i;
 
 	assert(tokeniser != NULL);
 	assert(token != NULL);
@@ -3057,6 +3056,8 @@ hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 	case HUBBUB_TOKEN_END_TAG:
+	{
+		uint32_t i;
 		assert(memchr(token->data.tag.name.ptr, 0xff, 
 				token->data.tag.name.len) == NULL);
 		for (i = 0; i < token->data.tag.n_attributes; i++) {
@@ -3067,6 +3068,7 @@ hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 			assert(memchr(attr->value.ptr, 0xff, attr->value.len) ==
 					NULL);
 		}
+	}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
 		assert(memchr(token->data.comment.ptr, 0xff, 
