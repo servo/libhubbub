@@ -46,7 +46,8 @@ static inline void clear_stack_table_context(hubbub_treebuilder *treebuilder)
 static inline bool process_input_in_table(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-	for (size_t i = 0; i < token->data.tag.n_attributes; i++) {
+	size_t i;
+	for (i = 0; i < token->data.tag.n_attributes; i++) {
 		hubbub_attribute *attr = &token->data.tag.attributes[i];
 
 		if (!hubbub_string_match_ci(attr->value.ptr, attr->value.len,

@@ -172,6 +172,8 @@ hubbub_error hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 
 	/* Clean up context */
 	if (treebuilder->tree_handler != NULL) {
+		uint32_t n;
+
 		if (treebuilder->context.head_element != NULL) {
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -196,7 +198,7 @@ hubbub_error hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 					treebuilder->context.collect.node);
 		}
 
-		for (uint32_t n = treebuilder->context.current_node; 
+		for (n = treebuilder->context.current_node; 
 				n > 0; n--) {
 			treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -618,6 +620,7 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 		element_type prev_type;
 		void *prev_node;
 		uint32_t prev_stack_index;
+		bool foster;
 
 		element_type type = current_node(treebuilder);
 
@@ -631,7 +634,7 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 			return;
 		}
 
-		bool foster = treebuilder->context.in_table_foster &&
+		foster = treebuilder->context.in_table_foster &&
 				(type == TABLE || type == TBODY ||
 					type == TFOOT || type == THEAD ||
 					type == TR);
@@ -973,12 +976,13 @@ element_type element_type_from_name(hubbub_treebuilder *treebuilder,
 {
 	const uint8_t *name = tag_name->ptr;
 	size_t len = tag_name->len;
+	uint32_t i;
 
 	UNUSED(treebuilder);
 
 	/** \todo optimise this */
 
-	for (uint32_t i = 0; i < N_ELEMENTS(name_type_map); i++) {
+	for (i = 0; i < N_ELEMENTS(name_type_map); i++) {
 		if (name_type_map[i].len != len)
 			continue;
 
@@ -1157,8 +1161,9 @@ bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 uint32_t current_table(hubbub_treebuilder *treebuilder)
 {
 	element_context *stack = treebuilder->context.element_stack;
+	size_t t;
 
-	for (size_t t = treebuilder->context.current_node; t != 0; t--) {
+	for (t = treebuilder->context.current_node; t != 0; t--) {
 		if (stack[t].type == TABLE)
 			return t;
 	}
@@ -1411,7 +1416,9 @@ void formatting_list_dump(hubbub_treebuilder *treebuilder, FILE *fp)
  */
 const char *element_type_to_name(element_type type)
 {
-	for (size_t i = 0; 
+	size_t i;
+
+	for (i = 0; 
 			i < sizeof(name_type_map) / sizeof(name_type_map[0]);
 			i++) {
 		if (name_type_map[i].type == type)

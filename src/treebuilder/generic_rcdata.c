@@ -37,6 +37,8 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_CHARACTER:
 	{
 		hubbub_string chars = token->data.character;
+		int success;
+		void *text, *appended;
 
 		if (treebuilder->context.strip_leading_lr) {
 			if (chars.ptr[0] == '\n') {
@@ -50,9 +52,6 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		if (chars.len == 0)
 			break;
 
-
-		int success;
-		void *text, *appended;
 
 		success = treebuilder->tree_handler->create_text(
 				treebuilder->tree_handler->ctx,

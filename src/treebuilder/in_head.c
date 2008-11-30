@@ -29,6 +29,10 @@
 static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
+	uint16_t charset_enc = 0;
+	uint16_t content_type_enc = 0;
+	size_t i;
+
 	insert_element_no_push(treebuilder, &token->data.tag);
 
 	/** \todo ack sc flag */
@@ -38,10 +42,7 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 		return HUBBUB_OK;
 #endif
 
-	uint16_t charset_enc = 0;
-	uint16_t content_type_enc = 0;
-
-	for (size_t i = 0; i < token->data.tag.n_attributes; i++) {
+	for (i = 0; i < token->data.tag.n_attributes; i++) {
 		hubbub_attribute *attr = &token->data.tag.attributes[i];
 
 		if (hubbub_string_match(attr->name.ptr, attr->name.len,

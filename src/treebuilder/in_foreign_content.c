@@ -142,15 +142,17 @@ static const case_changes svg_tagnames[] = {
 void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag)
 {
+	size_t i;
 	UNUSED(treebuilder);
 
-	for (size_t i = 0; i < tag->n_attributes; i++) {
+	for (i = 0; i < tag->n_attributes; i++) {
 		hubbub_attribute *attr = &tag->attributes[i];
 
 		const uint8_t *name = attr->name.ptr;
 		size_t len = attr->name.len;
+		size_t j;
 
-		for (size_t j = 0; j < N_ELEMENTS(svg_attributes); j++) {
+		for (j = 0; j < N_ELEMENTS(svg_attributes); j++) {
 			if (hubbub_string_match(name, len,
 					(uint8_t *)svg_attributes[j].attr,
 					svg_attributes[j].len)) {
@@ -172,10 +174,11 @@ void adjust_svg_tagname(hubbub_treebuilder *treebuilder,
 {
 	const uint8_t *name = tag->name.ptr;
 	size_t len = tag->name.len;
+	size_t i;
 
 	UNUSED(treebuilder);
 
-	for (size_t i = 0; i < N_ELEMENTS(svg_tagnames); i++) {
+	for (i = 0; i < N_ELEMENTS(svg_tagnames); i++) {
 		if (hubbub_string_match(name, len,
 				(uint8_t *)svg_tagnames[i].attr,
 				svg_tagnames[i].len)) {
@@ -198,9 +201,10 @@ void adjust_svg_tagname(hubbub_treebuilder *treebuilder,
 void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag)
 {
+	size_t i;
 	UNUSED(treebuilder);
 
-	for (size_t i = 0; i < tag->n_attributes; i++) {
+	for (i = 0; i < tag->n_attributes; i++) {
 		hubbub_attribute *attr = &tag->attributes[i];
 		const uint8_t *name = attr->name.ptr;
 

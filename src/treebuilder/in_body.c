@@ -113,6 +113,7 @@ hubbub_error handle_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
 	hubbub_error err = HUBBUB_OK;
+	uint32_t i;
 
 #if !defined(NDEBUG) && defined(DEBUG_IN_BODY)
 	fprintf(stdout, "Processing token %d\n", token->type);
@@ -145,7 +146,7 @@ hubbub_error handle_in_body(hubbub_treebuilder *treebuilder,
 		err = process_end_tag(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_EOF:
-		for (uint32_t i = treebuilder->context.current_node; 
+		for (i = treebuilder->context.current_node; 
 				i > 0; i--) {
 			element_type type = 
 				treebuilder->context.element_stack[i].type;
@@ -873,6 +874,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 
 	/* First up, clone the token's attributes */
 	if (token->data.tag.n_attributes > 0) {
+		uint32_t i;
 		attrs = treebuilder->alloc(NULL,
 				(token->data.tag.n_attributes + 1) *
 						sizeof(hubbub_attribute),
@@ -882,7 +884,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 			return;
 		}
 
-		for (uint32_t i = 0; i < token->data.tag.n_attributes; i++) {
+		for (i = 0; i < token->data.tag.n_attributes; i++) {
 			hubbub_attribute *attr = &token->data.tag.attributes[i];
 			const uint8_t *name = attr->name.ptr;
 
@@ -1271,10 +1273,21 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 	while (true) {
 		element_context *stack = treebuilder->context.element_stack;
 
-		/* 1 */
 		formatting_list_entry *entry;
 		uint32_t formatting_element;
+		uint32_t common_ancestor;
+		uint32_t furthest_block;
+		bookmark bookmark;
+		uint32_t last_node;
+		void *reparented;
+		void *fe_clone = NULL;
+		void *clone_appended = NULL;
+		hubbub_ns ons;
+		element_type otype;
+		void *onode;
+		uint32_t oindex;
 
+		/* 1 */
 		if (!aa_find_and_validate_formatting_element(treebuilder,
 				type, &entry))
 			return;
@@ -1286,34 +1299,26 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		formatting_element = entry->stack_index;
 
 		/* 2 & 3 */
-		uint32_t furthest_block;
-
 		if (!aa_find_furthest_block(treebuilder,
 				entry, &furthest_block))
 			return;
 
 		/* 4 */
-		uint32_t common_ancestor = formatting_element - 1;
+		common_ancestor = formatting_element - 1;
 
 		/* 5 */
 		aa_remove_from_parent(treebuilder, stack[furthest_block].node);
 
 		/* 6 */
-		bookmark bookmark;
-
 		bookmark.prev = entry->prev;
 		bookmark.next = entry->next;
 
 		/* 7 */
-		uint32_t last_node;
-
 		aa_find_bookmark_location_reparenting_misnested(treebuilder,
 				formatting_element, &furthest_block,
 				&bookmark, &last_node);
 
 		/* 8 */
-		void *reparented;
-
 		if (stack[common_ancestor].type == TABLE ||
 				stack[common_ancestor].type == TBODY ||
 				stack[common_ancestor].type == TFOOT ||
@@ -1330,8 +1335,8 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		 * previously using, then have it take the place of the other
 		 * one in the formatting list and stack. */
 		if (reparented != stack[last_node].node) {
-			for (struct formatting_list_entry *node_entry = 
-				treebuilder->context.formatting_list_end;
+			struct formatting_list_entry *node_entry;
+			for (node_entry = treebuilder->context.formatting_list_end;
 					node_entry != NULL; 
 					node_entry = node_entry->prev) {
 				if (node_entry->stack_index == last_node) {
@@ -1351,8 +1356,6 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		}
 
 		/* 9 */
-		void *fe_clone = NULL;
-
 		treebuilder->tree_handler->clone_node(
 				treebuilder->tree_handler->ctx,
 				entry->details.node, false, &fe_clone);
@@ -1363,8 +1366,6 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 				stack[furthest_block].node, fe_clone);
 
 		/* 11 */
-		void *clone_appended = NULL;
-
 		treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
 				stack[furthest_block].node, fe_clone,
@@ -1398,11 +1399,6 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		stack[furthest_block + 1].node = clone_appended;
 
 		/* 12 */
-		hubbub_ns ons;
-		element_type otype;
-		void *onode;
-		uint32_t oindex;
-
 		formatting_list_remove(treebuilder, entry,
 				&ons, &otype, &onode, &oindex);
 
@@ -1628,6 +1624,9 @@ void aa_find_bookmark_location_reparenting_misnested(
 	node = last = fb = *furthest_block;
 
 	while (true) {
+		bool children = false;
+		void *reparented;
+
 		/* i */
 		node--;
 
@@ -1667,8 +1666,6 @@ void aa_find_bookmark_location_reparenting_misnested(
 		}
 
 		/* v */
-		bool children = false;
-
 		treebuilder->tree_handler->has_children(
 				treebuilder->tree_handler->ctx,
 				node_entry->details.node, &children);
@@ -1678,7 +1675,7 @@ void aa_find_bookmark_location_reparenting_misnested(
 		}
 
 		/* vi */
-		void *reparented = aa_reparent_node(treebuilder,
+		reparented = aa_reparent_node(treebuilder,
 				stack[last].node, stack[node].node);
 		/* If the reparented node is not the same as the one we were
 		 * previously using, then have it take the place of the other
@@ -1728,6 +1725,7 @@ void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 		uint32_t index, uint32_t limit)
 {
 	element_context *stack = treebuilder->context.element_stack;
+	uint32_t n;
 
 	assert(index < limit);
 	assert(limit <= treebuilder->context.current_node);
@@ -1737,7 +1735,7 @@ void aa_remove_element_stack_item(hubbub_treebuilder *treebuilder,
 	 * entries. If found, update the corresponding
 	 * formatting list entry's stack index to match the
 	 * new stack location */
-	for (uint32_t n = index + 1; n <= limit; n++) {
+	for (n = index + 1; n <= limit; n++) {
 		if (is_formatting_element(stack[n].type) ||
 				(is_scoping_element(stack[n].type) &&
 				stack[n].type != HTML &&
