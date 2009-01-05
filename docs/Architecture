@@ -12,37 +12,23 @@ Introduction
 Overview
 --------
 
-  Hubbub is comprised of four parts:
+  Hubbub is comprised of two parts:
   
-    * a charset handler
-    * an input stream veneer
     * a tokeniser
     * a tree builder
 
-  Charset handler
-  ---------------
-  
-    The charset handler converts the raw data input into a requested encoding.
-  
-  Input stream veneer
-  -------------------
-  
-    The input stream veneer provides an abstract stream-like interface over
-    the document buffer. This is used by the tokeniser. The document buffer
-    will be encoded in either UTF-8 or UTF-16 (this is client-selectable).
-  
   Tokeniser
   ---------
   
     The tokeniser divides the data held in the document buffer into chunks. 
-    It sends SAX-style events for each chunk. The tokeniser is agnostic to
-    the charset the document buffer is stored in.
+    It sends SAX-style events for each chunk. 
   
   Tree builder
   ------------
   
-    The tree builder constructs a DOM tree from the SAX events emitted by the 
-    tokeniser. The tree builder is tied to the document buffer charset.
+    The tree builder constructs a DOM-like tree from the SAX events emitted by 
+    the tokeniser. The exact representation of the tree is up to the client,
+    which must provide a number of tree building handler functions.
 
 Memory usage and ownership
 --------------------------
@@ -51,33 +37,20 @@ Memory usage and ownership
   memory.
   
   Raw input data provided by the library client is owned by the client. 
-  
-  The document buffer is allocated on the fly by the library. 
-  
-  The document buffer is created and resized by the charset handler. Its 
-  location is passed to the tree builder through a dedicated event. While 
-  parsing is occurring, the ownership of the document buffer lies with the 
-  charset handler. Upon parse completion, the tree builder may request 
-  ownership of the buffer. If it does not, the buffer will be freed on parser
-  destruction.
 
-  SAX events which refer to document segments contain direct references into 
-  the document buffer (i.e. no copying of data held in the document buffer 
-  occurs).
+  SAX events which refer to document segments contain direct references to
+  internal data. Token objects are transient and data within them are no 
+  longer valid once the event handler has returned control to the tokeniser.
+  All data returned by a SAX event is owned by the library.
 
-  The tree builder will allocate memory for use as DOM nodes. References to 
-  strings in the document buffer will be direct and will operate a 
-  copy-on-write strategy. All strings (excepting those which comprise part of 
-  the document buffer) and nodes within the DOM are reference counted. Upon a 
-  reference count reaching 0, the item is freed.
-
-  The above strategy permits data copying to be kept to a minimum, hence 
-  minimising memory usage.
+  The tree builder will use client callbacks to create the objects used
+  within the tree. Tree objects may be reference counted (the client may
+  do nothing in the ref/unref callbacks and use garbage collection instead).
+  The resultant tree is owned by the client.
 
 Parse errors
 ------------
 
-  Notification of parse errors is made through a dedicated event similar to 
-  that used for notification of movement of the document buffer. This event
+  Notification of parse errors is made through a dedicated event. This event
   contains the line/column offset of the error location, along with a message
   detailing the error.
