@@ -217,9 +217,27 @@ hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
 
 	perror = parserutils_inputstream_append(parser->stream, data, len);
 	if (perror != PARSERUTILS_OK)
-		return !HUBBUB_OK;
+		return hubbub_error_from_parserutils_error(perror);
 
 	error = hubbub_tokeniser_run(parser->tok);
+	if (error == HUBBUB_BADENCODING) {
+		/* Ok, we autodetected an encoding that we don't actually
+		 * support. We've not actually processed any data at this
+		 * point so fall back to Windows-1252 and hope for the best
+		 */
+		perror = parserutils_inputstream_change_charset(parser->stream,
+				"Windows-1252", HUBBUB_CHARSET_TENTATIVE);
+		/* Under no circumstances should we get here if we've managed
+		 * to process data. If there is a way, I want to know about it
+		 */
+		assert(perror != PARSERUTILS_INVALID);
+		if (perror != PARSERUTILS_OK)
+			return hubbub_error_from_parserutils_error(perror);
+
+		/* Retry the tokenisation */
+		error = hubbub_tokeniser_run(parser->tok);
+	}
+
 	if (error != HUBBUB_OK)
 		return error;
 
