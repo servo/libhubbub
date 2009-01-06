@@ -5,6 +5,7 @@
  * Copyright 2007-8 John-Mark Bell <jmb@netsurf-browser.org>
  */
 
+#include <assert.h>
 #include <string.h>
 
 #include <parserutils/charset/mibenum.h>
