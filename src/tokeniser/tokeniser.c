@@ -1708,7 +1708,7 @@ hubbub_error hubbub_tokeniser_handle_bogus_comment(hubbub_tokeniser *tokeniser)
 	} else if (c == '\r') {
 		error = parserutils_inputstream_peek(
 				tokeniser->input,
-				tokeniser->context.pending + len, //XXX
+				tokeniser->context.pending,
 				&cptr,
 				&len);
 
@@ -2224,7 +2224,7 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_dq(
 	} else if (c == '\r') {
 		error = parserutils_inputstream_peek(
 				tokeniser->input,
-				tokeniser->context.pending + len, ///XXX
+				tokeniser->context.pending,
 				&cptr,
 				&len);
 
@@ -2274,7 +2274,7 @@ hubbub_error hubbub_tokeniser_handle_doctype_public_sq(
 	} else if (c == '\r') {
 		error = parserutils_inputstream_peek(
 				tokeniser->input,
-				tokeniser->context.pending + len, //XXX
+				tokeniser->context.pending,
 				&cptr,
 				&len);
 
@@ -2468,7 +2468,7 @@ hubbub_error hubbub_tokeniser_handle_doctype_system_dq(
 	} else if (c == '\r') {
 		error = parserutils_inputstream_peek(
 				tokeniser->input,
-				tokeniser->context.pending + len, //XXX
+				tokeniser->context.pending,
 				&cptr,
 				&len);
 
@@ -2518,7 +2518,7 @@ hubbub_error hubbub_tokeniser_handle_doctype_system_sq(
 	} else if (c == '\r') {
 		error = parserutils_inputstream_peek(
 				tokeniser->input,
-				tokeniser->context.pending + len, //XXX
+				tokeniser->context.pending,
 				&cptr,
 				&len);
 
