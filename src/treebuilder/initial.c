@@ -112,7 +112,8 @@ static bool starts_with(const uint8_t *a, size_t a_len, const uint8_t *b,
 /**
  * Determine whether this doctype triggers full quirks mode
  *
- * \param cdoc        The doctype to examine
+ * \param treebuilder  Treebuilder instance
+ * \param cdoc         The doctype to examine
  * \return True to trigger quirks, false otherwise
  */
 static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
@@ -177,7 +178,8 @@ static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
 /**
  * Determine whether this doctype triggers limited quirks mode
  *
- * \param cdoc        The doctype to examine
+ * \param treebuilder  Treebuilder instance
+ * \param cdoc         The doctype to examine
  * \return True to trigger quirks, false otherwise
  */
 static bool lookup_limited_quirks(hubbub_treebuilder *treebuilder,
