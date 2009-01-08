@@ -72,3 +72,17 @@ API documentation
   public API may be found in the "include" directory. The "examples" 
   directory contains commented examples of how to use hubbub.
 
+  Additionally, you can use doxygen to auto-generate API documentation, thus:
+
+  		$ make docs
+
+  Then open the build/docs/html/index.html file in a web browser.
+
+A note on character set aliases
+-------------------------------
+
+  Hubbub uses an external mapping file to encode relationships between 
+  character set names. This is the "Aliases" file. A copy may be found at
+  test/data/Aliases. The path to this file is required when calling 
+  hubbub_initialise().
+
