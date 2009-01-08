@@ -21,6 +21,16 @@
 #define UNUSED(x) ((x)=(x))
 
 /**
+ * Error codes
+ */
+typedef enum error_code {
+	OK,
+	NOMEM,
+	BADENCODING,
+	ENCODINGCHANGE
+} error_code;
+
+/**
  * Source of encoding information
  */
 typedef enum encoding_source {
@@ -130,13 +140,115 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	return realloc(ptr, len);
 }
 
-/**************** TODO: Sort this out already *********************************/
+/******************************************************************************
+ * Main hubbub driver code                                                    *
+ ******************************************************************************/
+static error_code create_context(const char *charset, context **ctx);
+static void destroy_context(context *c);
+static error_code parse_chunk(context *c, const uint8_t *data, size_t len);
+static error_code parse_completed(context *c);
 
 int main(int argc, char **argv)
 {
+	error_code error;
+	context *c;
+	hubbub_parser_optparams params;
+	FILE *input;
+	uint8_t *buf;
+	size_t len;
+
+	if (argc != 3) {
+		fprintf(stderr, "Usage: %s <Aliases> <input>\n", argv[0]);
+		return 1;
+	}
+
+	/* Initialise hubbub */
+	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
+
+	/* Read input file into memory. If we wanted to, we could read into
+	 * a fixed-size buffer and pass each chunk to the parser sequentially.
+	 */
+	input = fopen(argv[2], "r");
+	if (input == NULL) {
+		fprintf(stderr, "Failed opening %s\n", argv[2]);
+		return 1;
+	}
+
+	fseek(input, 0, SEEK_END);
+	len = ftell(input);
+	fseek(input, 0, SEEK_SET);
+
+	buf = malloc(len);
+	if (buf == NULL) {
+		fclose(input);
+		fprintf(stderr, "No memory for buf\n");
+		return 1;
+	}
+
+	fread(buf, 1, len, input);
+
+	/* Create our parsing context */
+	error = create_context(NULL, &c);
+	assert(error == OK);
+
+	/* Attempt to parse the document */
+	error = parse_chunk(c, buf, len);
+	assert(error == OK || error == ENCODINGCHANGE);
+	if (error == ENCODINGCHANGE) {
+		/* During parsing, we detected that the charset of the 
+		 * input data was different from what was auto-detected
+		 * (see the change_encoding callback for more details).
+		 * Therefore, we must destroy the current parser and create
+		 * a new one using the newly-detected charset. Then we
+		 * reparse the data using the new parser. 
+		 *
+		 * change_encoding() will have put the new charset into
+		 * c->encoding.
+		 */
+		hubbub_parser *temp;
+
+		assert(hubbub_parser_create(c->encoding, true, myrealloc, NULL,
+			&temp) == HUBBUB_OK);
+
+		hubbub_parser_destroy(c->parser);
+		c->parser = temp;
+
+		/* Retry the parse */
+		error = parse_chunk(c, buf, len);
+	}
+	assert(error == OK);
+
+	/* Tell hubbub that we've finished */
+	error = parse_completed(c);
+	assert(error == OK);
+
+	/* At this point, the DOM tree can be accessed through c->document */
+	/* Let's dump it to stdout */
+	/* In a real application, we'd probably want to grab the document
+	 * from the parsing context, then destroy the context as it's no 
+	 * longer of any use */
+	xmlDebugDumpDocument(stdout, c->document);
+
+	/* Clean up */
+	destroy_context(c);
+
+	fclose(input);
+
+	hubbub_finalise(myrealloc, NULL);
+
+	return 0;
 }
 
-binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
+/**
+ * Create a parsing context
+ *
+ * \param charset  The charset the input data is in, or NULL to autodetect
+ * \param ctx      Location to receive context
+ * \return OK on success, 
+ *         NOMEM on memory exhaustion, 
+ *         BADENCODING if charset isn't supported
+ */
+error_code create_context(const char *charset, context **ctx)
 {
 	context *c;
 	hubbub_parser_optparams params;
@@ -145,30 +257,32 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 
 	c = malloc(sizeof(context));
 	if (c == NULL)
-		return BINDING_NOMEM;
+		return NOMEM;
 
 	c->parser = NULL;
 	c->encoding = charset;
-	c->encoding_source = ENCODING_SOURCE_HEADER;
+	c->enc_source = ENCODING_SOURCE_HEADER;
 	c->document = NULL;
-	c->owns_doc = true;
 
-	error = hubbub_parser_create(charset, true, myrealloc, arena, 
+	/* Create the parser */
+	error = hubbub_parser_create(c->encoding, true, myrealloc, NULL, 
 			&c->parser);
 	if (error != HUBBUB_OK) {
 		free(c);
 		if (error == HUBBUB_BADENCODING)
-			return BINDING_BADENCODING;
+			return BADENCODING;
 		else
-			return BINDING_NOMEM;	/* Assume OOM */
+			return NOMEM;	/* Assume OOM */
 	}
 
+	/* Create the root node of the document */
 	c->document = htmlNewDocNoDtD(NULL, NULL);
 	if (c->document == NULL) {
 		hubbub_parser_destroy(c->parser);
 		free(c);
-		return BINDING_NOMEM;
+		return NOMEM;
 	}
+	/* Reference count of zero */
 	c->document->_private = (void *) 0;
 
 	for (i = 0; 
@@ -176,33 +290,37 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 		c->namespaces[i] = NULL;
 	}
 
+	/* Register tree handler with hubbub */
 	c->tree_handler = tree_handler;
 	c->tree_handler.ctx = (void *) c;
 
 	params.tree_handler = &c->tree_handler;
 	hubbub_parser_setopt(c->parser, HUBBUB_PARSER_TREE_HANDLER, &params);
 
+	/* Also tell it about the document node (referencing it first) */
 	ref_node(c, c->document);
 	params.document_node = c->document;
 	hubbub_parser_setopt(c->parser, HUBBUB_PARSER_DOCUMENT_NODE, &params);
 
-	*ctx = (void *) c;
+	*ctx = c;
 
-	return BINDING_OK;
+	return OK;
 }
 
-binding_error binding_destroy_tree(void *ctx)
+/**
+ * Destroy a parsing context
+ *
+ * \param c  Context to destroy
+ */
+void destroy_context(context *c)
 {
-	context *c = (context *) ctx;
-
-	if (ctx == NULL)
-		return BINDING_OK;
+	if (c == NULL)
+		return;
 
 	if (c->parser != NULL)
 		hubbub_parser_destroy(c->parser);
 
-	if (c->owns_doc)
-		xmlFreeDoc(c->document);
+	xmlFreeDoc(c->document);
 
 	c->parser = NULL;
 	c->encoding = NULL;
@@ -210,30 +328,43 @@ binding_error binding_destroy_tree(void *ctx)
 
 	free(c);
 
-	return BINDING_OK;
+	return;
 }
 
-binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len)
+/**
+ * Parse a chunk of the input document
+ *
+ * \param c     Parsing context
+ * \param data  Data buffer
+ * \param len   Length, in bytes, of data in buffer
+ * \return OK on success,
+ *         ENCODINGCHANGE if the encoding needs changing
+ */
+error_code parse_chunk(context *c, const uint8_t *data, size_t len)
 {
-	context *c = (context *) ctx;
 	hubbub_error err;
 
 	err = hubbub_parser_parse_chunk(c->parser, (uint8_t *) data, len);
 	if (err == HUBBUB_ENCODINGCHANGE)
-		return BINDING_ENCODINGCHANGE;
+		return ENCODINGCHANGE;
 
-	return BINDING_OK;
+	return OK;
 }
 
-binding_error binding_parse_completed(void *ctx)
+/**
+ * Inform that we've run out of input to parse
+ *
+ * \param c  Parsing context
+ * \return OK.
+ */
+error_code parse_completed(context *c)
 {
-	context *c = (context *) ctx;
 	hubbub_error error;
 
 	error = hubbub_parser_completed(c->parser);
 	/** \todo error handling */
 
-	return BINDING_OK;
+	return OK;
 }
 
 /******************************************************************************
@@ -276,8 +407,9 @@ void create_namespaces(context *ctx, xmlNode *root)
 
 		/* Expect "xml" to fail here */
 		if (ctx->namespaces[i - 1] == NULL) {
-			LOG(("Failed creating namespace %s\n", 
-					namespaces[i].prefix));
+			fprintf(stderr, 
+				"WARNING: Failed creating namespace %s\n", 
+					namespaces[i].prefix);
 		}
 	}
 }
