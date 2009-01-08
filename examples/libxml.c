@@ -170,6 +170,7 @@ int main(int argc, char **argv)
 	 */
 	input = fopen(argv[2], "r");
 	if (input == NULL) {
+		hubbub_finalise(myrealloc, NULL);
 		fprintf(stderr, "Failed opening %s\n", argv[2]);
 		return 1;
 	}
@@ -181,6 +182,7 @@ int main(int argc, char **argv)
 	buf = malloc(len);
 	if (buf == NULL) {
 		fclose(input);
+		hubbub_finalise(myrealloc, NULL);
 		fprintf(stderr, "No memory for buf\n");
 		return 1;
 	}
@@ -189,7 +191,13 @@ int main(int argc, char **argv)
 
 	/* Create our parsing context */
 	error = create_context(NULL, &c);
-	assert(error == OK);
+	if (error != OK) {
+		free(buf);
+		fclose(input);
+		hubbub_finalise(myrealloc, NULL);
+		fprintf(stderr, "Failed creating parsing context\n");
+		return 1;
+	}
 
 	/* Attempt to parse the document */
 	error = parse_chunk(c, buf, len);
@@ -207,8 +215,15 @@ int main(int argc, char **argv)
 		 */
 		hubbub_parser *temp;
 
-		assert(hubbub_parser_create(c->encoding, true, myrealloc, NULL,
-			&temp) == HUBBUB_OK);
+		if (hubbub_parser_create(c->encoding, true, myrealloc, NULL,
+				&temp) != HUBBUB_OK) {
+			destroy_context(c);
+			free(buf);
+			fclose(input);
+			hubbub_finalise(myrealloc, NULL);
+			fprintf(stderr, "Failed recreating parser\n");
+			return 1;
+		}
 
 		hubbub_parser_destroy(c->parser);
 		c->parser = temp;
@@ -216,11 +231,30 @@ int main(int argc, char **argv)
 		/* Retry the parse */
 		error = parse_chunk(c, buf, len);
 	}
-	assert(error == OK);
+
+	if (error != OK) {
+		destroy_context(c);
+		free(buf);
+		fclose(input);
+		hubbub_finalise(myrealloc, NULL);
+		fprintf(stderr, "Failed parsing document\n");
+		return 1;
+	}
+
 
 	/* Tell hubbub that we've finished */
 	error = parse_completed(c);
-	assert(error == OK);
+	if (error != OK) {
+		destroy_context(c);
+		free(buf);
+		fclose(input);
+		hubbub_finalise(myrealloc, NULL);
+		fprintf(stderr, "Failed parsing document\n");
+		return 1;
+	}
+
+	/* We're done with this */
+	free(buf);
 
 	/* At this point, the DOM tree can be accessed through c->document */
 	/* Let's dump it to stdout */
