@@ -36,6 +36,9 @@ typedef enum
 	UNKNOWN,
 } element_type;
 
+/**
+ * Item on the element stack
+ */
 typedef struct element_context
 {
 	hubbub_ns ns;			/**< Element namespace */
@@ -51,6 +54,9 @@ typedef struct element_context
 	void *node;			/**< Node pointer */
 } element_context;
 
+/**
+ * Entry in a formatting list
+ */
 typedef struct formatting_list_entry
 {
 	element_context details;	/**< Entry details */
@@ -61,6 +67,9 @@ typedef struct formatting_list_entry
 	struct formatting_list_entry *next;	/**< Next in list */
 } formatting_list_entry;
 
+/**
+ * Context for a tree builder
+ */
 typedef struct hubbub_treebuilder_context
 {
 	insertion_mode mode;		/**< The current insertion mode */
@@ -100,16 +109,19 @@ typedef struct hubbub_treebuilder_context
 					* be foster parented */
 } hubbub_treebuilder_context;
 
+/**
+ * Treebuilder object
+ */
 struct hubbub_treebuilder
 {
 	hubbub_tokeniser *tokeniser;	/**< Underlying tokeniser */
 
-	hubbub_treebuilder_context context;
+	hubbub_treebuilder_context context;	/**< Our context */
 
-	hubbub_tree_handler *tree_handler;
+	hubbub_tree_handler *tree_handler;	/**< Callback table */
 
-	hubbub_error_handler error_handler;
-	void *error_pw;
+	hubbub_error_handler error_handler;	/**< Error handler */
+	void *error_pw;				/**< Error handler data */
 
 	hubbub_alloc alloc;		/**< Memory (de)allocation function */
 	void *alloc_pw;			/**< Client private data */

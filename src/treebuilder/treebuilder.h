@@ -37,13 +37,13 @@ typedef union hubbub_treebuilder_optparams {
 	struct {
 		hubbub_error_handler handler;
 		void *pw;
-	} error_handler;
+	} error_handler;			/**< Error handling callback */
 
-	hubbub_tree_handler *tree_handler;
+	hubbub_tree_handler *tree_handler;	/**< Tree handling callbacks */
 
-	void *document_node;
+	void *document_node;			/**< The document node */
 
-	bool enable_scripting;
+	bool enable_scripting;			/**< Enable scripting */
 } hubbub_treebuilder_optparams;
 
 /* Create a hubbub treebuilder */

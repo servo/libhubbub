@@ -36,18 +36,18 @@ typedef union hubbub_tokeniser_optparams {
 	struct {
 		hubbub_token_handler handler;
 		void *pw;
-	} token_handler;
+	} token_handler;		/**< Token handling callback */
 
 	struct {
 		hubbub_error_handler handler;
 		void *pw;
-	} error_handler;
+	} error_handler;		/**< Error handling callback */
 
 	struct {
 		hubbub_content_model model;
-	} content_model;
+	} content_model;		/**< Current content model */
 
-	bool process_cdata;
+	bool process_cdata;		/**< Whether to process CDATA sections*/
 } hubbub_tokeniser_optparams;
 
 /* Create a hubbub tokeniser */

@@ -15,9 +15,12 @@
 
 #undef DEBUG_IN_BODY
 
+/**
+ * Bookmark for formatting list. Used in adoption agency
+ */
 typedef struct bookmark {
-	formatting_list_entry *prev;
-	formatting_list_entry *next;
+	formatting_list_entry *prev;	/**< Previous entry */
+	formatting_list_entry *next;	/**< Next entry */
 } bookmark;
 
 static void process_character(hubbub_treebuilder *treebuilder,

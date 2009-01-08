@@ -18,6 +18,7 @@ Requirements
     + Pkg-config (for the testcases)
     + xsltproc (for the entity fetcher)
     + wget (for the entity fetcher)
+    + doxygen (for the API documentation)
 
   Hubbub also requires the following libraries to be installed:
 

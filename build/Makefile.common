@@ -12,6 +12,7 @@ EXPORT := $(TOP)/dist
 RELEASEDIR := build/Release
 DEBUGDIR := build/Debug
 COVERAGEDIR := build/coverage
+DOCDIR := build/docs
 
 # List of items to delete on clean
 ITEMS_CLEAN :=
@@ -41,7 +42,7 @@ $(eval $(foreach INC, $(MAKE_INCLUDES), $(call do_include,$(INC))))
 # Calculate objects to build
 OBJECTS := $(subst /,_,$(subst .c,.o,$(SOURCES)))
 
-.PHONY: release debug test coverage profile \
+.PHONY: release debug test coverage profile docs \
 	clean distclean setup export install uninstall
 
 # Rules
@@ -69,9 +70,13 @@ coverage: clean
 profile: clean
 	@$(MAKE) test CFLAGS="$(CFLAGS) -pg" LDFLAGS="-pg $(LDFLAGS)"
 
+docs: setup
+	@$(DOXYGEN) build/Doxyfile
+
 clean:
 	-@$(RM) $(RMFLAGS) $(ITEMS_CLEAN)
 	-@$(RM) $(RMFLAGS) gmon.out
+	-@$(RM) $(RMFLAGS) -r $(DOCDIR)
 	-@$(RM) $(RMFLAGS) -r $(COVERAGEDIR)
 	-@$(RM) $(RMFLAGS) -r $(RELEASEDIR)
 	-@$(RM) $(RMFLAGS) -r $(DEBUGDIR)
@@ -87,6 +92,7 @@ setup:
 	@$(MKDIR) $(MKDIRFLAGS) $(RELEASEDIR)/deps
 	@$(MKDIR) $(MKDIRFLAGS) $(DEBUGDIR)/deps
 	@$(MKDIR) $(MKDIRFLAGS) $(COVERAGEDIR)
+	@$(MKDIR) $(MKDIRFLAGS) $(DOCDIR)
 
 export: 
 	@$(MKDIR) $(MKDIRFLAGS) $(TOP)/dist

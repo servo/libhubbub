@@ -37,22 +37,22 @@ typedef union hubbub_parser_optparams {
 	struct {
 		hubbub_token_handler handler;
 		void *pw;
-	} token_handler;
+	} token_handler;		/**< Token handling callback */
 
 	struct {
 		hubbub_error_handler handler;
 		void *pw;
-	} error_handler;
+	} error_handler;		/**< Error handling callback */
 
 	struct {
 		hubbub_content_model model;
-	} content_model;
+	} content_model;		/**< Current content model */
 
-	hubbub_tree_handler *tree_handler;
+	hubbub_tree_handler *tree_handler;	/**< Tree handling callbacks */
 
-	void *document_node;
+	void *document_node;		/**< Document node */
 
-	bool enable_scripting;
+	bool enable_scripting;		/**< Whether to enable scripting */
 } hubbub_parser_optparams;
 
 /* Create a hubbub parser */

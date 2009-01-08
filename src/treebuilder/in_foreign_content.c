@@ -19,11 +19,14 @@
 
 #define S(s)		s, SLEN(s)
 
+/**
+ * Mapping table for case changes
+ */
 typedef struct
 {
-	const char *attr;
-	size_t len;
-	const char *proper;
+	const char *attr;	/**< Lower case attribute name */
+	size_t len;		/**< Length of name in bytes */
+	const char *proper;	/**< Correctly cased version */
 } case_changes;
 
 static const case_changes svg_attributes[] = {

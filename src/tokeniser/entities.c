@@ -11,9 +11,12 @@
 
 typedef struct hubbub_entity hubbub_entity;
 
+/**
+ * Entity mapping table
+ */
 static const struct hubbub_entity {
-	const char *name;
-	uint32_t ucs4;
+	const char *name;		/**< Entity name */
+	uint32_t ucs4;			/**< UCS-4 codepoint */
 } entities[] = {
 	{ "Aacute;", 0x000C1 },
 	{ "Aacute", 0x000C1 },

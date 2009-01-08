@@ -107,21 +107,22 @@ typedef struct hubbub_tokeniser_context {
 
 	uint8_t last_start_tag_name[10];	/**< Name of the last start tag
 						 * emitted */
-	size_t last_start_tag_len;
+	size_t last_start_tag_len;		/**< Length of last start tag */
 
 	struct {
 		uint32_t count;
 		bool match;
-	} close_tag_match;
+	} close_tag_match;			/**< State for matching close 
+						 * tags */
 
 	struct {
 		uint32_t count;			/**< Index into "DOCTYPE" */
-	} match_doctype;
+	} match_doctype;			/**< State for matching doctype */
 
 	struct {
 		uint32_t count;			/**< Index into "[CDATA[" */
 		uint32_t end;			/**< Index into "]]>" */
-	} match_cdata;
+	} match_cdata;				/**< State for matching cdata */
 
 	struct {
 		size_t offset;			/**< Offset in buffer */
@@ -145,15 +146,15 @@ typedef struct hubbub_tokeniser_context {
 						 * numeric entity value */
 		hubbub_tokeniser_state return_state;	/**< State we were
 							 * called from */
-	} match_entity;
+	} match_entity;				/**< Entity matching state */
 
 	struct {
 		uint32_t line;			/**< Current line of input */
 		uint32_t col;			/**< Current character in
 						 * line */
-	} position;
+	} position;				/**< Position in source data */
 
-	uint32_t allowed_char;
+	uint32_t allowed_char;			/**< Used for quote matching */
 } hubbub_tokeniser_context;
 
 /**
@@ -164,18 +165,18 @@ struct hubbub_tokeniser {
 	hubbub_content_model content_model;	/**< Current content
 						 * model flag */
 	bool escape_flag;		/**< Escape flag **/
-	bool process_cdata_section;
+	bool process_cdata_section;	/**< Whether to process CDATA sections*/
 
 	parserutils_inputstream *input;	/**< Input stream */
 	parserutils_buffer *buffer;	/**< Input buffer */
 
 	hubbub_tokeniser_context context;	/**< Tokeniser context */
 
-	hubbub_token_handler token_handler;
-	void *token_pw;
+	hubbub_token_handler token_handler;	/**< Token handling callback */
+	void *token_pw;				/**< Token handler data */
 
-	hubbub_error_handler error_handler;
-	void *error_pw;
+	hubbub_error_handler error_handler;	/**< Error handling callback */
+	void *error_pw;				/**< Error handler data */
 
 	hubbub_alloc alloc;		/**< Memory (de)allocation function */
 	void *alloc_pw;			/**< Client private data */

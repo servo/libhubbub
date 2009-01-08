@@ -112,7 +112,7 @@ typedef struct hubbub_tag {
  * Token data
  */
 typedef struct hubbub_token {
-	hubbub_token_type type;
+	hubbub_token_type type;		/**< The token type */
 
 	union {
 		hubbub_doctype doctype;
@@ -122,7 +122,7 @@ typedef struct hubbub_token {
 		hubbub_string comment;
 
 		hubbub_string character;
-	} data;
+	} data;				/**< Type-specific data */
 } hubbub_token;
 
 #endif
