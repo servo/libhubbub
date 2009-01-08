@@ -1080,6 +1080,7 @@ bool element_stack_push(hubbub_treebuilder *treebuilder,
  * Pop an element off the stack of open elements
  *
  * \param treebuilder  The treebuilder instance containing the stack
+ * \param ns           Pointer to location to receive element namespace
  * \param type         Pointer to location to receive element type
  * \param node         Pointer to location to receive node
  * \return True on success, false on memory exhaustion.
