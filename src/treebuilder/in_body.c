@@ -423,7 +423,7 @@ bool process_end_tag(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <html> start tag as if in "in body"
+ * Process a html start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -441,7 +441,7 @@ void process_html_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <body> start tag as if in "in body"
+ * Process a body start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -479,7 +479,7 @@ void process_container_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <form> start tag as if in "in body"
+ * Process a form start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -510,7 +510,7 @@ void process_form_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <dd>, <dt> or <li> start tag as if in "in body"
+ * Process a dd, dt or li start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -573,7 +573,7 @@ void process_dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <plaintext> start tag as if in "in body"
+ * Process a plaintext start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -597,7 +597,7 @@ void process_plaintext_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <a> start tag as if in "in body"
+ * Process an "a" start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -660,8 +660,8 @@ void process_a_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <b>, <big>, <em>, <font>, <i>, <s>, <small>, 
- * <strike>, <strong>, <tt>, or <u> start tag as if in "in body"
+ * Process a b, big, em, font, i, s, small, 
+ * strike, strong, tt, or u start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -685,7 +685,7 @@ void process_presentational_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <nobr> start tag as if in "in body"
+ * Process a nobr start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -719,7 +719,7 @@ void process_nobr_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <button> start tag as if in "in body"
+ * Process a button start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -759,7 +759,7 @@ void process_button_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process an <applet>, <marquee> or <object> start tag as if in "in body"
+ * Process an applet, marquee or object start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -784,7 +784,7 @@ void process_applet_marquee_object_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process an <hr> start tag as if in "in body"
+ * Process an hr start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -800,7 +800,7 @@ void process_hr_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process an <image> start tag as if in "in body"
+ * Process an image start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -823,7 +823,7 @@ void process_image_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process an <input> start tag as if in "in body"
+ * Process an input start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -856,7 +856,7 @@ void process_input_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process an <isindex> start tag as if in "in body"
+ * Process an isindex start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -998,7 +998,7 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <textarea> start tag as if in "in body"
+ * Process a textarea start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -1011,7 +1011,7 @@ void process_textarea_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a <select> start tag as if in "in body"
+ * Process a select start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
@@ -1047,7 +1047,7 @@ void process_phrasing_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a </body> end tag as if in "in body"
+ * Process a body end tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \return True if processed, false otherwise
@@ -1128,7 +1128,7 @@ void process_0container_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a </p> end tag as if in "in body"
+ * Process a p end tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  */
@@ -1175,7 +1175,7 @@ void process_0p_in_body(hubbub_treebuilder *treebuilder)
 }
 
 /**
- * Process a </dd>, </dt>, or </li> end tag as if in "in body"
+ * Process a dd, dt, or li end tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param type         The element type
@@ -1213,8 +1213,7 @@ void process_0dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
- * Process a </h1>, </h2>, </h3>, </h4>,
- * </h5>, or </h6> end tag as if in "in body"
+ * Process a h1, h2, h3, h4, h5, or h6 end tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param type         The element type
@@ -1867,8 +1866,7 @@ void *aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 
 
 /**
- * Process an </applet>, <button>, <marquee>,
- * or <object> end tag as if in "in body"
+ * Process an applet, button, marquee, or object end tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  * \param type         The element type
@@ -1909,7 +1907,7 @@ void process_0applet_button_marquee_object_in_body(
 }
 
 /**
- * Process a </br> end tag as if in "in body"
+ * Process a br end tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
  */
