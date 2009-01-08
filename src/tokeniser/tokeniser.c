@@ -3174,7 +3174,7 @@ hubbub_error emit_current_comment(hubbub_tokeniser *tokeniser)
  * Emit the current doctype token being stored in the tokeniser context.
  *
  * \param tokeniser	Tokeniser instance
- * \param force_qurirks	Force quirks mode on this document
+ * \param force_quirks	Force quirks mode on this document
  * \return	true
  */
 hubbub_error emit_current_doctype(hubbub_tokeniser *tokeniser,

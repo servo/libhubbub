@@ -87,7 +87,7 @@ hubbub_error handle_after_head(hubbub_treebuilder *treebuilder,
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
-		/** \parse error */
+		/** \todo parse error */
 		break;
 	case HUBBUB_TOKEN_EOF:
 		err = HUBBUB_REPROCESS;
