@@ -41,7 +41,7 @@ static inline void clear_stack_table_context(hubbub_treebuilder *treebuilder)
 
 
 /**
- * Process an <input> tag in the "in table" insertion mode.
+ * Process an input start tag in the "in table" insertion mode.
  */
 static inline bool process_input_in_table(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)

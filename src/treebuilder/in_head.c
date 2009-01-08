@@ -21,7 +21,7 @@
 
 
 /**
- * Process a <meta> tag as if "in head".
+ * Process a meta tag as if "in head".
  *
  * \param treebuilder	The treebuilder instance
  * \param token        The token to process
@@ -97,7 +97,7 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 
 
 /**
- * Process a <script> start tag as if in "in head"
+ * Process a script start tag as if in "in head"
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to process
