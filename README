@@ -45,6 +45,15 @@ Compilation
 
   Compile and install both of these before trying to make Hubbub.
 
+  Note: By default, libparserutils only supports a few character sets. It may, 
+        however, be configured to use iconv() to provide charset conversion.
+	To do this, do the following:
+
+		$ cd /path/to/libparserutils
+		$ echo "CFLAGS += -DWITH_ICONV_FILTER" \
+				>build/Makefile.config.override
+
+	Then build libparserutils as normal.
 
   If necessary, modify the toolchain settings in the Makefile.
   Invoke make:
