@@ -14,115 +14,254 @@
 
 #include <hubbub/types.h>
 
-/* Type of allocation function for hubbub */
+/**
+ * Type of allocation function for hubbub 
+ *
+ * The semantics of this function are the same as for realloc().
+ *
+ * \param ptr   Pointer to object to reallocate, or NULL for a new allocation
+ * \param size  Required length in bytes, or zero to free ::ptr
+ * \param pw    Pointer to client data
+ * \return Pointer to allocated object, or NULL on failure
+ */
 typedef void *(*hubbub_alloc)(void *ptr, size_t size, void *pw);
 
 /**
  * Type of token handling function
+ *
+ * \param token  Pointer to token to handle
+ * \param pw     Pointer to client data
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  */
 typedef hubbub_error (*hubbub_token_handler)(
 		const hubbub_token *token, void *pw);
 
 /**
  * Type of parse error handling function
+ *
+ * \param line     Source line on which error occurred
+ * \param col      Column in ::line of start of erroneous input
+ * \param message  Error message
+ * \param pw       Pointer to client data
  */
 typedef void (*hubbub_error_handler)(uint32_t line, uint32_t col,
 		const char *message, void *pw);
 
 /**
- * Type of tree comment node creation function
+ * Create a comment node
+ *
+ * \param ctx     Client's context
+ * \param data    String content of node
+ * \param result  Pointer to location to receive created node
+ * \return 0 on success, 1 on failure.
+ *
+ * Postcondition: if successful, result's reference count must be 1.
  */
 typedef int (*hubbub_tree_create_comment)(void *ctx, const hubbub_string *data,
 		void **result);
 
 /**
- * Type of tree doctype node creation function
+ * Create a doctype node
+ *
+ * \param ctx      Client's context
+ * \param doctype  Data for doctype node (name, public id, system id)
+ * \param result   Pointer to location to receive created node
+ * \return 0 on success, 1 on failure.
+ *
+ * Postcondition: if successful, result's reference count must be 1.
  */
 typedef int (*hubbub_tree_create_doctype)(void *ctx,
 		const hubbub_doctype *doctype,
 		void **result);
 
 /**
- * Type of tree element node creation function
+ * Create an element node
+ *
+ * \param ctx     Client's context
+ * \param tag     Data for element node (namespace, name, attributes)
+ * \param result  Pointer to location to receive created node
+ * \return 0 on success, 1 on failure.
+ *
+ * Postcondition: if successful, result's reference count must be 1.
  */
 typedef int (*hubbub_tree_create_element)(void *ctx, const hubbub_tag *tag, 
 		void **result);
 
 /**
- * Type of tree text node creation function
+ * Create a text node
+ *
+ * \param ctx     Client's context
+ * \param data    String content of node
+ * \param result  Pointer to location to receive created node
+ * \return 0 on success, 1 on failure.
+ *
+ * Postcondition: if successful, result's reference count must be 1.
  */
 typedef int (*hubbub_tree_create_text)(void *ctx, const hubbub_string *data,
 		void **result);
 
 /**
- * Type of tree node reference function
+ * Increase a node's reference count
+ *
+ * \param ctx   Client's context
+ * \param node  Node to reference
+ * \param 0 on success, 1 on failure.
+ *
+ * Postcondition: node's reference count is one larger than before
  */
 typedef int (*hubbub_tree_ref_node)(void *ctx, void *node);
 
 /**
- * Type of tree node dereference function
+ * Decrease a node's reference count
+ *
+ * \param ctx   Client's context
+ * \param node  Node to reference
+ * \param 0 on success, 1 on failure.
+ *
+ * Postcondition: If the node's reference count becomes zero, and it has no 
+ * parent, and it is not the document node, then it is destroyed. Otherwise,
+ * the reference count is one less than before.
  */
 typedef int (*hubbub_tree_unref_node)(void *ctx, void *node);
 
 /**
- * Type of tree node appending function
+ * Append a node to the end of another's child list
+ *
+ * \param ctx     Client's context
+ * \param parent  The node to append to
+ * \param child   The node to append
+ * \param result  Pointer to location to receive appended node
+ * \return 0 on success, 1 on failure
+ *
+ * Postcondition: if successful, result's reference count is increased by 1
+ *
+ * Important: *result may not == child (e.g. if text nodes got coalesced)
  */
 typedef int (*hubbub_tree_append_child)(void *ctx, void *parent, void *child,
 		void **result);
 
 /**
- * Type of tree node insertion function
+ * Insert a node into another's child list
+ *
+ * \param ctx        Client's context
+ * \param parent     The node to insert into
+ * \param child      The node to insert
+ * \param ref_child  The node to insert before
+ * \param result     Pointer to location to receive inserted node
+ * \return 0 on success, 1 on failure
+ *
+ * Postcondition: if successful, result's reference count is increased by 1
+ *
+ * Important: *result may not == child (e.g. if text nodes got coalesced)
  */
 typedef int (*hubbub_tree_insert_before)(void *ctx, void *parent, void *child,
 		void *ref_child, void **result);
 
 /**
- * Type of tree node removal function
+ * Remove a node from another's child list
+ *
+ * \param ctx     Client context
+ * \param parent  The node to remove from
+ * \param child   The node to remove
+ * \param result  Pointer to location to receive removed node
+ * \return 0 on success, 1 on failure
+ *
+ * Postcondition: if successful, result's reference count is increased by 1
  */
 typedef int (*hubbub_tree_remove_child)(void *ctx, void *parent, void *child,
 		void **result);
 
 /**
- * Type of tree node cloning function
+ * Clone a node
+ * 
+ * \param ctx     Client's context
+ * \param node    The node to clone
+ * \param deep    True to clone entire subtree, false to clone only the node
+ * \param result  Pointer to location to receive clone
+ * \return 0 on success, 1 on failure
+ *
+ * Postcondition: if successful, result's reference count must be 1.
  */
 typedef int (*hubbub_tree_clone_node)(void *ctx, void *node, bool deep,
 		void **result);
 
 /**
- * Type of child reparenting function
+ * Move all the children of one node to another
+ *
+ * \param ctx         Client's context
+ * \param node        The initial parent node
+ * \param new_parent  The new parent node
+ * \return 0 on success, 1 on failure
  */
 typedef int (*hubbub_tree_reparent_children)(void *ctx, void *node, 
 		void *new_parent);
 
 /**
- * Type of parent node acquisition function
+ * Retrieve the parent of a node
+ *
+ * \param ctx           Client context
+ * \param node          Node to retrieve the parent of
+ * \param element_only  True if the parent must be an element, false otherwise
+ * \param result        Pointer to location to receive parent node
+ * \return 0 on success, 1 on failure
+ *
+ * If there is a parent node, but it is not an element node and element_only
+ * is true, then act as if no parent existed.
+ *
+ * Postcondition: if there is a parent, then result's reference count must be
+ * increased.
  */
 typedef int (*hubbub_tree_get_parent)(void *ctx, void *node, bool element_only, 
 		void **result);
 
 /**
- * Type of child presence query function
+ * Determine if a node has children
+ *
+ * \param ctx     Client's context
+ * \param node    The node to inspect
+ * \param result  Location to receive result
+ * \return 0 on success, 1 on failure
  */
 typedef int (*hubbub_tree_has_children)(void *ctx, void *node, bool *result);
 
 /**
- * Type of form association function
+ * Associate a node with a form
+ *
+ * \param ctx   Client's context
+ * \param form  The form to associate with
+ * \param node  The node to associate
+ * \return 0 on success, 1 on failure
  */
 typedef int (*hubbub_tree_form_associate)(void *ctx, void *form, void *node);
 
 /**
- * Type of attribute addition function
+ * Add attributes to a node
+ *
+ * \param ctx           Client's context
+ * \param node          The node to add to
+ * \param attributes    Array of attributes to add
+ * \param n_attributes  Number of entries in array
+ * \return 0 on success, 1 on failure
  */
 typedef int (*hubbub_tree_add_attributes)(void *ctx, void *node,
 		const hubbub_attribute *attributes, uint32_t n_attributes);
 
 /**
- * Type of tree quirks mode notification function
+ * Notification of the quirks mode of a document
+ *
+ * \param ctx   Client's context
+ * \param mode  The quirks mode
+ * \return 0 on success, 1 on failure
  */
 typedef int (*hubbub_tree_set_quirks_mode)(void *ctx, hubbub_quirks_mode mode);
 
 /**
- * Type of encoding change notification function
+ * Notification that a potential encoding change is required
+ *
+ * \param ctx      Client's context
+ * \param charset  The new charset for the source data
+ * \return 0 to ignore the change and continue using the current input handler,
+ *         1 to stop processing immediately and return control to the client.
  */
 typedef int (*hubbub_tree_encoding_change)(void *ctx, const char *encname);
 

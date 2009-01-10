@@ -492,7 +492,7 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
  * Create a doctype node
  *
  * \param ctx      Our context
- * \param doctype  Data for doctype node (public ID and system ID)
+ * \param doctype  Data for doctype node (name, public ID and system ID)
  * \param result   Location to receive manufactured node
  * \return 0 on success, 1 on memory exhaustion
  *
