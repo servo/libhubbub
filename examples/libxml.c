@@ -324,6 +324,10 @@ error_code create_context(const char *charset, context **ctx)
 		c->namespaces[i] = NULL;
 	}
 
+	/* The following are both needed to make hubbub do anything. If it has 
+	 * no tree handler or document node registered, it won't attempt to 
+	 * build a tree. */
+
 	/* Register tree handler with hubbub */
 	c->tree_handler = tree_handler;
 	c->tree_handler.ctx = (void *) c;
