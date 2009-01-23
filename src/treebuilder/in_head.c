@@ -29,6 +29,7 @@
 static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
+	static uint16_t utf16, utf16be, utf16le;
 	uint16_t charset_enc = 0;
 	uint16_t content_type_enc = 0;
 	size_t i;
@@ -37,10 +38,19 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 
 	/** \todo ack sc flag */
 
-#if 0
-	if (confidence == certain)
+	if (treebuilder->tree_handler->encoding_change == NULL)
 		return HUBBUB_OK;
-#endif
+
+	/* Grab UTF-16 MIBenums */
+	if (utf16 == 0) {
+		utf16 = parserutils_charset_mibenum_from_name(
+				"utf-16", SLEN("utf-16"));
+		utf16be = parserutils_charset_mibenum_from_name(
+				"utf-16be", SLEN("utf-16be"));
+		utf16le = parserutils_charset_mibenum_from_name(
+				"utf-16le", SLEN("utf-16le"));
+		assert(utf16 != 0 && utf16be != 0 && utf16le != 0);
+	}
 
 	for (i = 0; i < token->data.tag.n_attributes; i++) {
 		hubbub_attribute *attr = &token->data.tag.attributes[i];
@@ -61,33 +71,28 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 		}
 	}
 
+	/* Fall back, if necessary */
+	if (charset_enc == 0 && content_type_enc != 0)
+		charset_enc = content_type_enc;
+
 	if (charset_enc != 0) {
+		const char *name;
+
 		hubbub_charset_fix_charset(&charset_enc);
 
-		if (treebuilder->tree_handler->encoding_change) {
-			const char *name = parserutils_charset_mibenum_to_name(
-					charset_enc);
-
-			/* 1 indicates the encoding should actually change */
-			if (treebuilder->tree_handler->encoding_change(
-					treebuilder->tree_handler->ctx,
-					name) == 1) {
-				return HUBBUB_ENCODINGCHANGE;
-			}
+		/* Change UTF-16 to UTF-8 */
+		if (charset_enc == utf16le || charset_enc == utf16be ||
+				charset_enc == utf16) {
+			charset_enc = parserutils_charset_mibenum_from_name(
+					"UTF-8", SLEN("UTF-8"));
 		}
-	} else if (content_type_enc != 0) {
-		hubbub_charset_fix_charset(&content_type_enc);
 
-		if (treebuilder->tree_handler->encoding_change) {
-			const char *name = parserutils_charset_mibenum_to_name(
-					content_type_enc);
+		name = parserutils_charset_mibenum_to_name(charset_enc);
 
-			/* 1 indicates the encoding should actually change */
-			if (treebuilder->tree_handler->encoding_change(
-					treebuilder->tree_handler->ctx,
-					name) == 1) {
-				return HUBBUB_ENCODINGCHANGE;
-			}
+		/* 1 indicates the encoding should actually change */
+		if (treebuilder->tree_handler->encoding_change(
+				treebuilder->tree_handler->ctx,	name) == 1) {
+			return HUBBUB_ENCODINGCHANGE;
 		}
 	}
 
