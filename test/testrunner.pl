@@ -16,6 +16,7 @@ use strict;
 use File::Spec;
 use IO::Select;
 use IPC::Open3;
+use Symbol;
 
 if (@ARGV < 1) {
 	print "Usage: testrunner.pl <directory> [<exeext>]\n";
@@ -114,32 +115,111 @@ sub run_test
 {
 	my @errors;
 
-	my $pid = open3("&<NULL", \*OUT, \*ERR, @_);
+	# Handles for communicating with the child
+	my ($out, $err);
+	$err = gensym(); # Apparently, this is required
 
-#	$SIG{CHLD} = sub { };
+	my $pid;
+
+	# Invoke child
+	eval {
+		$pid = open3("&<NULL", $out, $err, @_);
+	};
+	die $@ if $@;
 
 	my $selector = IO::Select->new();
-	$selector->add(*OUT, *ERR);
+	$selector->add($out, $err);
 
 	my $last = "FAIL";
+	my $outcont = 0;
+	my $errcont = 0;
 
 	# Marshal testcase output to log file
 	while (my @ready = $selector->can_read) {
 		foreach my $fh (@ready) {
-			if (fileno($fh) == fileno(OUT)) {
-				while (my $output = <OUT>) {
-					print LOG "    $output";
-					$last = $output;
-				}
-			} else {
-				my @tmp = <ERR>;
-				push(@errors, @tmp);
-			}
+			my $input;
+			# Read up to 4096 bytes from handle
+			my $len = sysread($fh, $input, 4096);
 
-			$selector->remove($fh) if eof($fh);
+			if (!defined $len) {
+				die "Error reading from child: $!\n";
+			} elsif ($len == 0) {
+				# EOF, so remove handle
+				$selector->remove($fh);
+				next;
+			} else {
+				# Split into lines
+				my @lines = split('\n', $input);
+
+				# Grab the last character of the input
+				my $lastchar = substr($input, -1, 1);
+
+				if ($fh == $out) {
+					# Child's stdout
+					foreach my $l (@lines) {
+						# Last line of previous read
+						# was incomplete, and this is
+						# the first line of this read
+						# Simply contatenate.
+						if ($outcont == 1 && 
+							$l eq $lines[0]) {
+							print LOG "$l\n";
+							$last .= $l;
+						# Last char of this read was 
+						# not '\n', so don't terminate
+						# line in log.
+						} elsif ($lastchar ne '\n' &&
+							$l eq $lines[-1]) {
+							print LOG "    $l";
+							$last = $l;
+						# Normal behaviour, just print
+						# the line to the log.
+						} else {
+							print LOG "    $l\n";
+							$last = $l;
+						}
+					}
+
+					# Flag whether last line was incomplete
+					# for next time.
+					if ($lastchar ne '\n') {
+						$outcont = 1;
+					} else {
+						$outcont = 0;
+					}
+				} elsif ($fh == $err) {
+					# Child's stderr
+					if ($errcont == 1) {
+						# Continuation required,
+						# concatenate first line of 
+						# this read with last of 
+						# previous, then append the 
+						# rest from this read.
+						$errors[-1] .= $lines[0];
+						push(@errors, @lines[1 .. -1]);
+					} else {
+						# Normal behaviour, just append
+						push(@errors, @lines);
+					}
+
+					# Flag need for continuation
+					if ($lastchar ne '\n') {
+						$errcont = 1;
+					} else {
+						$errcont = 0;
+					}
+				} else {
+					die "Unexpected file handle\n";
+				}
+			}
 		}
 	}
 
+	# Last line of child's output may not be terminated, so ensure it
+	# is in the log, for readability.
+	print LOG "\n";
+
+	# Reap child
 	waitpid($pid, 0);
 
 	# Catch non-zero exit status and turn it into failure
@@ -152,21 +232,26 @@ sub run_test
 		$last = "FAIL";
 	}
 
-	print substr($last, 0, 4) . "\n";
+	# Only interested in first 4 characters of last line
+	$last = substr($last, 0, 4);
+
+	# Convert all non-pass to fail
+	if ($last ne "PASS") {
+		$last = "FAIL";
+	}
+
+	print "$last\n";
 
 	# Bail, noisily, on failure
-	if (substr($last, 0, 4) eq "FAIL") {
+	if ($last eq "FAIL") {
 		# Write any stderr output to the log
 		foreach my $error (@errors) {
-			print LOG "    $error";
+			print LOG "    $error\n";
 		}
 
 		print "\n\nFailure detected: consult log file\n\n\n";
 
 		exit(1);
 	}
-
-	close(OUT);
-	close(ERR);
 }
 
