@@ -55,4 +55,5 @@ TOP := <Hubbub$$Dir>
 # Tell everyone that we're building on RISC OS, so they can work around things.
 HOST := riscos
 
+TARGET := ronative
 include build/Makefile.common

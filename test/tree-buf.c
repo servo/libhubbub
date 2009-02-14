@@ -241,9 +241,11 @@ int main(int argc, char **argv)
 	parser = setup_parser();
 
 	for (uint32_t i = 0; i < n_chunks; i++) {
+                ssize_t bytes_read;
 		assert(chunks[i] <= sizeof(buf));
 
-		fread(buf, 1, chunks[i], fp);
+		bytes_read = fread(buf, 1, chunks[i], fp);
+                assert((size_t)(bytes_read) == chunks[i]);
 
 		assert(hubbub_parser_parse_chunk(parser, (uint8_t *) buf,
 				chunks[i]) == HUBBUB_OK);

@@ -22,11 +22,11 @@ DOXYGEN := doxygen
 WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
 	-Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wnested-externs -Werror -pedantic
-CFLAGS = -std=c99 -D_BSD_SOURCE -I$(TOP)/include/ $(WARNFLAGS)
+CFLAGS = -std=c99 -D_BSD_SOURCE -I$(TOP)/include/ $(WARNFLAGS) $(CSHAREDFLAGS)
 RELEASECFLAGS = $(CFLAGS) -DNDEBUG -O2
 DEBUGCFLAGS = $(CFLAGS) -O0 -g
 ARFLAGS := -cru
-LDFLAGS = -L$(TOP)/
+LDFLAGS = -L$(TOP)/ $(LDSHAREDFLAGS)
 
 CPFLAGS :=
 RMFLAGS := -f
@@ -42,5 +42,14 @@ EXEEXT :=
 # Default installation prefix
 PREFIX ?= /usr/local
 
+TARGET := nix
+
+ifeq ($(BUILD_SHARED),yes)
+
+TARGET := nix-shared
+CSHAREDFLAGS := -fPIC -DPIC
+LDSHAREDFLAGS := -Wl,-shared
+
+endif
 
 include build/Makefile.common

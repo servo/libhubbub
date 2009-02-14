@@ -9,6 +9,7 @@
 # TOP			The location of the source tree root
 # RELEASEDIR		The place to put release objects
 # DEBUGDIR		The place to put debug objects
+# TESTTYPE		The type of test to build (release/debug)
 #
 # do_include		Canned command sequence to include a child makefile
 #
@@ -38,6 +39,14 @@ CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
 		$(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json) \
 		-Wno-unused-parameter
 LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json)
+endif
+
+ifeq ($(TESTTYPE),release)
+TESTCFLAGS := $(RELEASECFLAGS)
+TESTLIB := libhubbub.a
+else
+TESTCFLAGS := $(DEBUGCFLAGS)
+TESTLIB := libhubbub-debug.a
 endif
 
 ifdef PROFILE
@@ -75,7 +84,7 @@ define dep_test
 DEP_$(d) += $(2)
 $(2): $(1)
 	@$$(RM) $$(RMFLAGS) $(2)
-	@$$(CC) $$(DEBUGCFLAGS) -MM -MT '$(2) $(3)' -MF $(2) $(1)
+	@$$(CC) $$(TESTCFLAGS) -MM -MT '$(2) $(3)' -MF $(2) $(1)
 
 endef
 
@@ -86,11 +95,11 @@ define compile_test
 ifeq ($(HOST),riscos)
 $(2): $(3)
 else
-$(2): $(3) $(TOP)/$(COMPONENT)-debug.a
+$(2): $(3) $(TOP)/$(TESTLIB)
 endif
 	@$$(ECHO) $$(ECHOFLAGS) "==> $(1)"
-	@$$(CC) -c -g $$(DEBUGCFLAGS) -o $$@.o $(1)
-	@$$(LD) -g -o $$@ $$@.o -lhubbub-debug $$(LDFLAGS) -lgcov
+	@$$(CC) -c -g $$(TESTCFLAGS) -o $$@.o $(1)
+	@$$(LD) -g -o $$@ $$@.o $$(TOP)/$$(TESTLIB) $$(LDFLAGS) -lgcov
 	@$$(RM) $$(RMFLAGS) $$@.o
 
 endef

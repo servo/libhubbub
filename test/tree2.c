@@ -217,7 +217,7 @@ int main(int argc, char **argv)
 	bool reprocess = false;
 	bool passed = true;
 
-	hubbub_parser *parser;
+	hubbub_parser *parser = NULL;
 	enum reading_state state = EXPECT_DATA;
 
 	buf_t expected = { NULL, 0, 0 };

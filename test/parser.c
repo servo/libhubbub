@@ -50,25 +50,19 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	origlen = len = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
-	while (len >= CHUNK_SIZE) {
-		fread(buf, 1, CHUNK_SIZE, fp);
-
+	while (len > 0) {
+		ssize_t bytes_read = fread(buf, 1, CHUNK_SIZE, fp);
+                
+                if (bytes_read < 1)
+                        break;
+                
 		assert(hubbub_parser_parse_chunk(parser,
-				buf, CHUNK_SIZE) == HUBBUB_OK);
+				buf, bytes_read) == HUBBUB_OK);
 
-		len -= CHUNK_SIZE;
+		len -= bytes_read;
 	}
-
-	if (len > 0) {
-		fread(buf, 1, len, fp);
-
-		assert(hubbub_parser_parse_chunk(parser,
-				buf, len) == HUBBUB_OK);
-
-		len = 0;
-
-		assert(hubbub_parser_completed(parser) == HUBBUB_OK);
-	}
+        
+        assert(len == 0);
 
 	fclose(fp);
 
