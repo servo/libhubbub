@@ -488,13 +488,6 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 		/** \todo errors */
 	}
 
-	/* It's a bit nasty having this code deal with textarea->form
-	 * association, but it avoids having to duplicate the entire rest
-	 * of this function for textarea processing */
-	if (type == TEXTAREA && treebuilder->context.form_element != NULL) {
-		/** \todo associate textarea with form */
-	}
-
 	if (treebuilder->context.in_table_foster) {
 		appended = aa_insert_into_foster_parent(treebuilder, node);
 		treebuilder->tree_handler->ref_node(
@@ -521,6 +514,16 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 					treebuilder->tree_handler->ctx,
 					appended);
 		}
+	}
+
+	/* It's a bit nasty having this code deal with textarea->form
+	 * association, but it avoids having to duplicate the entire rest
+	 * of this function for textarea processing */
+	if (type == TEXTAREA && treebuilder->context.form_element != NULL) {
+		treebuilder->tree_handler->form_associate(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.form_element,
+				appended);
 	}
 
 	/* Appended node's reference count is 2 */
