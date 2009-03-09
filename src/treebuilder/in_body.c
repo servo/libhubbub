@@ -1950,7 +1950,7 @@ void process_0generic_in_body(hubbub_treebuilder *treebuilder,
 
 			close_implied_end_tags(treebuilder, UNKNOWN);
 
-			do {
+			while (treebuilder->context.current_node >= node) {
 				hubbub_ns ns;
 				void *node;
 
@@ -1964,7 +1964,10 @@ void process_0generic_in_body(hubbub_treebuilder *treebuilder,
 						node);
 
 				popped++;
-			} while (otype != type);
+
+				if (otype == type)
+					break;
+			}
 
 			if (popped > 1) {
 				/** \todo parse error */
