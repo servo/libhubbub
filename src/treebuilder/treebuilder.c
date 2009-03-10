@@ -720,12 +720,11 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag,
 	type = element_type_from_name(treebuilder, &tag->name);
 	if (treebuilder->context.form_element != NULL && 
 			is_form_associated(type)) {
-		/** \todo consider @form, or leave it to the client? */
+		/* Consideration of @form is left to the client */
 		treebuilder->tree_handler->form_associate(
 				treebuilder->tree_handler->ctx,
 				treebuilder->context.form_element,
-				treebuilder->context.element_stack[
-				treebuilder->context.current_node].node);
+				appended);
 	}
 
 	if (push) {
