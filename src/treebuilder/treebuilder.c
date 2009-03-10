@@ -25,61 +25,61 @@ static const struct {
 	element_type type;
 } name_type_map[] = {
 	{ S("address"), ADDRESS },	{ S("area"), AREA },
-	{ S("base"), BASE },	{ S("basefont"), BASEFONT },
+	{ S("base"), BASE },		{ S("basefont"), BASEFONT },
 	{ S("bgsound"), BGSOUND },	{ S("blockquote"), BLOCKQUOTE },
-	{ S("body"), BODY },	{ S("br"), BR },
+	{ S("body"), BODY },		{ S("br"), BR },
 	{ S("center"), CENTER },	{ S("col"), COL },
 	{ S("colgroup"), COLGROUP },	{ S("dd"), DD },
 	{ S("dir"), DIR },		{ S("div"), DIV },
 	{ S("dl"), DL },		{ S("dt"), DT },
-	{ S("embed"), EMBED },	{ S("fieldset"), FIELDSET },
-	{ S("form"), FORM },	{ S("frame"), FRAME },
+	{ S("embed"), EMBED },		{ S("fieldset"), FIELDSET },
+	{ S("form"), FORM },		{ S("frame"), FRAME },
 	{ S("frameset"), FRAMESET },	{ S("h1"), H1 },
 	{ S("h2"), H2 },		{ S("h3"), H3 },
 	{ S("h4"), H4 },		{ S("h5"), H5 },
 	{ S("h6"), H6 },		{ S("head"), HEAD },
 	{ S("hr"), HR },		{ S("iframe"), IFRAME },
-	{ S("image"), IMAGE },	{ S("img"), IMG },
-	{ S("input"), INPUT },	{ S("isindex"), ISINDEX },
+	{ S("image"), IMAGE },		{ S("img"), IMG },
+	{ S("input"), INPUT },		{ S("isindex"), ISINDEX },
 	{ S("li"), LI },		{ S("link"), LINK },
 	{ S("listing"), LISTING },
 	{ S("menu"), MENU },
-	{ S("meta"), META },	{ S("noembed"), NOEMBED },
+	{ S("meta"), META },		{ S("noembed"), NOEMBED },
 	{ S("noframes"), NOFRAMES },	{ S("noscript"), NOSCRIPT },
 	{ S("ol"), OL },		{ S("optgroup"), OPTGROUP },
-	{ S("option"), OPTION },	{ S("p"), P },
-	{ S("param"), PARAM },	{ S("plaintext"), PLAINTEXT },
-	{ S("pre"), PRE },		{ S("script"), SCRIPT },
-	{ S("select"), SELECT },	{ S("spacer"), SPACER },
-	{ S("style"), STYLE }, 	{ S("tbody"), TBODY },
-	{ S("textarea"), TEXTAREA },	{ S("tfoot"), TFOOT },
-	{ S("thead"), THEAD },	{ S("title"), TITLE },
-	{ S("tr"), TR },		{ S("ul"), UL },
-	{ S("wbr"), WBR },
+	{ S("option"), OPTION },	{ S("output"), OUTPUT },
+	{ S("p"), P },			{ S("param"), PARAM },	
+	{ S("plaintext"), PLAINTEXT },	{ S("pre"), PRE },
+	{ S("script"), SCRIPT },	{ S("select"), SELECT },
+	{ S("spacer"), SPACER },	{ S("style"), STYLE },
+ 	{ S("tbody"), TBODY },		{ S("textarea"), TEXTAREA },
+	{ S("tfoot"), TFOOT },		{ S("thead"), THEAD },	
+	{ S("title"), TITLE },		{ S("tr"), TR },
+	{ S("ul"), UL },		{ S("wbr"), WBR },
 	{ S("applet"), APPLET },	{ S("button"), BUTTON },
 	{ S("caption"), CAPTION },	{ S("html"), HTML },
 	{ S("marquee"), MARQUEE },	{ S("object"), OBJECT },
-	{ S("table"), TABLE },	{ S("td"), TD },
+	{ S("table"), TABLE },		{ S("td"), TD },
 	{ S("th"), TH },
-	{ S("a"), A },		{ S("b"), B },
+	{ S("a"), A },			{ S("b"), B },
 	{ S("big"), BIG },		{ S("em"), EM },
-	{ S("font"), FONT },	{ S("i"), I },
-	{ S("nobr"), NOBR },	{ S("s"), S },
-	{ S("small"), SMALL },	{ S("strike"), STRIKE },
+	{ S("font"), FONT },		{ S("i"), I },
+	{ S("nobr"), NOBR },		{ S("s"), S },
+	{ S("small"), SMALL },		{ S("strike"), STRIKE },
 	{ S("strong"), STRONG },	{ S("tt"), TT },
-	{ S("u"), U },		{ S("xmp"), XMP },
+	{ S("u"), U },			{ S("xmp"), XMP },
 
-	{ S("math"), MATH },	{ S("mglyph"), MGLYPH },
+	{ S("math"), MATH },		{ S("mglyph"), MGLYPH },
 	{ S("malignmark"), MALIGNMARK },
 	{ S("mi"), MI },		{ S("mo"), MO },
 	{ S("mn"), MN },		{ S("ms"), MS },
-	{ S("mtext"), MTEXT },	{ S("annotation-xml"), ANNOTATION_XML },
+	{ S("mtext"), MTEXT },		{ S("annotation-xml"), ANNOTATION_XML },
 
 	{ S("svg"), SVG },		{ S("desc"), DESC },
 	{ S("foreignobject"), FOREIGNOBJECT },
 };
 
-
+static bool is_form_associated(element_type type);
 
 /**
  * Create a hubbub treebuilder
@@ -127,6 +127,7 @@ hubbub_error hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 	tb->context.element_stack[0].type = 0;
 
 	tb->context.strip_leading_lr = false;
+	tb->context.frameset_ok = true;
 
 	tb->error_handler = NULL;
 	tb->error_pw = NULL;
@@ -190,12 +191,6 @@ hubbub_error hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
 					treebuilder->context.document);
-		}
-
-		if (treebuilder->context.collect.node != NULL) {
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					treebuilder->context.collect.node);
 		}
 
 		for (n = treebuilder->context.current_node; 
@@ -364,10 +359,6 @@ hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token,
 		mode(GENERIC_RCDATA)
 			err = handle_generic_rcdata(treebuilder, token);
 			break;
-		mode(SCRIPT_COLLECT_CHARACTERS)
-			err = handle_script_collect_characters(
-					treebuilder, token);
-			break;
 		}
 	}
 
@@ -386,7 +377,8 @@ hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token,
  *              (token data updated to skip any leading whitespace), 
  *         false if it contained only whitespace
  */
-hubbub_error process_characters_expect_whitespace(hubbub_treebuilder *treebuilder,
+hubbub_error process_characters_expect_whitespace(
+		hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool insert_into_current_node)
 {
 	const uint8_t *data = token->data.character.ptr;
@@ -451,9 +443,6 @@ void process_comment_append(hubbub_treebuilder *treebuilder,
 				parent, comment, &appended);
 		if (success != 0) {
 			/** \todo errors */
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					comment);
 		}
 
 		treebuilder->tree_handler->unref_node(
@@ -474,59 +463,12 @@ void process_comment_append(hubbub_treebuilder *treebuilder,
 void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool rcdata)
 {
-	int success;
-	void *node, *appended;
 	element_type type;
 	hubbub_tokeniser_optparams params;
 
 	type = element_type_from_name(treebuilder, &token->data.tag.name);
 
-	success = treebuilder->tree_handler->create_element(
-			treebuilder->tree_handler->ctx,
-			&token->data.tag, &node);
-	if (success != 0) {
-		/** \todo errors */
-	}
-
-	if (treebuilder->context.in_table_foster) {
-		appended = aa_insert_into_foster_parent(treebuilder, node);
-		treebuilder->tree_handler->ref_node(
-				treebuilder->tree_handler->ctx, appended);
-	} else {
-		success = treebuilder->tree_handler->append_child(
-				treebuilder->tree_handler->ctx,
-				treebuilder->context.element_stack[
-				treebuilder->context.current_node].node,
-				node, &appended);
-		if (success != 0) {
-			/** \todo errors */
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					node);
-		}
-		if (appended != node) {
-			/* Transfer the reference we have on node to appended.
-			 * We're no longer interested in node */
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					node);
-			treebuilder->tree_handler->ref_node(
-					treebuilder->tree_handler->ctx,
-					appended);
-		}
-	}
-
-	/* It's a bit nasty having this code deal with textarea->form
-	 * association, but it avoids having to duplicate the entire rest
-	 * of this function for textarea processing */
-	if (type == TEXTAREA && treebuilder->context.form_element != NULL) {
-		treebuilder->tree_handler->form_associate(
-				treebuilder->tree_handler->ctx,
-				treebuilder->context.form_element,
-				appended);
-	}
-
-	/* Appended node's reference count is 2 */
+	insert_element(treebuilder, &token->data.tag, true);
 
 	params.content_model.model = rcdata ? HUBBUB_CONTENT_MODEL_RCDATA 
 					    : HUBBUB_CONTENT_MODEL_CDATA;
@@ -535,10 +477,6 @@ void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 
 	treebuilder->context.collect.mode = treebuilder->context.mode;
 	treebuilder->context.collect.type = type;
-	treebuilder->context.collect.node = appended;
-
-	treebuilder->tree_handler->unref_node(
-			treebuilder->tree_handler->ctx, appended);
 
 	treebuilder->context.mode = GENERIC_RCDATA;
 }
@@ -741,12 +679,15 @@ void clear_active_formatting_list_to_marker(hubbub_treebuilder *treebuilder)
 }
 
 /**
- * Create element and insert it into the DOM, pushing it on the stack
+ * Create element and insert it into the DOM, 
+ * potentially pushing it on the stack
  *
  * \param treebuilder  The treebuilder instance
  * \param tag          The element to insert
+ * \param push         Whether to push the element onto the stack
  */
-void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
+void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag,
+		bool push)
 {
 	element_type type = current_node(treebuilder);
 	int success;
@@ -776,53 +717,25 @@ void insert_element(hubbub_treebuilder *treebuilder, const hubbub_tag *tag)
 				treebuilder->tree_handler->ctx, node);
 	}
 
-	if (!element_stack_push(treebuilder,
-			tag->ns,
-			element_type_from_name(treebuilder, &tag->name),
-			appended)) {
-		/** \todo errors */
-	}
-}
-
-/**
- * Create element and insert it into the DOM, do not push it onto the stack
- *
- * \param treebuilder  The treebuilder instance
- * \param tag          The element to insert
- */
-void insert_element_no_push(hubbub_treebuilder *treebuilder, 
-		const hubbub_tag *tag)
-{
-	element_type type = current_node(treebuilder);
-	int success;
-	void *node, *appended;
-
-	success = treebuilder->tree_handler->create_element(
-			treebuilder->tree_handler->ctx, tag, &node);
-	if (success != 0) {
-		/** \todo errors */
-	}
-
-	if (treebuilder->context.in_table_foster &&
-			(type == TABLE || type == TBODY || type == TFOOT ||
-			type == THEAD || type == TR)) {
-		appended = aa_insert_into_foster_parent(treebuilder, node);
-	} else {
-		success = treebuilder->tree_handler->append_child(
+	type = element_type_from_name(treebuilder, &tag->name);
+	if (treebuilder->context.form_element != NULL && 
+			is_form_associated(type)) {
+		/** \todo consider @form, or leave it to the client? */
+		treebuilder->tree_handler->form_associate(
 				treebuilder->tree_handler->ctx,
+				treebuilder->context.form_element,
 				treebuilder->context.element_stack[
-					treebuilder->context.current_node].node,
-				node, &appended);
-		if (success != 0) {
+				treebuilder->context.current_node].node);
+	}
+
+	if (push) {
+		if (!element_stack_push(treebuilder, tag->ns, type, appended)) {
 			/** \todo errors */
 		}
-
+	} else {
 		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, node);
+				treebuilder->tree_handler->ctx, appended);
 	}
-
-	treebuilder->tree_handler->unref_node(
-			treebuilder->tree_handler->ctx, appended);
 }
 
 /**
@@ -1042,6 +955,19 @@ bool is_phrasing_element(element_type type)
 }
 
 /**
+ * Determine if a node is form associated
+ *
+ * \param type  Node type to consider
+ * \return True iff node is form associated
+ */
+bool is_form_associated(element_type type)
+{
+	return type == FIELDSET || type == LABEL || type == INPUT ||
+			type == BUTTON || type == SELECT || type == TEXTAREA ||
+			type == OUTPUT;
+}
+
+/**
  * Push an element onto the stack of open elements
  *
  * \param treebuilder  The treebuilder instance containing the stack
@@ -1155,6 +1081,60 @@ bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 
 		assert((signed) treebuilder->context.current_node >= 0);
 	}
+
+	return true;
+}
+
+/**
+ * Remove a node from the stack of open elements
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param index        The index of the node to remove
+ * \param ns           Pointer to location to receive namespace
+ * \param type         Pointer to location to receive type
+ * \param removed      Pointer to location to receive removed node
+ * \return true on success, false on memory exhaustion
+ */
+bool element_stack_remove(hubbub_treebuilder *treebuilder, uint32_t index,
+		hubbub_ns *ns, element_type *type, void **removed)
+{
+	element_context *stack = treebuilder->context.element_stack;
+	uint32_t n;
+
+	assert(index <= treebuilder->context.current_node);
+
+	/* Scan over subsequent entries in the stack,
+	 * searching for them in the list of active formatting
+	 * entries. If found, update the corresponding
+	 * formatting list entry's stack index to match the
+	 * new stack location */
+	for (n = index + 1; n <= treebuilder->context.current_node; n++) {
+		if (is_formatting_element(stack[n].type) ||
+				(is_scoping_element(stack[n].type) &&
+				stack[n].type != HTML &&
+				stack[n].type != TABLE)) {
+			formatting_list_entry *e;
+
+			for (e = treebuilder->context.formatting_list_end;
+					e != NULL; e = e->prev) {
+				if (e->stack_index == n)
+					e->stack_index--;
+			}
+		}
+	}
+
+	*ns = stack[index].ns;
+	*type = stack[index].type;
+	*removed = stack[index].node;
+
+	/* Now, shuffle the stack up one, removing node in the process */
+	if (index < treebuilder->context.current_node) {
+		memmove(&stack[index], &stack[index + 1],
+				(treebuilder->context.current_node - index) * 
+				sizeof(element_context));
+	}
+
+	treebuilder->context.current_node--;
 
 	return true;
 }

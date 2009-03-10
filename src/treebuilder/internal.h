@@ -15,19 +15,19 @@ typedef enum
 /* Special */
 	ADDRESS, AREA, ARTICLE, ASIDE, BASE, BASEFONT, BGSOUND, BLOCKQUOTE,
 	BODY, BR, CENTER, COL, COLGROUP, COMMAND, DATAGRID, DD, DETAILS,
-	DIALOG, DIR, DIV, DL, DT, EMBED, EVENTSOURCE, FIELDSET, FIGURE,
-	FOOTER, FORM, FRAME, FRAMESET, H1, H2, H3, H4, H5, H6, HEAD, HEADER,
-	HR, IFRAME, IMAGE, IMG, INPUT, ISINDEX, LI, LINK, LISTING, MENU, META,
-	NAV, NOEMBED, NOFRAMES, NOSCRIPT, OL, OPTGROUP, OPTION, P, PARAM,
-	PLAINTEXT, PRE, SCRIPT, SECTION, SELECT, SPACER, STYLE, TBODY,
-	TEXTAREA, TFOOT, THEAD, TITLE, TR, UL, WBR,
+	DIALOG, DIR, DIV, DL, DT, EMBED, FIELDSET, FIGURE, FOOTER, FORM, FRAME,
+	FRAMESET, H1, H2, H3, H4, H5, H6, HEAD, HEADER, HR, IFRAME, IMAGE, IMG,
+	INPUT, ISINDEX, LI, LINK, LISTING, MENU, META, NAV, NOEMBED, NOFRAMES, 
+	NOSCRIPT, OL, OPTGROUP, OPTION, P, PARAM, PLAINTEXT, PRE, SCRIPT, 
+	SECTION, SELECT, SPACER, STYLE, TBODY, TEXTAREA, TFOOT, THEAD, TITLE, 
+	TR, UL, WBR,
 /* Scoping */
 	APPLET, BUTTON, CAPTION, HTML, MARQUEE, OBJECT, TABLE, TD, TH,
 /* Formatting */
-	A, B, BIG, EM, FONT, I, NOBR, S, SMALL, STRIKE, STRONG, TT, U,
+	A, B, BIG, CODE, EM, FONT, I, NOBR, S, SMALL, STRIKE, STRONG, TT, U,
 /* Phrasing */
 	/**< \todo Enumerate phrasing elements */
-	CODE, LABEL, RP, RT, RUBY, SPAN, SUB, SUP, VAR, XMP,
+	LABEL, OUTPUT, RP, RT, RUBY, SPAN, SUB, SUP, VAR, XMP,
 /* MathML */
 	MATH, MGLYPH, MALIGNMARK, MI, MO, MN, MS, MTEXT, ANNOTATION_XML,
 /* SVG */
@@ -96,7 +96,6 @@ typedef struct hubbub_treebuilder_context
 
 	struct {
 		insertion_mode mode;	/**< Insertion mode to return to */
-		void *node;		/**< Node to attach Text child to */
 		element_type type;	/**< Type of node */
 	} collect;			/**< Context for character collecting */
 
@@ -107,6 +106,8 @@ typedef struct hubbub_treebuilder_context
 	bool in_table_foster;		/**< Whether nodes that would be
 					* inserted into the current node should
 					* be foster parented */
+
+	bool frameset_ok;		/**< Whether to process a frameset */
 } hubbub_treebuilder_context;
 
 /**
@@ -144,9 +145,7 @@ void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder);
 void clear_active_formatting_list_to_marker(
 		hubbub_treebuilder *treebuilder);
 void insert_element(hubbub_treebuilder *treebuilder, 
-		const hubbub_tag *tag_name);
-void insert_element_no_push(hubbub_treebuilder *treebuilder,
-		const hubbub_tag *tag_name);
+		const hubbub_tag *tag_name, bool push);
 void close_implied_end_tags(hubbub_treebuilder *treebuilder, 
 		element_type except);
 void reset_insertion_mode(hubbub_treebuilder *treebuilder);
@@ -167,6 +166,8 @@ bool element_stack_pop(hubbub_treebuilder *treebuilder,
 		hubbub_ns *ns, element_type *type, void **node);
 bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
 		element_type type);
+bool element_stack_remove(hubbub_treebuilder *treebuilder, uint32_t index,
+		hubbub_ns *ns, element_type *type, void **removed);
 uint32_t current_table(hubbub_treebuilder *treebuilder);
 element_type current_node(hubbub_treebuilder *treebuilder);
 element_type prev_node(hubbub_treebuilder *treebuilder);
@@ -190,6 +191,7 @@ bool formatting_list_replace(hubbub_treebuilder *treebuilder,
 		uint32_t *ostack_index);
 
 /* in_foreign_content.c */
+void adjust_mathml_attributes(hubbub_treebuilder *treebuilder, hubbub_tag *tag);
 void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag);
 void adjust_svg_tagname(hubbub_treebuilder *treebuilder,

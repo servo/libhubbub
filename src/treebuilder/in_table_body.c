@@ -103,7 +103,7 @@ hubbub_error handle_in_table_body(hubbub_treebuilder *treebuilder,
 
 		if (type == TR) {
 			table_clear_stack(treebuilder);
-			insert_element(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, true);
 			treebuilder->context.mode = IN_ROW;
 		} else if (type == TH || type == TD) {
 			hubbub_tag tag;
@@ -119,7 +119,7 @@ hubbub_error handle_in_table_body(hubbub_treebuilder *treebuilder,
 			tag.attributes = NULL;
 
 			table_clear_stack(treebuilder);
-			insert_element(treebuilder, &tag);
+			insert_element(treebuilder, &tag, true);
 			treebuilder->context.mode = IN_ROW;
 
 			err = HUBBUB_REPROCESS;

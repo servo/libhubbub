@@ -60,7 +60,8 @@ hubbub_error handle_before_head(hubbub_treebuilder *treebuilder,
 		element_type type = element_type_from_name(treebuilder,
 				&token->data.tag.name);
 
-		if (type == HEAD || type == BR) {
+		if (type == HTML || type == BODY ||
+				type == HEAD || type == BR) {
 			err = HUBBUB_REPROCESS;
 		} else {
 			/** \todo parse error */
@@ -87,7 +88,7 @@ hubbub_error handle_before_head(hubbub_treebuilder *treebuilder,
 			tag = token->data.tag;
 		}
 
-		insert_element(treebuilder, &tag);
+		insert_element(treebuilder, &tag, true);
 
 		treebuilder->tree_handler->ref_node(
 				treebuilder->tree_handler->ctx,

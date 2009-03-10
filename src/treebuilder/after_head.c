@@ -51,7 +51,7 @@ hubbub_error handle_after_head(hubbub_treebuilder *treebuilder,
 		} else if (type == BODY) {
 			handled = true;
 		} else if (type == FRAMESET) {
-			insert_element(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, true);
 			treebuilder->context.mode = IN_FRAMESET;
 		} else if (type == BASE || type == LINK || type == META ||
 				type == NOFRAMES || type == SCRIPT ||
@@ -59,6 +59,7 @@ hubbub_error handle_after_head(hubbub_treebuilder *treebuilder,
 			hubbub_ns ns;
 			element_type otype;
 			void *node;
+			uint32_t index;
 
 			/** \todo parse error */
 
@@ -69,11 +70,13 @@ hubbub_error handle_after_head(hubbub_treebuilder *treebuilder,
 				/** \todo errors */
 			}
 
+			index = treebuilder->context.current_node;
+
 			/* Process as "in head" */
 			err = handle_in_head(treebuilder, token);
 
-			if (!element_stack_pop(treebuilder, &ns, &otype,
-					&node)) {
+			if (!element_stack_remove(treebuilder, index,
+					&ns, &otype, &node)) {
 				/** \todo errors */
 			}
 
@@ -87,7 +90,16 @@ hubbub_error handle_after_head(hubbub_treebuilder *treebuilder,
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
-		/** \todo parse error */
+	{
+		element_type type = element_type_from_name(treebuilder,
+				&token->data.tag.name);
+
+		if (type == HTML || type == BODY || type == BR) {
+			err = HUBBUB_REPROCESS;
+		} else {
+			/** \todo parse error */
+		}
+	}
 		break;
 	case HUBBUB_TOKEN_EOF:
 		err = HUBBUB_REPROCESS;
@@ -109,7 +121,7 @@ hubbub_error handle_after_head(hubbub_treebuilder *treebuilder,
 			tag = token->data.tag;
 		}
 
-		insert_element(treebuilder, &tag);
+		insert_element(treebuilder, &tag, true);
 
 		treebuilder->context.mode = IN_BODY;
 	}

@@ -97,9 +97,6 @@ hubbub_error handle_before_html(hubbub_treebuilder *treebuilder,
 				html, &appended);
 		if (success != 0) {
 			/** \todo errors */
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					html);
 		}
 
 		treebuilder->tree_handler->unref_node(

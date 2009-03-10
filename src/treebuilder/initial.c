@@ -139,7 +139,8 @@ static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
 		return true;
 
 	/* No public id means not-quirks */
-	if (cdoc->public_missing) return false;
+	if (cdoc->public_missing)
+		return false;
 
 	for (i = 0; i < sizeof public_doctypes / sizeof public_doctypes[0]; i++)
 	{
@@ -151,21 +152,21 @@ static bool lookup_full_quirks(hubbub_treebuilder *treebuilder,
 	}
 
 	if (hubbub_string_match_ci(public_id, public_id_len,
-					S("-//W3O//DTD W3 HTML Strict 3.0//EN//")) ||
+				S("-//W3O//DTD W3 HTML Strict 3.0//EN//")) ||
 			hubbub_string_match_ci(public_id, public_id_len,
-					S("-/W3C/DTD HTML 4.0 Transitional/EN")) ||
+				S("-/W3C/DTD HTML 4.0 Transitional/EN")) ||
 			hubbub_string_match_ci(public_id, public_id_len,
-					S("HTML")) ||
+				S("HTML")) ||
 			hubbub_string_match_ci(system_id, system_id_len,
-					S("http://www.ibm.com/data/dtd/v11/ibmxhtml1-transitional.dtd"))) {
+				S("http://www.ibm.com/data/dtd/v11/ibmxhtml1-transitional.dtd"))) {
 		return true;
 	}
 
 	if (cdoc->system_missing == true &&
 			(starts_with(public_id, public_id_len,
-					S("-//W3C//DTD HTML 4.01 Frameset//")) ||
+				S("-//W3C//DTD HTML 4.01 Frameset//")) ||
 			starts_with(public_id, public_id_len,
-					S("-//W3C//DTD HTML 4.01 Transitional//")))) {
+				S("-//W3C//DTD HTML 4.01 Transitional//")))) {
 		return true;
 	}
 
@@ -193,17 +194,17 @@ static bool lookup_limited_quirks(hubbub_treebuilder *treebuilder,
 #define S(s)	(uint8_t *) s, sizeof s
 
 	if (starts_with(public_id, public_id_len,
-					S("-//W3C//DTD XHTML 1.0 Frameset//")) ||
+				S("-//W3C//DTD XHTML 1.0 Frameset//")) ||
 			starts_with(public_id, public_id_len,
-					S("-//W3C//DTD XHTML 1.0 Transitional//"))) {
+				S("-//W3C//DTD XHTML 1.0 Transitional//"))) {
 		return true;
 	}
 
 	if (cdoc->system_missing == false &&
 			(starts_with(public_id, public_id_len,
-					S("-//W3C//DTD HTML 4.01 Frameset//")) ||
+				S("-//W3C//DTD HTML 4.01 Frameset//")) ||
 			starts_with(public_id, public_id_len,
-					S("-//W3C//DTD HTML 4.01 Transitional//")))) {
+				S("-//W3C//DTD HTML 4.01 Transitional//")))) {
 		return true;
 	}
 
@@ -220,7 +221,8 @@ static bool lookup_limited_quirks(hubbub_treebuilder *treebuilder,
  * \param token        The token to handle
  * \return True to reprocess token, false otherwise
  */
-hubbub_error handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token *token)
+hubbub_error handle_initial(hubbub_treebuilder *treebuilder, 
+		const hubbub_token *token)
 {
 	hubbub_error err = HUBBUB_OK;
 
@@ -249,7 +251,6 @@ hubbub_error handle_initial(hubbub_treebuilder *treebuilder, const hubbub_token 
 
 		/** \todo parse error */
 
-		/** \todo need public and system ids from tokeniser */
 		success = treebuilder->tree_handler->create_doctype(
 				treebuilder->tree_handler->ctx,
 				&token->data.doctype,

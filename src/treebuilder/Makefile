@@ -39,7 +39,7 @@ SRCS_$(d) := treebuilder.c \
 		in_cell.c in_select.c in_select_in_table.c \
 		in_foreign_content.c after_body.c in_frameset.c \
 		after_frameset.c after_after_body.c after_after_frameset.c \
-		generic_rcdata.c script_collect.c
+		generic_rcdata.c
 
 # Append to sources for component
 SOURCES += $(addprefix $(d), $(SRCS_$(d)))

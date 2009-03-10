@@ -135,6 +135,30 @@ static const case_changes svg_tagnames[] = {
 
 #undef S
 
+/**
+ * Adjust MathML attributes
+ *
+ * \param treebuilder  Treebuilder instance
+ * \param tag          Tag to adjust the attributes of
+ */
+void adjust_mathml_attributes(hubbub_treebuilder *treebuilder,
+		hubbub_tag *tag)
+{
+	size_t i;
+	UNUSED(treebuilder);
+
+	for (i = 0; i < tag->n_attributes; i++) {
+		hubbub_attribute *attr = &tag->attributes[i];
+		const uint8_t *name = attr->name.ptr;
+		size_t len = attr->name.len;
+
+		if (hubbub_string_match(name, len, 
+				(const uint8_t *) "definitionurl", 
+				SLEN("definitionurl"))) {
+			attr->name.ptr = (uint8_t *) "definitionURL";
+		}
+	}
+}
 
 /**
  * Adjust SVG attributes.
@@ -157,10 +181,10 @@ void adjust_svg_attributes(hubbub_treebuilder *treebuilder,
 
 		for (j = 0; j < N_ELEMENTS(svg_attributes); j++) {
 			if (hubbub_string_match(name, len,
-					(uint8_t *)svg_attributes[j].attr,
+					(uint8_t *) svg_attributes[j].attr,
 					svg_attributes[j].len)) {
 				attr->name.ptr =
-					(uint8_t *)svg_attributes[j].proper;
+					(uint8_t *) svg_attributes[j].proper;
 			}
 		}
 	}
@@ -183,10 +207,9 @@ void adjust_svg_tagname(hubbub_treebuilder *treebuilder,
 
 	for (i = 0; i < N_ELEMENTS(svg_tagnames); i++) {
 		if (hubbub_string_match(name, len,
-				(uint8_t *)svg_tagnames[i].attr,
+				(uint8_t *) svg_tagnames[i].attr,
 				svg_tagnames[i].len)) {
-			tag->name.ptr =
-				(uint8_t *)svg_tagnames[i].proper;
+			tag->name.ptr =	(uint8_t *) svg_tagnames[i].proper;
 		}
 	}
 }
@@ -237,7 +260,8 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 			}
 		/* 8 == strlen("xml:base") */
 		} else if (attr->name.len >= 8 &&
-				strncmp((char *) name, "xml:", SLEN("xml:")) == 0) {
+				strncmp((char *) name, "xml:", 
+						SLEN("xml:")) == 0) {
 			size_t len = attr->name.len - 4;
 			name += 4;
 
@@ -318,8 +342,7 @@ static void process_as_in_secondary(hubbub_treebuilder *treebuilder,
 
 	if (treebuilder->context.mode == IN_FOREIGN_CONTENT &&
 			!element_in_scope_in_non_html_ns(treebuilder)) {
-		treebuilder->context.mode =
-				treebuilder->context.second_mode;
+		treebuilder->context.mode = treebuilder->context.second_mode;
 	}
 }
 
@@ -398,20 +421,45 @@ hubbub_error handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 				type == BODY || type == BR || type == CENTER ||
 				type == CODE || type == DD || type == DIV ||
 				type == DL || type == DT || type == EM ||
-				type == EMBED || type == FONT || type == H1 ||
-				type == H2 || type == H3 || type == H4 ||
-				type == H5 || type == H6 || type == HEAD ||
-				type == HR || type == I || type == IMG ||
-				type == LI || type == LISTING ||
-				type == MENU || type == META || type == NOBR ||
-				type == OL || type == P || type == PRE ||
-				type == RUBY || type == S || type == SMALL ||
-				type == SPAN || type == STRONG ||
-				type == STRIKE || type == SUB || type == SUP ||
-				type == TABLE || type == TT || type == U ||
-				type == UL || type == VAR) {
+				type == EMBED || type == H1 || type == H2 || 
+				type == H3 || type == H4 || type == H5 || 
+				type == H6 || type == HEAD || type == HR || 
+				type == I || type == IMG || type == LI || 
+				type == LISTING || type == MENU || 
+				type == META || type == NOBR || type == OL || 
+				type == P || type == PRE || type == RUBY || 
+				type == S || type == SMALL || type == SPAN || 
+				type == STRONG || type == STRIKE || 
+				type == SUB || type == SUP || type == TABLE || 
+				type == TT || type == U || type == UL || 
+				type == VAR) {
 			foreign_break_out(treebuilder);
 			err = HUBBUB_REPROCESS;
+		} else if (type == FONT) {
+			const hubbub_tag *tag = &token->data.tag;
+			size_t i;
+
+			for (i = 0; i < tag->n_attributes; i++) {
+				hubbub_attribute *attr = &tag->attributes[i];
+				const uint8_t *name = attr->name.ptr;
+				size_t len = attr->name.len;
+
+				if (hubbub_string_match(name, len, 
+						(const uint8_t *) "color", 
+						SLEN("color")) ||
+						hubbub_string_match(name, len,
+						(const uint8_t *) "face",
+						SLEN("face")) ||
+						hubbub_string_match(name, len,
+						(const uint8_t *) "size",
+						SLEN("size")))
+					break;
+			}
+
+			if (i != tag->n_attributes) {
+				foreign_break_out(treebuilder);
+				err = HUBBUB_REPROCESS;
+			}
 		} else {
 			hubbub_tag tag = token->data.tag;
 
@@ -426,10 +474,10 @@ hubbub_error handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 			tag.ns = cur_node_ns;
 
 			if (token->data.tag.self_closing) {
-				insert_element_no_push(treebuilder, &tag);
+				insert_element(treebuilder, &tag, false);
 				/** \todo ack sc flag */
 			} else {
-				insert_element(treebuilder, &tag);
+				insert_element(treebuilder, &tag, true);
 			}
 		}
 	}

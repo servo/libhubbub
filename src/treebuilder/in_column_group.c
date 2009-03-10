@@ -51,7 +51,7 @@ hubbub_error handle_in_column_group(hubbub_treebuilder *treebuilder,
 			/* Process as if "in body" */
 			handle_in_body(treebuilder, token);
 		} else if (type == COL) {
-			insert_element_no_push(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, false);
 
 			/** \todo ack sc flag */
 		} else {

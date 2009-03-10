@@ -34,7 +34,7 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 	uint16_t content_type_enc = 0;
 	size_t i;
 
-	insert_element_no_push(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, false);
 
 	/** \todo ack sc flag */
 
@@ -99,52 +99,6 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 	return HUBBUB_OK;
 }
 
-
-
-/**
- * Process a script start tag as if in "in head"
- *
- * \param treebuilder  The treebuilder instance
- * \param token        The token to process
- */
-static void process_script_in_head(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token)
-{
-	int success;
-	void *script;
-	hubbub_tokeniser_optparams params;
-
-	success = treebuilder->tree_handler->create_element(
-			treebuilder->tree_handler->ctx,
-			&token->data.tag, &script);
-	if (success != 0) {
-		/** \todo errors */
-	}
-
-	/** \todo mark script as parser-inserted */
-
-	/* It would be nice to be able to re-use the generic
-	 * rcdata character collector here. Unfortunately, we
-	 * can't as we need to do special processing after the
-	 * script data has been collected, so we use an almost
-	 * identical insertion mode which does the right magic
-	 * at the end. */
-	params.content_model.model = HUBBUB_CONTENT_MODEL_CDATA;
-	hubbub_tokeniser_setopt(treebuilder->tokeniser,
-			HUBBUB_TOKENISER_CONTENT_MODEL, 
-			&params);
-
-	treebuilder->context.collect.mode = treebuilder->context.mode;
-	treebuilder->context.collect.node = script;
-	treebuilder->context.collect.type = SCRIPT;
-
-	treebuilder->context.mode = SCRIPT_COLLECT_CHARACTERS;
-}
-
-
-
-
-
 /**
  * Handle token in "in head" insertion mode
  *
@@ -179,9 +133,8 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 		if (type == HTML) {
 			/* Process as if "in body" */
 			handle_in_body(treebuilder, token);
-		} else if (type == BASE || type == COMMAND ||
-				type == EVENTSOURCE || type == LINK) {
-			insert_element_no_push(treebuilder, &token->data.tag);
+		} else if (type == BASE || type == COMMAND || type == LINK) {
+			insert_element(treebuilder, &token->data.tag, false);
 
 			/** \todo ack sc flag */
 		} else if (type == META) {
@@ -194,11 +147,15 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 			if (treebuilder->context.enable_scripting) {
 				parse_generic_rcdata(treebuilder, token, false);
 			} else {
-				insert_element(treebuilder, &token->data.tag);
+				insert_element(treebuilder, &token->data.tag,
+						true);
 				treebuilder->context.mode = IN_HEAD_NOSCRIPT;
 			}
 		} else if (type == SCRIPT) {
-			process_script_in_head(treebuilder, token);
+			/** \todo need to ensure that the client callback
+			 * sets the parser-inserted/already-executed script 
+			 * flags. */
+			parse_generic_rcdata(treebuilder, token, false);
 		} else if (type == HEAD) {
 			/** \todo parse error */
 		} else {
@@ -213,7 +170,7 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 
 		if (type == HEAD) {
 			handled = true;
-		} else if (type == BR) {
+		} else if (type == HTML || type == BODY || type == BR) {
 			err = HUBBUB_REPROCESS;
 		} /** \todo parse error */
 	}

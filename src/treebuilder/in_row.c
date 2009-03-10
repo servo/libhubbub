@@ -92,7 +92,7 @@ hubbub_error handle_in_row(hubbub_treebuilder *treebuilder,
 		if (type == TH || type == TD) {
 			table_clear_stack(treebuilder);
 
-			insert_element(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, true);
 			treebuilder->context.mode = IN_CELL;
 
 			/* ref node for formatting list */

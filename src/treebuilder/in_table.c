@@ -56,15 +56,7 @@ static inline bool process_input_in_table(hubbub_treebuilder *treebuilder,
 		}
 
 		/** \todo parse error */
-		insert_element(treebuilder, &token->data.tag);
-
-		if (treebuilder->context.form_element != NULL) {
-			treebuilder->tree_handler->form_associate(
-					treebuilder->tree_handler->ctx,
-					treebuilder->context.form_element,
-					treebuilder->context.element_stack[
-					treebuilder->context.current_node].node);
-		}
+		insert_element(treebuilder, &token->data.tag, true);
 
 		return true;
 	}
@@ -125,7 +117,7 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 					treebuilder->context.current_node].node,
 					treebuilder->context.current_node);
 
-			insert_element(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, true);
 			treebuilder->context.mode = IN_CAPTION;
 		} else if (type == COLGROUP || type == COL) {
 			hubbub_tag tag = token->data.tag;
@@ -141,7 +133,7 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 			}
 
 			clear_stack_table_context(treebuilder);
-			insert_element(treebuilder, &tag);
+			insert_element(treebuilder, &tag, true);
 			treebuilder->context.mode = IN_COLUMN_GROUP;
 		} else if (type == TBODY || type == TFOOT || type == THEAD ||
 				type == TD || type == TH || type == TR) {
@@ -158,7 +150,7 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 			}
 
 			clear_stack_table_context(treebuilder);
-			insert_element(treebuilder, &tag);
+			insert_element(treebuilder, &tag, true);
 			treebuilder->context.mode = IN_TABLE_BODY;
 		} else if (type == TABLE) {
 			/** \todo parse error */

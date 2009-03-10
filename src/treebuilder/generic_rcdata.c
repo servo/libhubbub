@@ -37,8 +37,6 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_CHARACTER:
 	{
 		hubbub_string chars = token->data.character;
-		int success;
-		void *text, *appended;
 
 		if (treebuilder->context.strip_leading_lr) {
 			if (chars.ptr[0] == '\n') {
@@ -52,30 +50,7 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		if (chars.len == 0)
 			break;
 
-
-		success = treebuilder->tree_handler->create_text(
-				treebuilder->tree_handler->ctx,
-				&chars,
-				&text);
-		if (success != 0) {
-			/** \todo errors */
-		}
-
-		success = treebuilder->tree_handler->append_child(
-				treebuilder->tree_handler->ctx,
-				treebuilder->context.collect.node,
-				text, &appended);
-		if (success != 0) {
-			/** \todo errors */
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					text);
-		}
-
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, appended);
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, text);
+		append_text(treebuilder, &chars);
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
@@ -87,10 +62,16 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 			/** \todo parse error */
 		}
 
+		if (type == SCRIPT) {
+			/** \todo script processing and execution */
+		}
+
 		done = true;
 	}
 		break;
 	case HUBBUB_TOKEN_EOF:
+		/** \todo if the current node's a script, 
+		 * mark it as already executed */
 		/** \todo parse error */
 		done = true;
 		err = HUBBUB_REPROCESS;
@@ -104,11 +85,18 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 	}
 
 	if (done) {
-		/* Clean up context */
+		hubbub_ns ns;
+		element_type otype;
+		void *node;
+
+		/* Pop the current node from the stack */
+		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
+			/** \todo errors */
+		}
+
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
-				treebuilder->context.collect.node);
-		treebuilder->context.collect.node = NULL;
+				node);
 
 		/* Return to previous insertion mode */
 		treebuilder->context.mode = treebuilder->context.collect.mode;

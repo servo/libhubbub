@@ -36,7 +36,6 @@ typedef enum
 	AFTER_AFTER_FRAMESET,
 
 	GENERIC_RCDATA,
-	SCRIPT_COLLECT_CHARACTERS,
 } insertion_mode;
 
 

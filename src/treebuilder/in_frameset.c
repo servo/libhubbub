@@ -49,9 +49,9 @@ hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 		if (type == HTML) {
 			handle_in_body(treebuilder, token);
 		} else if (type == FRAMESET) {
-			insert_element(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, true);
 		} else if (type == FRAME) {
-			insert_element_no_push(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, false);
 			/** \todo ack sc flag */
 		} else if (type == NOFRAMES) {
 			err = handle_in_head(treebuilder, token);

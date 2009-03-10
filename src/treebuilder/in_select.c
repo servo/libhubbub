@@ -62,7 +62,7 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 						node);
 			}
 
-			insert_element(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, true);
 		} else if (type == OPTGROUP) {
 			if (current_node(treebuilder) == OPTION) {
 				if (!element_stack_pop(treebuilder, &ns, &otype,
@@ -86,7 +86,7 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 						node);
 			}
 
-			insert_element(treebuilder, &token->data.tag);
+			insert_element(treebuilder, &token->data.tag, true);
 		} else if (type == SELECT || type == INPUT ||
 				type == TEXTAREA) {
 
@@ -99,6 +99,8 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 			}
 
 			if (type != SELECT) err = HUBBUB_REPROCESS;
+		} else if (type == SCRIPT) {
+			handle_in_head(treebuilder, token);
 		} else {
 			/** \todo parse error */
 		}

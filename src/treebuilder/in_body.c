@@ -34,7 +34,11 @@ static void process_html_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static void process_body_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
+static void process_frameset_in_body(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
 static void process_container_in_body(hubbub_treebuilder *treebuilder, 
+		const hubbub_token *token);
+static void process_hN_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static void process_form_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
@@ -57,13 +61,13 @@ static void process_hr_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static void process_image_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
-static void process_input_in_body(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token);
 static void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static void process_textarea_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static void process_select_in_body(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token);
+static void process_opt_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
 static void process_phrasing_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token);
@@ -71,6 +75,7 @@ static void process_phrasing_in_body(hubbub_treebuilder *treebuilder,
 static bool process_0body_in_body(hubbub_treebuilder *treebuilder);
 static void process_0container_in_body(hubbub_treebuilder *treebuilder,
 		element_type type);
+static void process_0form_in_body(hubbub_treebuilder *treebuilder);
 static void process_0p_in_body(hubbub_treebuilder *treebuilder);
 static void process_0dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 		element_type type);
@@ -185,6 +190,7 @@ void process_character(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
 	hubbub_string dummy = token->data.character;
+	const uint8_t *p;
 
 	reconstruct_active_formatting_list(treebuilder);
 
@@ -201,6 +207,16 @@ void process_character(hubbub_treebuilder *treebuilder,
 
 	if (dummy.len)
 		append_text(treebuilder, &dummy);
+
+	if (treebuilder->context.frameset_ok) {
+		for (p = dummy.ptr; p < dummy.ptr + dummy.len; p++) {
+			if (*p != 0x0009 && *p != 0x000a &&
+					*p != 0x000c && *p != 0x0020) {
+				treebuilder->context.frameset_ok = false;
+				break;
+			}
+		}
+	}
 }
 
 /**
@@ -219,30 +235,34 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 
 	if (type == HTML) {
 		process_html_in_body(treebuilder, token);
-	} else if (type == BASE || type == COMMAND ||
-			type == EVENTSOURCE || type == LINK ||
+	} else if (type == BASE || type == COMMAND || type == LINK ||
 			type == META || type == NOFRAMES || type == SCRIPT ||
 			type == STYLE || type == TITLE) {
 		/* Process as "in head" */
 		err = handle_in_head(treebuilder, token);
 	} else if (type == BODY) {
 		process_body_in_body(treebuilder, token);
+	} else if (type == FRAMESET) {
+		process_frameset_in_body(treebuilder, token);
+		treebuilder->context.mode = IN_FRAMESET;
 	} else if (type == ADDRESS || type == ARTICLE || type == ASIDE ||
 			type == BLOCKQUOTE || type == CENTER ||
 			type == DATAGRID || type == DETAILS ||
 			type == DIALOG || type == DIR ||
 			type == DIV || type == DL || type == FIELDSET ||
 			type == FIGURE || type == FOOTER ||
-			type == H1 || type == H2 || type == H3 ||
-			type == H4 || type == H5 || type == H6 ||
 			type == HEADER || type == MENU || type == NAV ||
 			type == OL || type == P || type == SECTION ||
 			type == UL) {
 		process_container_in_body(treebuilder, token);
+	} else if (type == H1 || type == H2 || type == H3 ||
+			type == H4 || type == H5 || type == H6) {
+		process_hN_in_body(treebuilder, token);
 	} else if (type == PRE || type == LISTING) {
 		process_container_in_body(treebuilder, token);
 
 		treebuilder->context.strip_leading_lr = true;
+		treebuilder->context.frameset_ok = false;
 	} else if (type == FORM) {
 		process_form_in_body(treebuilder, token);
 	} else if (type == DD || type == DT || type == LI) {
@@ -251,7 +271,7 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 		process_plaintext_in_body(treebuilder, token);
 	} else if (type == A) {
 		process_a_in_body(treebuilder, token);
-	} else if (type == B || type == BIG || type == EM || 
+	} else if (type == B || type == BIG || type == CODE || type == EM || 
 			type == FONT || type == I || type == S || 
 			type == SMALL || type == STRIKE || 
 			type == STRONG || type == TT || type == U) {
@@ -267,25 +287,27 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 				token, type);
 	} else if (type == XMP) {
 		reconstruct_active_formatting_list(treebuilder);
+		treebuilder->context.frameset_ok = false;
 		parse_generic_rcdata(treebuilder, token, false);
 	} else if (type == TABLE) {
 		process_container_in_body(treebuilder, token);
+
+		treebuilder->context.frameset_ok = false;
 
 		treebuilder->context.element_stack[current_table(treebuilder)]
 				.tainted = false;
 		treebuilder->context.mode = IN_TABLE;
 	} else if (type == AREA || type == BASEFONT || 
 			type == BGSOUND || type == BR || 
-			type == EMBED || type == IMG || type == PARAM ||
-			type == SPACER || type == WBR) {
+			type == EMBED || type == IMG || type == INPUT ||
+			type == PARAM || type == SPACER || type == WBR) {
 		reconstruct_active_formatting_list(treebuilder);
-		insert_element_no_push(treebuilder, &token->data.tag);
+		insert_element(treebuilder, &token->data.tag, false);
+		treebuilder->context.frameset_ok = false;
 	} else if (type == HR) {
 		process_hr_in_body(treebuilder, token);
 	} else if (type == IMAGE) {
 		process_image_in_body(treebuilder, token);
-	} else if (type == INPUT) {
-		process_input_in_body(treebuilder, token);
 	} else if (type == ISINDEX) {
 		process_isindex_in_body(treebuilder, token);
 	} else if (type == TEXTAREA) {
@@ -294,6 +316,8 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 			type == NOFRAMES || 
 			(treebuilder->context.enable_scripting && 
 			type == NOSCRIPT)) {
+		if (type == IFRAME)
+			treebuilder->context.frameset_ok = false;
 		parse_generic_rcdata(treebuilder, token, false);
 	} else if (type == SELECT) {
 		process_select_in_body(treebuilder, token);
@@ -308,6 +332,8 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 				treebuilder->context.mode == IN_CELL) {
 			treebuilder->context.mode = IN_SELECT_IN_TABLE;
 		}
+	} else if (type == OPTGROUP || type == OPTION) {
+		process_opt_in_body(treebuilder, token);
 	} else if (type == RP || type == RT) {
 		/** \todo ruby */
 	} else if (type == MATH || type == SVG) {
@@ -320,21 +346,21 @@ bool process_start_tag(hubbub_treebuilder *treebuilder,
 			adjust_svg_attributes(treebuilder, &tag);
 			tag.ns = HUBBUB_NS_SVG;
 		} else {
+			adjust_mathml_attributes(treebuilder, &tag);
 			tag.ns = HUBBUB_NS_MATHML;
 		}
 
 		if (token->data.tag.self_closing) {
-			insert_element_no_push(treebuilder, &tag);
+			insert_element(treebuilder, &tag, false);
 			/** \todo ack sc flag */
 		} else {
-			insert_element(treebuilder, &tag);
+			insert_element(treebuilder, &tag, true);
 			treebuilder->context.second_mode =
 					treebuilder->context.mode;
 			treebuilder->context.mode = IN_FOREIGN_CONTENT;
 		}
 	} else if (type == CAPTION || type == COL || type == COLGROUP ||
-			type == FRAME || type == FRAMESET ||
-			type == HEAD || type == TBODY ||
+			type == FRAME || type == HEAD || type == TBODY ||
 			type == TD || type == TFOOT || type == TH ||
 			type == THEAD || type == TR) {
 		/** \todo parse error */
@@ -372,13 +398,16 @@ bool process_end_tag(hubbub_treebuilder *treebuilder,
 			treebuilder->context.mode = AFTER_BODY;
 		}
 		err = HUBBUB_REPROCESS;
-	} else if (type == ADDRESS || type == BLOCKQUOTE || 
-			type == CENTER || type == DIR || type == DIV ||
-			type == DL || type == FIELDSET || 
-			type == LISTING || type == MENU ||
-			type == OL || type == PRE || type == UL ||
-			type == FORM) {
+	} else if (type == ADDRESS || type == ARTICLE || type == ASIDE ||
+			type == BLOCKQUOTE || type == CENTER || type == DIR || 
+			type == DATAGRID || type == DIV || type == DL || 
+			type == FIELDSET || type == FOOTER || type == HEADER ||
+			type == LISTING || type == MENU || type == NAV ||
+			type == OL || type == PRE || type == SECTION ||
+			type == UL) {
 		process_0container_in_body(treebuilder, type);
+	} else if (type == FORM) {
+		process_0form_in_body(treebuilder);
 	} else if (type == P) {
 		process_0p_in_body(treebuilder);
 	} else if (type == DD || type == DT || type == LI) {
@@ -386,7 +415,7 @@ bool process_end_tag(hubbub_treebuilder *treebuilder,
 	} else if (type == H1 || type == H2 || type == H3 || 
 			type == H4 || type == H5 || type == H6) {
 		process_0h_in_body(treebuilder, type);
-	} else if (type == A || type == B || type == BIG || 
+	} else if (type == A || type == B || type == BIG || type == CODE ||
 			type == EM || type == FONT || type == I ||
 			type == NOBR || type == S || type == SMALL ||
 			type == STRIKE || type == STRONG ||
@@ -410,12 +439,7 @@ bool process_end_tag(hubbub_treebuilder *treebuilder,
 			(treebuilder->context.enable_scripting && 
 					type == NOSCRIPT)) {
 		/** \todo parse error */
-/*	} else if (type == EVENT_SOURCE || type == SECTION ||
-			type == NAV || type == ARTICLE ||
-			type == ASIDE || type == HEADER ||
-			type == FOOTER || type == DATAGRID ||
-			type == COMMAND) {
-*/	} else {
+	} else {
 		process_0generic_in_body(treebuilder, type);
 	}
 
@@ -463,6 +487,58 @@ void process_body_in_body(hubbub_treebuilder *treebuilder,
 }
 
 /**
+ * Process a frameset start tag as if in "in body"
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ */
+void process_frameset_in_body(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	void *parent = NULL;
+
+	/** \todo parse error */
+
+	if (treebuilder->context.current_node < 1 ||
+			treebuilder->context.element_stack[1].type != BODY)
+		return;
+
+	if (treebuilder->context.frameset_ok == false)
+		return;
+
+	if (treebuilder->tree_handler->get_parent(
+			treebuilder->tree_handler->ctx,
+			treebuilder->context.element_stack[1].node,
+			false, &parent)) {
+		/** \todo errors */
+	}
+
+	if (parent != NULL) {
+		void *removed;
+
+		if (treebuilder->tree_handler->remove_child(
+				treebuilder->tree_handler->ctx,
+				parent, 
+				treebuilder->context.element_stack[1].node, 
+				&removed)) {
+			/** \todo errors */
+		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, removed);
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, parent);
+	}
+
+	if (element_stack_pop_until(treebuilder, BODY) == false) {
+		/** \todo errors */
+	}
+
+	insert_element(treebuilder, &token->data.tag, true);
+}
+
+/**
  * Process a generic container start tag as if in "in body"
  *
  * \param treebuilder  The treebuilder instance
@@ -475,7 +551,45 @@ void process_container_in_body(hubbub_treebuilder *treebuilder,
 		process_0p_in_body(treebuilder);
 	}
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
+}
+
+/**
+ * Process a hN start tag as if in "in body"
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ */
+void process_hN_in_body(hubbub_treebuilder *treebuilder, 
+		const hubbub_token *token)
+{
+	element_type type;
+
+	if (element_in_scope(treebuilder, P, false)) {
+		process_0p_in_body(treebuilder);
+	}
+
+	type = treebuilder->context.element_stack[
+			treebuilder->context.current_node].type;
+
+	if (type == H1 || type == H2 || type == H3 || type == H4 ||
+			type == H5 || type == H6) {
+		hubbub_ns ns;
+		element_type otype;
+		void *node;
+
+		/** \todo parse error */
+
+		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
+			/** \todo errors */
+		}
+
+		treebuilder->tree_handler->unref_node(
+			treebuilder->tree_handler->ctx,
+			node);
+	}
+
+	insert_element(treebuilder, &token->data.tag, true);
 }
 
 /**
@@ -494,7 +608,7 @@ void process_form_in_body(hubbub_treebuilder *treebuilder,
 			process_0p_in_body(treebuilder);
 		}
 
-		insert_element(treebuilder, &token->data.tag);
+		insert_element(treebuilder, &token->data.tag, true);
 
 		/* Claim a reference on the node and 
 		 * use it as the current form element */
@@ -521,6 +635,8 @@ void process_dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 {
 	element_context *stack = treebuilder->context.element_stack;
 	uint32_t node;
+
+	treebuilder->context.frameset_ok = false;
 
 	if (element_in_scope(treebuilder, P, false)) {
 		process_0p_in_body(treebuilder);
@@ -569,7 +685,7 @@ void process_dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 		} while (treebuilder->context.current_node >= node);
 	}
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
 }
 
 /**
@@ -587,7 +703,7 @@ void process_plaintext_in_body(hubbub_treebuilder *treebuilder,
 		process_0p_in_body(treebuilder);
 	}
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
 
 	params.content_model.model = HUBBUB_CONTENT_MODEL_PLAINTEXT;
 
@@ -639,15 +755,21 @@ void process_a_in_body(hubbub_treebuilder *treebuilder,
 		if (index <= treebuilder->context.current_node &&
 				treebuilder->context.element_stack[index].node 
 				== node) {
-			aa_remove_element_stack_item(treebuilder, index,
-					treebuilder->context.current_node);
-			treebuilder->context.current_node--;
+			hubbub_ns ns;
+			element_type otype;
+			void *onode;
+
+			element_stack_remove(treebuilder, index, &ns, &otype,
+					&onode);
+
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx, onode);
 		}
 	}
 
 	reconstruct_active_formatting_list(treebuilder);
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
 
 	treebuilder->tree_handler->ref_node(treebuilder->tree_handler->ctx,
 		treebuilder->context.element_stack[
@@ -672,7 +794,7 @@ void process_presentational_in_body(hubbub_treebuilder *treebuilder,
 {
 	reconstruct_active_formatting_list(treebuilder);
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
 
 	treebuilder->tree_handler->ref_node(treebuilder->tree_handler->ctx,
 		treebuilder->context.element_stack[
@@ -705,7 +827,7 @@ void process_nobr_in_body(hubbub_treebuilder *treebuilder,
 		reconstruct_active_formatting_list(treebuilder);
 	}
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
 
 	treebuilder->tree_handler->ref_node(
 		treebuilder->tree_handler->ctx,
@@ -737,15 +859,7 @@ void process_button_in_body(hubbub_treebuilder *treebuilder,
 
 	reconstruct_active_formatting_list(treebuilder);
 
-	insert_element(treebuilder, &token->data.tag);
-
-	if (treebuilder->context.form_element != NULL) {
-		treebuilder->tree_handler->form_associate(
-			treebuilder->tree_handler->ctx,
-			treebuilder->context.form_element,
-			treebuilder->context.element_stack[
-				treebuilder->context.current_node].node);
-	}
+	insert_element(treebuilder, &token->data.tag, true);
 
 	treebuilder->tree_handler->ref_node(
 		treebuilder->tree_handler->ctx,
@@ -756,6 +870,8 @@ void process_button_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node,
 		treebuilder->context.current_node);
+
+	treebuilder->context.frameset_ok = false;
 }
 
 /**
@@ -770,7 +886,7 @@ void process_applet_marquee_object_in_body(hubbub_treebuilder *treebuilder,
 {
 	reconstruct_active_formatting_list(treebuilder);
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
 
 	treebuilder->tree_handler->ref_node(
 		treebuilder->tree_handler->ctx,
@@ -781,6 +897,8 @@ void process_applet_marquee_object_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
+
+	treebuilder->context.frameset_ok = false;
 }
 
 /**
@@ -796,7 +914,9 @@ void process_hr_in_body(hubbub_treebuilder *treebuilder,
 		process_0p_in_body(treebuilder);
 	}
 
-	insert_element_no_push(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, false);
+
+	treebuilder->context.frameset_ok = false;
 }
 
 /**
@@ -819,40 +939,7 @@ void process_image_in_body(hubbub_treebuilder *treebuilder,
 
 	reconstruct_active_formatting_list(treebuilder);
 
-	insert_element_no_push(treebuilder, &tag);
-}
-
-/**
- * Process an input start tag as if in "in body"
- *
- * \param treebuilder  The treebuilder instance
- * \param token        The token to process
- */
-void process_input_in_body(hubbub_treebuilder *treebuilder,
-		const hubbub_token *token)
-{
-	hubbub_ns ns;
-	element_type otype;
-	void *node;
-
-	reconstruct_active_formatting_list(treebuilder);
-
-	insert_element(treebuilder, &token->data.tag);
-
-	if (treebuilder->context.form_element != NULL) {
-		treebuilder->tree_handler->form_associate(
-			treebuilder->tree_handler->ctx,
-			treebuilder->context.form_element,
-			treebuilder->context.element_stack[
-				treebuilder->context.current_node].node);
-	}
-
-	if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
-		/** \todo errors */
-	}
-
-	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
-			node);
+	insert_element(treebuilder, &tag, false);
 }
 
 /**
@@ -974,7 +1061,9 @@ void process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	dummy.data.tag.n_attributes = n_attrs;
 	dummy.data.tag.attributes = attrs;
 
-	process_input_in_body(treebuilder, &dummy);
+	reconstruct_active_formatting_list(treebuilder);
+	insert_element(treebuilder, &dummy.data.tag, false);
+	treebuilder->context.frameset_ok = false;
 
 	/* Act as if </label> was seen */
 	process_0generic_in_body(treebuilder, LABEL);
@@ -1007,6 +1096,7 @@ void process_textarea_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
 	treebuilder->context.strip_leading_lr = true;
+	treebuilder->context.frameset_ok = false;
 	parse_generic_rcdata(treebuilder, token, true);
 }
 
@@ -1021,15 +1111,27 @@ void process_select_in_body(hubbub_treebuilder *treebuilder,
 {
 	reconstruct_active_formatting_list(treebuilder);
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
 
-	if (treebuilder->context.form_element != NULL) {
-		treebuilder->tree_handler->form_associate(
-			treebuilder->tree_handler->ctx,
-			treebuilder->context.form_element,
-			treebuilder->context.element_stack[
-				treebuilder->context.current_node].node);
+	treebuilder->context.frameset_ok = false;
+}
+
+/**
+ * Process an option or optgroup start tag as if in "in body"
+ *
+ * \param treebuilder  The treebuilder instance
+ * \param token        The token to process
+ */
+void process_opt_in_body(hubbub_treebuilder *treebuilder,
+		const hubbub_token *token)
+{
+	if (element_in_scope(treebuilder, OPTION, false)) {
+		process_0generic_in_body(treebuilder, OPTION);
 	}
+	
+	reconstruct_active_formatting_list(treebuilder);
+
+	insert_element(treebuilder, &token->data.tag, true);
 }
 
 /**
@@ -1043,7 +1145,7 @@ void process_phrasing_in_body(hubbub_treebuilder *treebuilder,
 {
 	reconstruct_active_formatting_list(treebuilder);
 
-	insert_element(treebuilder, &token->data.tag);
+	insert_element(treebuilder, &token->data.tag, true);
 }
 
 /**
@@ -1068,7 +1170,9 @@ bool process_0body_in_body(hubbub_treebuilder *treebuilder)
 			element_type ntype = stack[node].type;
 
 			if (ntype != DD && ntype != DT && ntype != LI && 
-					ntype != P && ntype != TBODY &&
+					ntype != OPTGROUP && ntype != OPTION &&
+					ntype != P && ntype != RP && 
+					ntype != RT && ntype != TBODY &&
 					ntype != TD && ntype != TFOOT &&
 					ntype != TH && ntype != THEAD &&
 					ntype != TR && ntype != BODY) {
@@ -1089,14 +1193,6 @@ bool process_0body_in_body(hubbub_treebuilder *treebuilder)
 void process_0container_in_body(hubbub_treebuilder *treebuilder,
 		element_type type)
 {
-	if (type == FORM) {
-		if (treebuilder->context.form_element != NULL)
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					treebuilder->context.form_element);
-		treebuilder->context.form_element = NULL;
-	}
-
 	if (!element_in_scope(treebuilder, type, false)) {
 		/** \todo parse error */
 	} else {
@@ -1126,6 +1222,49 @@ void process_0container_in_body(hubbub_treebuilder *treebuilder,
 		}
 	}
 }
+
+/**
+ * Process a form end tag as if in "in body"
+ *
+ * \param treebuilder  The treebuilder instance
+ */
+void process_0form_in_body(hubbub_treebuilder *treebuilder)
+{
+	void *node = treebuilder->context.form_element;
+	uint32_t idx = 0;
+
+	if (treebuilder->context.form_element != NULL)
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				treebuilder->context.form_element);
+	treebuilder->context.form_element = NULL;
+
+	idx = element_in_scope(treebuilder, FORM, false);
+
+	if (idx == 0 || node == NULL || 
+			treebuilder->context.element_stack[idx].node != node) {
+		/** \todo parse error */
+	} else {
+		hubbub_ns ns;
+		element_type otype;
+		void *node;
+
+		close_implied_end_tags(treebuilder, UNKNOWN);
+
+		if (treebuilder->context.element_stack[
+				treebuilder->context.current_node].node != 
+				node) {
+			/** \todo parse error */
+		}
+
+		element_stack_remove(treebuilder, idx, &ns, &otype, &node);
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
+	}
+}
+
 
 /**
  * Process a p end tag as if in "in body"
@@ -1309,18 +1448,15 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		common_ancestor = formatting_element - 1;
 
 		/* 5 */
-		aa_remove_from_parent(treebuilder, stack[furthest_block].node);
-
-		/* 6 */
 		bookmark.prev = entry->prev;
 		bookmark.next = entry->next;
 
-		/* 7 */
+		/* 6 */
 		aa_find_bookmark_location_reparenting_misnested(treebuilder,
 				formatting_element, &furthest_block,
 				&bookmark, &last_node);
 
-		/* 8 */
+		/* 7 */
 		if (stack[common_ancestor].type == TABLE ||
 				stack[common_ancestor].type == TBODY ||
 				stack[common_ancestor].type == TFOOT ||
@@ -1357,17 +1493,17 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 			stack[last_node].node = reparented;
 		}
 
-		/* 9 */
+		/* 8 */
 		treebuilder->tree_handler->clone_node(
 				treebuilder->tree_handler->ctx,
 				entry->details.node, false, &fe_clone);
 
-		/* 10 */
+		/* 9 */
 		treebuilder->tree_handler->reparent_children(
 				treebuilder->tree_handler->ctx,
 				stack[furthest_block].node, fe_clone);
 
-		/* 11 */
+		/* 10 */
 		treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
 				stack[furthest_block].node, fe_clone,
@@ -1385,10 +1521,10 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 					clone_appended);
 		}
 
-		/* 12 and 13 are reversed here so that we know the correct
+		/* 11 and 12 are reversed here so that we know the correct
 		 * stack index to use when inserting into the formatting list */
 
-		/* 13 */
+		/* 12 */
 		aa_remove_element_stack_item(treebuilder, formatting_element,
 				furthest_block);
 
@@ -1400,7 +1536,7 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		stack[furthest_block + 1].type = entry->details.type;
 		stack[furthest_block + 1].node = clone_appended;
 
-		/* 12 */
+		/* 11 */
 		formatting_list_remove(treebuilder, entry,
 				&ons, &otype, &onode, &oindex);
 
@@ -1411,7 +1547,7 @@ void process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 				bookmark.prev, bookmark.next,
 				ons, otype, clone_appended, furthest_block + 1);
 
-		/* 14 */
+		/* 13 */
 	}
 }
 
@@ -1626,7 +1762,6 @@ void aa_find_bookmark_location_reparenting_misnested(
 	node = last = fb = *furthest_block;
 
 	while (true) {
-		bool children = false;
 		void *reparented;
 
 		/* i */
@@ -1668,13 +1803,7 @@ void aa_find_bookmark_location_reparenting_misnested(
 		}
 
 		/* v */
-		treebuilder->tree_handler->has_children(
-				treebuilder->tree_handler->ctx,
-				node_entry->details.node, &children);
-
-		if (children) {
-			aa_clone_and_replace_entries(treebuilder, node_entry);
-		}
+		aa_clone_and_replace_entries(treebuilder, node_entry);
 
 		/* vi */
 		reparented = aa_reparent_node(treebuilder,
@@ -1842,6 +1971,8 @@ void *aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node)
 		}
 	}
 
+	aa_remove_from_parent(treebuilder, node);
+
 	if (insert) {
 		treebuilder->tree_handler->insert_before(
 				treebuilder->tree_handler->ctx,
@@ -1928,7 +2059,7 @@ void process_0br_in_body(hubbub_treebuilder *treebuilder)
 
 	reconstruct_active_formatting_list(treebuilder);
 
-	insert_element_no_push(treebuilder, &tag);
+	insert_element(treebuilder, &tag, false);
 }
 
 /**
