@@ -834,6 +834,7 @@ Line: 1 Col: 50 Expected closing tag. Unexpected end of file.
 |             <cite>
 |               <i>
 |                 <cite>
+|                   <i>
 |       <i>
 |         <i>
 |           <i>
@@ -1389,8 +1390,8 @@ Line: 1 Col: 13 Unexpected end tag (html). Ignored.
 #document
 | <html>
 |   <head>
-|     <meta>
 |   <body>
+|     <meta>
 |     <p>
 
 #data
@@ -1628,7 +1629,10 @@ Line: 1 Col: 105 Expected closing tag. Unexpected end of file.
 #document
 | <html>
 |   <head>
-|   <body>
+|   <frameset>
+|     <frame>
+|     <frameset>
+|       <frame>
 |     <noframes>
 |       "</frameset><noframes>"
 

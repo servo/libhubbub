@@ -55,9 +55,9 @@ Line: 1 Col: 22 Unexpected end tag (body) after the (implied) root element.
 | <!DOCTYPE html>
 | <html>
 |   <head>
+|   <body>
 |     <title>
 |       "X"
-|   <body>
 
 #data
 <!doctype html><table><meta></table>
