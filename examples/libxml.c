@@ -721,6 +721,12 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 	xmlNode *chld = (xmlNode *) child;
 	xmlNode *p = (xmlNode *) parent;
 
+	/* Note: this does not exactly follow the current specification.
+	 * See http://www.whatwg.org/specs/web-apps/current-work/ \
+	 *     multipage/tree-construction.html#insert-a-character 
+	 * for the exact behaviour required.
+	 */
+
 	if (chld->type == XML_TEXT_NODE && p->last != NULL && 
 			p->last->type == XML_TEXT_NODE) {
 		/* Need to clone the child, as libxml will free it if it 
@@ -926,6 +932,11 @@ int form_associate(void *ctx, void *form, void *node)
 	 * useful because forms may be misnested in the source data and thus
 	 * it is not necessarily sufficient to search the resultant DOM to 
 	 * perform the association.
+	 *
+	 * Note that this callback will be called even if the node has
+	 * an @form. In that case, the association should be between the node
+	 * and the form identified by the ID in @form. This may not be the same
+	 * as the form passed in.
 	 */
 	return 0;
 }
