@@ -12,8 +12,7 @@ Line: 1 Col: 29 Unexpected start tag head. Ignored.
 #data
 <!doctype html></html> <head>
 #errors
-22: Stray end tag “html”.
-29: Stray start tag “head”.
+Line: 1 Col: 22 Unexpected end tag (html) after the (implied) root element.
 #document
 | <!DOCTYPE html>
 | <html>
@@ -23,8 +22,7 @@ Line: 1 Col: 29 Unexpected start tag head. Ignored.
 #data
 <!doctype html></body><meta>
 #errors
-22: Stray end tag “body”.
-28: “meta” element outside “head”.
+Line: 1 Col: 22 Unexpected end tag (body) after the (implied) root element.
 #document
 | <!DOCTYPE html>
 | <html>
@@ -35,8 +33,8 @@ Line: 1 Col: 29 Unexpected start tag head. Ignored.
 #data
 <!doctype html><form><div></form><div>
 #errors
-Line: 1 Col: 33 End tag (form) seen too early. Ignored.
-Line: 1 Col: 38 Expected closing tag. Unexpected end of file.
+33: End tag “form” seen but there were unclosed elements.
+38: End of file seen and there were open elements.
 #document
 | <!DOCTYPE html>
 | <html>
@@ -44,7 +42,7 @@ Line: 1 Col: 38 Expected closing tag. Unexpected end of file.
 |   <body>
 |     <form>
 |       <div>
-|     <div>
+|         <div>
 
 #data
 <!doctype html><title>&amp;</title>
@@ -254,7 +252,7 @@ caption
 #errors
 Line: 1 Col: 7 Unexpected start tag (table). Expected DOCTYPE.
 Line: 1 Col: 31 Unexpected end tag (caption). Missing end tag (div).
-Line: 1 Col: 31 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 31 Unexpected end of file. Expected table content.
 #document
 | <html>
 |   <head>
@@ -359,7 +357,7 @@ td
 #errors
 Line: 1 Col: 7 Unexpected start tag (table). Expected DOCTYPE.
 Line: 1 Col: 20 Unexpected non-space characters in table context caused voodoo mode.
-Line: 1 Col: 20 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 20 Unexpected end of file. Expected table content.
 #document
 | <html>
 |   <head>
@@ -436,7 +434,7 @@ body
 #errors
 Line: 1 Col: 7 Unexpected start tag (table). Expected DOCTYPE.
 Line: 1 Col: 16 Unexpected start tag (div) in table context caused voodoo mode.
-Line: 1 Col: 16 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 16 Unexpected end of file. Expected table content.
 #document
 | <html>
 |   <head>
@@ -503,7 +501,7 @@ tbody
 #errors
 Line: 1 Col: 7 Unexpected start tag (table). Expected DOCTYPE.
 Line: 1 Col: 22 Unexpected end tag (thead) in the table body phase. Ignored.
-Line: 1 Col: 22 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 22 Unexpected end of file. Expected table content.
 #document
 | <html>
 |   <head>
@@ -533,7 +531,7 @@ Line: 1 Col: 55 Unexpected end tag (html) in the table body phase. Ignored.
 Line: 1 Col: 60 Unexpected end tag (td) in the table body phase. Ignored.
 Line: 1 Col: 65 Unexpected end tag (th) in the table body phase. Ignored.
 Line: 1 Col: 70 Unexpected end tag (tr) in the table body phase. Ignored.
-Line: 1 Col: 70 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 70 Unexpected end of file. Expected table content.
 #document
 | <html>
 |   <head>
@@ -547,7 +545,7 @@ Line: 1 Col: 70 Expected closing tag. Unexpected end of file.
 Line: 1 Col: 7 Unexpected start tag (table). Expected DOCTYPE.
 Line: 1 Col: 20 Unexpected end tag (div) in table context caused voodoo mode.
 Line: 1 Col: 20 End tag (div) seen too early. Expected other end tag.
-Line: 1 Col: 20 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 20 Unexpected end of file. Expected table content.
 #document
 | <html>
 |   <head>
@@ -560,7 +558,7 @@ Line: 1 Col: 20 Expected closing tag. Unexpected end of file.
 #errors
 Line: 1 Col: 7 Unexpected start tag (table). Expected DOCTYPE.
 Line: 1 Col: 14 Unexpected start tag (table) implies end tag (table).
-Line: 1 Col: 14 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 14 Unexpected end of file. Expected table content.
 #document
 | <html>
 |   <head>
@@ -583,7 +581,7 @@ Line: 1 Col: 69 Unexpected end tag (tfoot). Ignored.
 Line: 1 Col: 74 Unexpected end tag (th). Ignored.
 Line: 1 Col: 82 Unexpected end tag (thead). Ignored.
 Line: 1 Col: 87 Unexpected end tag (tr). Ignored.
-Line: 1 Col: 87 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 87 Unexpected end of file. Expected table content.
 #document
 | <html>
 |   <head>
@@ -594,7 +592,7 @@ Line: 1 Col: 87 Expected closing tag. Unexpected end of file.
 </table><tr>
 #errors
 Line: 1 Col: 8 Unexpected end tag (table). Ignored.
-Line: 1 Col: 12 Expected closing tag. Unexpected end of file.
+Line: 1 Col: 12 Unexpected end of file. Expected table content.
 #document-fragment
 table
 #document
@@ -604,8 +602,8 @@ table
 #data
 <html></html><!-- foo -->
 #errors
-6: Start tag seen without seeing a doctype first. Expected “<!DOCTYPE html>”.
-13: Stray end tag “html”.
+Line: 1 Col: 6 Unexpected start tag (html). Expected DOCTYPE.
+Line: 1 Col: 13 Unexpected end tag (html) after the (implied) root element.
 #document
 | <html>
 |   <!--  foo  -->
@@ -616,6 +614,7 @@ table
 <body></body></html>
 #errors
 Line: 1 Col: 20 Unexpected html end tag in inner html mode.
+Line: 1 Col: 20 Unexpected EOF in inner html mode.
 #document-fragment
 html
 #document
@@ -635,7 +634,8 @@ Line: 1 Col: 6 Unexpected start tag (html). Expected DOCTYPE.
 #data
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"><html></html>
 #errors
-doctype-error
+Line: 1 Col: 50 Erroneous DOCTYPE.
+Line: 1 Col: 63 Unexpected end tag (html) after the (implied) root element.
 #document
 | <!DOCTYPE html "-//W3C//DTD HTML 4.01//EN" "">
 | <html>
