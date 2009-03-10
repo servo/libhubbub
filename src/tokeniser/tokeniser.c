@@ -870,15 +870,6 @@ hubbub_error hubbub_tokeniser_handle_tag_open(hubbub_tokeniser *tokeniser)
 			ctag->n_attributes = 0;
 
 			tokeniser->state = STATE_TAG_NAME;
-		} else if (c == '\0') {
-			tokeniser->context.pending += len;
-			tokeniser->context.current_tag_type =
-					HUBBUB_TOKEN_START_TAG;
-
-			START_BUF(ctag->name, u_fffd, sizeof(u_fffd));
-			ctag->n_attributes = 0;
-
-			tokeniser->state = STATE_TAG_NAME;
 		} else if (c == '>') {
 			/** \todo parse error */
 
@@ -1274,7 +1265,7 @@ hubbub_error hubbub_tokeniser_handle_after_attribute_name(
 	} else {
 		hubbub_attribute *attr;
 
-		if (c == '"' || c == '\'' || c == '=') {
+		if (c == '"' || c == '\'') {
 			/** \todo parse error */
 		}
 
@@ -1327,6 +1318,7 @@ hubbub_error hubbub_tokeniser_handle_before_attribute_value(
 
 	if (error != PARSERUTILS_OK) {
 		if (error == PARSERUTILS_EOF) {
+			/** \todo parse error */
 			tokeniser->state = STATE_DATA;
 			return emit_current_tag(tokeniser);
 		} else {
@@ -1347,6 +1339,7 @@ hubbub_error hubbub_tokeniser_handle_before_attribute_value(
 		tokeniser->context.pending += len;
 		tokeniser->state = STATE_ATTRIBUTE_VALUE_SQ;
 	} else if (c == '>') {
+		/** \todo parse error */
 		tokeniser->context.pending += len;
 
 		tokeniser->state = STATE_DATA;
@@ -1357,6 +1350,10 @@ hubbub_error hubbub_tokeniser_handle_before_attribute_value(
 				u_fffd, sizeof(u_fffd));
 		tokeniser->state = STATE_ATTRIBUTE_VALUE_UQ;
 	} else {
+		if (c == '=') {
+			/** \todo parse error */
+		}
+
 		tokeniser->context.pending += len;
 		START_BUF(ctag->attributes[ctag->n_attributes - 1].value,
 				cptr, len);
@@ -1991,6 +1988,7 @@ hubbub_error hubbub_tokeniser_handle_before_doctype_name(
 
 	if (error != PARSERUTILS_OK) {
 		if (error == PARSERUTILS_EOF) {
+			/** \todo parse error */
 			/* Emit current doctype, force-quirks on */
 			tokeniser->state = STATE_DATA;
 			return emit_current_doctype(tokeniser, true);
@@ -2005,11 +2003,16 @@ hubbub_error hubbub_tokeniser_handle_before_doctype_name(
 	if (c == '\t' || c == '\n' || c == '\f' || c == ' ' || c == '\r') {
 		/* pass over in silence */
 	} else if (c == '>') {
+		/** \todo parse error */
 		tokeniser->state = STATE_DATA;
 		return emit_current_doctype(tokeniser, true);
 	} else {
 		if (c == '\0') {
 			START_BUF(cdoc->name, u_fffd, sizeof(u_fffd));
+		} else if ('A' <= c && c <= 'Z') {
+			uint8_t lc = c + 0x20;
+
+			START_BUF(cdoc->name, &lc, len);
 		} else {
 			START_BUF(cdoc->name, cptr, len);
 		}
@@ -2050,6 +2053,9 @@ hubbub_error hubbub_tokeniser_handle_doctype_name(hubbub_tokeniser *tokeniser)
 		return emit_current_doctype(tokeniser, false);
 	} else if (c == '\0') {
 		COLLECT(cdoc->name, u_fffd, sizeof(u_fffd));
+	} else if ('A' <= c && c <= 'Z') {
+		uint8_t lc = c + 0x20;
+		COLLECT(cdoc->name, &lc, len);
 	} else {
 		COLLECT(cdoc->name, cptr, len);
 	}
@@ -2886,11 +2892,12 @@ hubbub_error hubbub_tokeniser_handle_numbered_entity(
 			cp = cp1252Table[cp - 0x80];
 		} else if (cp == 0x0D) {
 			cp = 0x000A;
-		} else if (ctx->match_entity.overflow || cp <= 0x0008 ||
+		} else if (ctx->match_entity.overflow || 
+				cp <= 0x0008 || cp == 0x000B ||
 				(0x000E <= cp && cp <= 0x001F) ||
 				(0x007F <= cp && cp <= 0x009F) ||
 				(0xD800 <= cp && cp <= 0xDFFF) ||
-				(0xFDD0 <= cp && cp <= 0xFDDF) ||
+				(0xFDD0 <= cp && cp <= 0xFDEF) ||
 				(cp & 0xFFFE) == 0xFFFE) {
 			/* the check for cp > 0x10FFFF per spec is performed
 			 * in the loop above to avoid overflow */

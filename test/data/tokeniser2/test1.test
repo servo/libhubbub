@@ -6,11 +6,15 @@
 
 {"description":"Correct Doctype uppercase",
 "input":"<!DOCTYPE HTML>",
-"output":[["DOCTYPE", "HTML", null, null, true]]},
+"output":[["DOCTYPE", "html", null, null, true]]},
 
 {"description":"Correct Doctype mixed case",
 "input":"<!DOCTYPE HtMl>", 
-"output":[["DOCTYPE", "HtMl", null, null, true]]},
+"output":[["DOCTYPE", "html", null, null, true]]},
+
+{"description":"Correct Doctype case with EOF",
+"input":"<!DOCTYPE HtMl", 
+"output":["ParseError", ["DOCTYPE", "html", null, null, false]]},
 
 {"description":"Truncated doctype start",
 "input":"<!DOC>", 
@@ -171,6 +175,10 @@
 
 {"description":"Entity in attribute without semicolon",
 "input":"<h a='&COPY'>",
-"output":["ParseError", ["StartTag", "h", {"a":"\u00A9"}]]}
+"output":["ParseError", ["StartTag", "h", {"a":"\u00A9"}]]},
+
+{"description":"Unquoted attribute ending in ampersand",
+ "input":"<s o=& t",
+ "output":["ParseError",["StartTag","s",{"o":"&","t":""}]]}
 
 ]}
