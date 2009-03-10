@@ -48,7 +48,12 @@ OBJECTS := $(subst /,_,$(subst .c,.o,$(SOURCES)))
 
 # Rules
 release: setup $(addprefix $(RELEASEDIR)/,$(OBJECTS))
+
+ifeq ($(BUILD_SHARED),yes)
+	@$(LD) -o $(COMPONENT).so $(addprefix $(RELEASEDIR)/,$(OBJECTS)) $(LDFLAGS)
+else
 	@$(AR) $(ARFLAGS) $(COMPONENT).a $(addprefix $(RELEASEDIR)/,$(OBJECTS))
+endif
 
 debug: setup $(addprefix $(DEBUGDIR)/,$(OBJECTS))
 	@$(AR) $(ARFLAGS) $(COMPONENT)-debug.a \
