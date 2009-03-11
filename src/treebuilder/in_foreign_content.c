@@ -241,7 +241,7 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 			size_t len = attr->name.len - 6;
 			name += 6;
 
-			if (hubbub_string_match(name, len, S("actutate")) ||
+			if (hubbub_string_match(name, len, S("actuate")) ||
 					hubbub_string_match(name, len,
 							S("arcrole")) ||
 					hubbub_string_match(name, len,
