@@ -1,10 +1,10 @@
 # Component settings
 COMPONENT := hubbub
-COMPONENT_TYPE := lib-static
+# Default to a static library
+COMPONENT_TYPE ?= lib-static
 
-# Build settings
-TARGET := nix
-LIBEXT := .a
+# Setup the tooling
+include build/makefiles/Makefile.tools
 
 # Toolchain flags
 WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
@@ -13,17 +13,14 @@ WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
 CFLAGS := $(CFLAGS) -std=c99 -D_BSD_SOURCE -I$(CURDIR)/include/ \
 	-I$(CURDIR)/src $(WARNFLAGS) 
 
-include build/makefiles/Makefile.top
-
-# Further toolchain settings which rely on Makefile.top
-CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils --cflags)
-LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils --libs)
-
-ifeq ($(BUILD),release)
-  CFLAGS := $(CFLAGS) -DNDEBUG -O2
+ifneq ($(PKGCONFIG),)
+  CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils --cflags)
+  LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils --libs)
 else
-  CFLAGS := $(CFLAGS) -g -O0
+  LDFLAGS := -lparserutils
 endif
+
+include build/makefiles/Makefile.top
 
 # Extra installation rules
 INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/errors.h
