@@ -29,6 +29,8 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	const char *charset;
 	hubbub_charset_source cssource;
 
+	UNUSED(argc);
+
 	/* Initialise library */
 	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
 
