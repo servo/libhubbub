@@ -13,11 +13,36 @@ WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
 CFLAGS := $(CFLAGS) -std=c99 -D_BSD_SOURCE -I$(CURDIR)/include/ \
 	-I$(CURDIR)/src $(WARNFLAGS) 
 
+# Parserutils
 ifneq ($(PKGCONFIG),)
   CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils --cflags)
   LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils --libs)
 else
-  LDFLAGS := -lparserutils
+  LDFLAGS := $(LDFLAGS) -lparserutils
+endif
+
+ifeq ($(MAKECMDGOALS),test)
+  NEED_JSON := yes
+else
+  ifeq ($(MAKECMDGOALS),profile)
+    NEED_JSON := yes
+  else
+    ifeq ($(MAKECMDGOALS),coverage)
+      NEED_JSON := yes
+    endif
+  endif
+endif
+
+ifeq ($(NEED_JSON),yes)
+  # We require the presence of libjson -- http://oss.metaparadigm.com/json-c/
+  ifneq ($(PKGCONFIG),)
+    CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json)
+    LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json)
+  else
+    LDFLAGS := $(LDFLAGS) -ljson
+  endif
+
+  CFLAGS := $(CFLAGS) -Wno-unused-parameter
 endif
 
 include build/makefiles/Makefile.top
