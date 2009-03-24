@@ -1,123 +1,13 @@
-# Child makefile fragment for libhubbub
-#
-# Toolchain is provided by top-level makefile
-#
-# Variables provided by top-level makefile
-#
-# COMPONENT		The name of the component
-# EXPORT		The location of the export directory
-# TOP			The location of the source tree root
-# RELEASEDIR		The place to put release objects
-# DEBUGDIR		The place to put debug objects
-# TESTTYPE		The type of test to build (release/debug)
-#
-# do_include		Canned command sequence to include a child makefile
-#
-# Variables provided by parent makefile:
-#
-# DIR			The name of the directory we're in, relative to $(TOP)
-#
-# Variables we can manipulate:
-#
-# ITEMS_CLEAN		The list of items to remove for "make clean"
-# ITEMS_DISTCLEAN	The list of items to remove for "make distclean"
-# TARGET_TESTS		The list of target names to run for "make test"
-#
-# SOURCES		The list of sources to build for $(COMPONENT)
-#
-# Plus anything from the toolchain
-
-# Push parent directory onto the directory stack
-sp             := $(sp).x
-dirstack_$(sp) := $(d)
-d              := $(DIR)
-
 ifeq ($(MAKECMDGOALS),test)
 # Extend toolchain settings
 # We require the presence of libjson -- http://oss.metaparadigm.com/json-c/
-CFLAGS := $(CFLAGS) -I$(TOP)/src/ -I$(d) \
-		$(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json) \
+CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json) \
 		-Wno-unused-parameter
 LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json)
 endif
 
-ifeq ($(TESTTYPE),release)
-TESTCFLAGS := $(RELEASECFLAGS)
-TESTLIB := libhubbub.a
-else
-TESTCFLAGS := $(DEBUGCFLAGS)
-TESTLIB := libhubbub-debug.a
-endif
-
-ifdef PROFILE
-	CFLAGS := $(CFLAGS) -pg -fno-omit-frame-pointer
-	LDFLAGS := $(LDFLAGS) -pg
-endif
-
 # Tests
-TESTS_$(d) := csdetect dict entities hubbub parser \
-	tokeniser tokeniser2 tokeniser3 tree tree2 tree-buf
+DIR_TEST_SOURCES := csdetect.c dict.c entities.c hubbub.c parser.c \
+	tokeniser.c tokeniser2.c tokeniser3.c tree.c tree2.c tree-buf.c
 
-# Items for top-level makefile to use
-ITEMS_CLEAN := $(ITEMS_CLEAN) \
-	$(addprefix $(d), $(addsuffix $(EXEEXT), $(TESTS_$(d)))) \
-	$(addprefix $(d), $(addsuffix .gcda, $(TESTS_$(d)))) \
-	$(addprefix $(d), $(addsuffix .gcno, $(TESTS_$(d)))) \
-	$(addprefix $(d), $(addsuffix .d, $(TESTS_$(d))))
-ITEMS_DISTCLEAN := $(ITEMS_DISTCLEAN) $(d)log
-
-# Targets for top-level makefile to run
-TARGET_TESTS := $(TARGET_TESTS) test_$(d)
-
-# Now we get to hack around so that we know what directory we're in.
-# $(d) no longer exists when running the commands for a target, so we can't
-# simply use it verbatim. Assigning to a variable doesn't really help, as
-# there's no guarantee that someone else hasn't overridden that variable.
-# So, what we do is make the target depend on $(d), then pick it out of the
-# dependency list when running commands. This isn't pretty, but is effective.
-test_$(d): $(d) $(addprefix $(d), $(TESTS_$(d)))
-	@$(PERL) $(TOP)/$<testrunner.pl $(TOP)/$< $(EXEEXT)
-
-DEP_$(d) :=
-
-define dep_test
-DEP_$(d) += $(2)
-$(2): $(1)
-	@$$(RM) $$(RMFLAGS) $(2)
-	@$$(CC) $$(TESTCFLAGS) -MM -MT '$(2) $(3)' -MF $(2) $(1)
-
-endef
-
-# Build rules for each test binary -- they all depend on the debug library
-# Except when building on RISC OS, of course because then make utterly fails to
-# detect that the debug library exists.
-define compile_test
-ifeq ($(HOST),riscos)
-$(2): $(3)
-else
-$(2): $(3) $(TOP)/$(TESTLIB)
-endif
-	@$$(ECHO) $$(ECHOFLAGS) "==> $(1)"
-	@$$(CC) -c -g $$(TESTCFLAGS) -o $$@.o $(1)
-	@$$(LD) -g -o $$@ $$@.o $$(TOP)/$$(TESTLIB) $$(LDFLAGS) -lgcov
-	@$$(RM) $$(RMFLAGS) $$@.o
-
-endef
-
-$(eval $(foreach TEST,$(addprefix $(d), $(TESTS_$(d))), \
-	$(call dep_test,$(addsuffix .c, $(TEST)),$(addsuffix .d, $(TEST)),$(TEST))))
-
-ifeq ($(MAKECMDGOALS),test)
--include $(sort $(DEP_$(d)))
-endif
-
-$(eval $(foreach TEST,$(addprefix $(d), $(TESTS_$(d))), \
-	$(call compile_test,$(addsuffix .c, $(TEST)),$(TEST),$(addsuffix .d, $(TEST)))))
-
-# Now include any children we may have
-MAKE_INCLUDES := $(wildcard $(d)*/Makefile)
-$(eval $(foreach INC, $(MAKE_INCLUDES), $(call do_include,$(INC))))
-
-# Finally, pop off the directory stack
-d  := $(dirstack_$(sp))
-sp := $(basename $(sp))
+include build/makefiles/Makefile.subdir

@@ -1,55 +1,35 @@
-# Toolchain definitions for building on the destination platform
-CC := gcc
-AR := ar
-LD := gcc
+# Component settings
+COMPONENT := hubbub
+COMPONENT_TYPE := lib-static
 
-CP := cp
-RM := rm
-MKDIR := mkdir
-MV := mv
-ECHO := echo
-MAKE := make
-PERL := perl
-PKGCONFIG := pkg-config
-INSTALL := install
-SED := sed
-LCOV := lcov
-GENHTML := genhtml
-TOUCH := touch
-DOXYGEN := doxygen
+# Build settings
+TARGET := nix
+LIBEXT := .a
 
 # Toolchain flags
 WARNFLAGS := -Wall -Wextra -Wundef -Wpointer-arith -Wcast-align \
 	-Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wnested-externs -Werror -pedantic
-CFLAGS = -std=c99 -D_BSD_SOURCE -I$(TOP)/include/ $(WARNFLAGS) $(CSHAREDFLAGS)
-RELEASECFLAGS = $(CFLAGS) -DNDEBUG -O2
-DEBUGCFLAGS = $(CFLAGS) -O0 -g
-ARFLAGS := -cru
-LDFLAGS = -L$(TOP)/ $(LDSHAREDFLAGS)
+CFLAGS := $(CFLAGS) -std=c99 -D_BSD_SOURCE -I$(CURDIR)/include/ $(WARNFLAGS) 
 
-CPFLAGS :=
-RMFLAGS := -f
-MKDIRFLAGS := -p
-MVFLAGS :=
-ECHOFLAGS := 
-MAKEFLAGS :=
-PKGCONFIGFLAGS :=
-TOUCHFLAGS :=
+include build/makefiles/Makefile.top
 
-EXEEXT :=
+# Further toolchain settings which rely on Makefile.top
+CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils --cflags)
+LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils --libs)
 
-# Default installation prefix
-PREFIX ?= /usr/local
-
-TARGET := nix
-
-ifeq ($(BUILD_SHARED),yes)
-
-TARGET := nix-shared
-CSHAREDFLAGS := -fPIC -DPIC
-LDSHAREDFLAGS := -Wl,-shared
-
+ifeq ($(BUILD),release)
+  CFLAGS := $(CFLAGS) -DNDEBUG -O2
+else
+  CFLAGS := $(CFLAGS) -g -O0
 endif
 
-include build/Makefile.common
+# Extra installation rules
+INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/errors.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/functypes.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/hubbub.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/parser.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/tree.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/types.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) /lib/pkgconfig:lib$(COMPONENT).pc.in
+INSTALL_ITEMS := $(INSTALL_ITEMS) /lib:$(BUILDDIR)/lib$(COMPONENT)$(LIBEXT)
