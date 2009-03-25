@@ -595,7 +595,7 @@ int clone_node(void *ctx, void *node, bool deep, void **result)
 			child = child->next) {
 		node_t *n;
 
-		clone_node(ctx, child, true, (void **) &n);
+		clone_node(ctx, child, true, (void **) (void *) &n);
 
 		n->refcnt = 0;
 
