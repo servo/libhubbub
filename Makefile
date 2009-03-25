@@ -23,31 +23,21 @@ else
   LDFLAGS := $(LDFLAGS) -lparserutils
 endif
 
-ifeq ($(MAKECMDGOALS),test)
-  NEED_JSON := yes
-else
-  ifeq ($(MAKECMDGOALS),profile)
-    NEED_JSON := yes
-  else
-    ifeq ($(MAKECMDGOALS),coverage)
-      NEED_JSON := yes
-    endif
-  endif
-endif
+include build/makefiles/Makefile.top
 
-ifeq ($(NEED_JSON),yes)
+ifeq ($(WANT_TEST),yes)
   # We require the presence of libjson -- http://oss.metaparadigm.com/json-c/
   ifneq ($(PKGCONFIG),)
-    CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json)
-    LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json)
+    TESTCFLAGS := $(TESTCFLAGS) \
+		$(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --cflags json)
+    TESTLDFLAGS := $(TESTLDFLAGS) \
+		$(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json)
   else
-    LDFLAGS := $(LDFLAGS) -ljson
+    TESTLDFLAGS := $(TESTLDFLAGS) -ljson
   endif
 
-  CFLAGS := $(CFLAGS) -Wno-unused-parameter
+  TESTCFLAGS := $(TESTCFLAGS) -Wno-unused-parameter
 endif
-
-include build/makefiles/Makefile.top
 
 # Extra installation rules
 INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/errors.h
