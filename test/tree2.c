@@ -362,6 +362,8 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
+	UNUSED(ctx);
+
 	node->type = COMMENT;
 	node->data.content = strndup((const char *) data->ptr, data->len);
 	node->refcnt = 1;
@@ -375,6 +377,8 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
+
+	UNUSED(ctx);
 
 	node->type = DOCTYPE;
 	node->data.doctype.name = strndup(
@@ -402,6 +406,8 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 int create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
+
+	UNUSED(ctx);
 
 	assert(tag->ns < NUM_NAMESPACES);
 
@@ -441,6 +447,8 @@ int create_text(void *ctx, const hubbub_string *data, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
+	UNUSED(ctx);
+
 	node->type = CHARACTER;
 	node->data.content = strndup((const char *) data->ptr, data->len);
 	node->refcnt = 1;
@@ -455,6 +463,8 @@ int ref_node(void *ctx, void *node)
 {
 	node_t *n = node;
 
+	UNUSED(ctx);
+
 	if (node != (void *) 1)
 		n->refcnt++;
 
@@ -464,6 +474,8 @@ int ref_node(void *ctx, void *node)
 int unref_node(void *ctx, void *node)
 {
 	node_t *n = node;
+
+	UNUSED(ctx);
 
 	if (n != (void *) 1) {
 		assert(n->refcnt > 0);
@@ -484,7 +496,6 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 {
 	node_t *tparent = parent;
 	node_t *tchild = child;
-
 	node_t *insert = NULL;
 
 	tchild->next = tchild->prev = NULL;
@@ -702,6 +713,8 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 	node_t *insert;
 	node_t *kids;
 
+	UNUSED(ctx);
+
 	kids = old_parent->child;
 	if (!kids) return 0;
 
@@ -729,6 +742,8 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 
 int get_parent(void *ctx, void *node, bool element_only, void **result)
 {
+	UNUSED(element_only);
+
 	*result = ((node_t *)node)->parent;
 
 	if (*result != NULL)
@@ -739,6 +754,8 @@ int get_parent(void *ctx, void *node, bool element_only, void **result)
 
 int has_children(void *ctx, void *node, bool *result)
 {
+	UNUSED(ctx);
+
 	*result = ((node_t *)node)->child ? true : false;
 
 	return 0;
@@ -746,6 +763,10 @@ int has_children(void *ctx, void *node, bool *result)
 
 int form_associate(void *ctx, void *form, void *node)
 {
+	UNUSED(ctx);
+	UNUSED(form);
+	UNUSED(node);
+
 	return 0;
 }
 
@@ -754,6 +775,8 @@ int add_attributes(void *ctx, void *vnode,
 {
 	node_t *node = vnode;
 	size_t old_elems = node->data.element.n_attrs;
+
+	UNUSED(ctx);
 
 	node->data.element.n_attrs += n_attributes;
 
@@ -783,6 +806,9 @@ int add_attributes(void *ctx, void *vnode,
 
 int set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
 {
+	UNUSED(ctx);
+	UNUSED(mode);
+
 	return 0;
 }
 

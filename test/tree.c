@@ -88,6 +88,8 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	hubbub_charset_source cssource;
 	bool passed = true;
 
+	UNUSED(argc);
+
 	node_ref = calloc(NODE_REF_CHUNK, sizeof(uint16_t));
 	if (node_ref == NULL) {
 		printf("Failed allocating node_ref\n");
