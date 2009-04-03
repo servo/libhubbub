@@ -1,5 +1,6 @@
 # Component settings
 COMPONENT := hubbub
+COMPONENT_VERSION := 0.0.1
 # Default to a static library
 COMPONENT_TYPE ?= lib-static
 
@@ -17,10 +18,10 @@ CFLAGS := $(CFLAGS) -std=c99 -D_BSD_SOURCE -I$(CURDIR)/include/ \
 
 # Parserutils
 ifneq ($(PKGCONFIG),)
-  CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils --cflags)
-  LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils --libs)
+  CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils-0 --cflags)
+  LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils-0 --libs)
 else
-  LDFLAGS := $(LDFLAGS) -lparserutils
+  LDFLAGS := $(LDFLAGS) -lparserutils0
 endif
 
 include build/makefiles/Makefile.top
@@ -40,11 +41,12 @@ ifeq ($(WANT_TEST),yes)
 endif
 
 # Extra installation rules
-INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/errors.h
-INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/functypes.h
-INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/hubbub.h
-INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/parser.h
-INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/tree.h
-INSTALL_ITEMS := $(INSTALL_ITEMS) /include/hubbub:include/hubbub/types.h
+I := /include/hubbub$(major-version)/hubbub
+INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/errors.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/functypes.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/hubbub.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/parser.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/tree.h
+INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/types.h
 INSTALL_ITEMS := $(INSTALL_ITEMS) /lib/pkgconfig:lib$(COMPONENT).pc.in
-INSTALL_ITEMS := $(INSTALL_ITEMS) /lib:$(BUILDDIR)/lib$(COMPONENT)$(LIBEXT)
+INSTALL_ITEMS := $(INSTALL_ITEMS) /lib:$(OUTPUT)
