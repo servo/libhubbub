@@ -57,7 +57,7 @@ typedef union hubbub_parser_optparams {
 
 /* Create a hubbub parser */
 hubbub_error hubbub_parser_create(const char *enc, bool fix_enc,
-		hubbub_alloc alloc, void *pw, hubbub_parser **parser);
+		hubbub_allocator_fn alloc, void *pw, hubbub_parser **parser);
 /* Destroy a hubbub parser */
 hubbub_error hubbub_parser_destroy(hubbub_parser *parser);
 

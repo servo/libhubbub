@@ -23,7 +23,7 @@
  * \return HUBBUB_OK on success, applicable error otherwise.
  */
 hubbub_error hubbub_initialise(const char *aliases_file,
-		hubbub_alloc alloc, void *pw)
+		hubbub_allocator_fn alloc, void *pw)
 {
 	hubbub_error error;
 
@@ -48,10 +48,10 @@ hubbub_error hubbub_initialise(const char *aliases_file,
  * Clean up after Hubbub
  *
  * \param alloc  Pointer to (de)allocation function
- * \param pw       Pointer to client-specific private data (may be NULL)
+ * \param pw     Pointer to client-specific private data (may be NULL)
  * \return HUBBUB_OK on success, applicable error otherwise.
  */
-hubbub_error hubbub_finalise(hubbub_alloc alloc, void *pw)
+hubbub_error hubbub_finalise(hubbub_allocator_fn alloc, void *pw)
 {
 	if (alloc == NULL)
 		return HUBBUB_BADPARM;

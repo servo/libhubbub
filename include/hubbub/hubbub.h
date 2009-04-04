@@ -14,10 +14,10 @@
 
 /* Initialise the Hubbub library for use */
 hubbub_error hubbub_initialise(const char *aliases_file,
-		hubbub_alloc alloc, void *pw);
+		hubbub_allocator_fn alloc, void *pw);
 
 /* Clean up after Hubbub */
-hubbub_error hubbub_finalise(hubbub_alloc alloc, void *pw);
+hubbub_error hubbub_finalise(hubbub_allocator_fn alloc, void *pw);
 
 #endif
 

@@ -178,7 +178,7 @@ struct hubbub_tokeniser {
 	hubbub_error_handler error_handler;	/**< Error handling callback */
 	void *error_pw;				/**< Error handler data */
 
-	hubbub_alloc alloc;		/**< Memory (de)allocation function */
+	hubbub_allocator_fn alloc;	/**< Memory (de)allocation function */
 	void *alloc_pw;			/**< Client private data */
 };
 
@@ -284,7 +284,8 @@ static hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
  *         HUBBUB_NOMEM on memory exhaustion
  */
 hubbub_error hubbub_tokeniser_create(parserutils_inputstream *input,
-		hubbub_alloc alloc, void *pw, hubbub_tokeniser **tokeniser)
+		hubbub_allocator_fn alloc, void *pw, 
+		hubbub_tokeniser **tokeniser)
 {
 	parserutils_error perror;
 	hubbub_tokeniser *tok;

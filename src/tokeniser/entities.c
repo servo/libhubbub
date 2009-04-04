@@ -2166,7 +2166,7 @@ static hubbub_dict *dict;
  * \param pw     Pointer to client-specific private data (may be NULL)
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
-hubbub_error hubbub_entities_create(hubbub_alloc alloc, void *pw)
+hubbub_error hubbub_entities_create(hubbub_allocator_fn alloc, void *pw)
 {
 	hubbub_error error;
 	size_t i;
@@ -2196,7 +2196,7 @@ hubbub_error hubbub_entities_create(hubbub_alloc alloc, void *pw)
  * \param alloc  Memory (de)allocation function
  * \param pw     Pointer to client-specific private data (may be NULL)
  */
-void hubbub_entities_destroy(hubbub_alloc alloc, void *pw)
+void hubbub_entities_destroy(hubbub_allocator_fn alloc, void *pw)
 {
 	UNUSED(alloc);
 	UNUSED(pw);

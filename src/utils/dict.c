@@ -25,7 +25,7 @@ typedef struct hubbub_dict_node {
 struct hubbub_dict {
 	hubbub_dict_node *dict;		/**< Root of tree */
 
-	hubbub_alloc alloc;		/**< Memory (de)allocation function */
+	hubbub_allocator_fn alloc;	/**< Memory (de)allocation function */
 	void *pw;			/**< Pointer to client data */
 };
 
@@ -46,7 +46,7 @@ static hubbub_dict_node *hubbub_dict_insert_internal(hubbub_dict *dict,
  *         HUBBUB_BADPARM on bad parameters,
  *         HUBBUB_NOMEM on memory exhaustion
  */
-hubbub_error hubbub_dict_create(hubbub_alloc alloc, void *pw, 
+hubbub_error hubbub_dict_create(hubbub_allocator_fn alloc, void *pw, 
 		hubbub_dict **dict)
 {
 	hubbub_dict *d;

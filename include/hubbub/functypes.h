@@ -24,7 +24,7 @@
  * \param pw    Pointer to client data
  * \return Pointer to allocated object, or NULL on failure
  */
-typedef void *(*hubbub_alloc)(void *ptr, size_t size, void *pw);
+typedef void *(*hubbub_allocator_fn)(void *ptr, size_t size, void *pw);
 
 /**
  * Type of token handling function

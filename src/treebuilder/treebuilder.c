@@ -93,7 +93,8 @@ static bool is_form_associated(element_type type);
  *         HUBBUB_NOMEM on memory exhaustion
  */
 hubbub_error hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
-		hubbub_alloc alloc, void *pw, hubbub_treebuilder **treebuilder)
+		hubbub_allocator_fn alloc, void *pw, 
+		hubbub_treebuilder **treebuilder)
 {
 	hubbub_error error;
 	hubbub_treebuilder *tb;

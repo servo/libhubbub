@@ -26,7 +26,7 @@ struct hubbub_parser {
 	hubbub_tokeniser *tok;		/**< Tokeniser instance */
 	hubbub_treebuilder *tb;		/**< Treebuilder instance */
 
-	hubbub_alloc alloc;		/**< Memory (de)allocation function */
+	hubbub_allocator_fn alloc;	/**< Memory (de)allocation function */
 	void *pw;			/**< Client data */
 };
 
@@ -44,7 +44,7 @@ struct hubbub_parser {
  *         HUBBUB_BADENCODING if ::enc is unsupported
  */
 hubbub_error hubbub_parser_create(const char *enc, bool fix_enc,
-		hubbub_alloc alloc, void *pw, hubbub_parser **parser)
+		hubbub_allocator_fn alloc, void *pw, hubbub_parser **parser)
 {
 	parserutils_error perror;
 	hubbub_error error;

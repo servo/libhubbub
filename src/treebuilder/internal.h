@@ -124,7 +124,7 @@ struct hubbub_treebuilder
 	hubbub_error_handler error_handler;	/**< Error handler */
 	void *error_pw;				/**< Error handler data */
 
-	hubbub_alloc alloc;		/**< Memory (de)allocation function */
+	hubbub_allocator_fn alloc;	/**< Memory (de)allocation function */
 	void *alloc_pw;			/**< Client private data */
 };
 

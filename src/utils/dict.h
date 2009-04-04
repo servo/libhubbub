@@ -16,7 +16,7 @@
 typedef struct hubbub_dict hubbub_dict;
 
 /* Create a dictionary */
-hubbub_error hubbub_dict_create(hubbub_alloc alloc, void *pw, 
+hubbub_error hubbub_dict_create(hubbub_allocator_fn alloc, void *pw, 
 		hubbub_dict **dict);
 /* Destroy a dictionary */
 hubbub_error hubbub_dict_destroy(hubbub_dict *dict);
