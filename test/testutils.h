@@ -31,6 +31,33 @@ void __assert2(const char *expr, const char *function,
   ((void) ((expr) || (__assert2 (#expr, __func__, __FILE__, __LINE__), 0)))
 
 
+/**
+ * Convert a string representation of an error name to a hubbub error code
+ *
+ * \param str  String containing error name
+ * \param len  Length of string (bytes)
+ * \return Hubbub error code, or HUBBUB_OK if unknown
+ */
+hubbub_error hubbub_error_from_string(const char *str, size_t len);
+hubbub_error hubbub_error_from_string(const char *str, size_t len)
+{
+	if (strncmp(str, "HUBBUB_OK", len) == 0) {
+		return HUBBUB_OK;
+	} else if (strncmp(str, "HUBBUB_NOMEM", len) == 0) {
+		return HUBBUB_NOMEM;
+	} else if (strncmp(str, "HUBBUB_BADPARM", len) == 0) {
+		return HUBBUB_BADPARM;
+	} else if (strncmp(str, "HUBBUB_INVALID", len) == 0) {
+		return HUBBUB_INVALID;
+	} else if (strncmp(str, "HUBBUB_FILENOTFOUND", len) == 0) {
+		return HUBBUB_FILENOTFOUND;
+	} else if (strncmp(str, "HUBBUB_NEEDDATA", len) == 0) {
+		return HUBBUB_NEEDDATA;
+	}
+
+	return HUBBUB_OK;
+}
+
 typedef bool (*line_func)(const char *data, size_t datalen, void *pw);
 
 static size_t parse_strlen(const char *str, size_t limit);

@@ -27,8 +27,6 @@ typedef enum hubbub_error {
 
 /* Convert a hubbub error value to a string */
 const char *hubbub_error_to_string(hubbub_error error);
-/* Convert a string to a hubbub error value */
-hubbub_error hubbub_error_from_string(const char *str, size_t len);
 
 #endif
 
