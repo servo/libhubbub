@@ -245,6 +245,7 @@ hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
 	return HUBBUB_OK;
 }
 
+#if 0
 /**
  * Pass a chunk of extraneous data to a hubbub parser for parsing
  *
@@ -277,6 +278,7 @@ hubbub_error hubbub_parser_parse_extraneous_chunk(hubbub_parser *parser,
 
 	return HUBBUB_OK;
 }
+#endif
 
 /**
  * Inform the parser that the last chunk of data has been parsed

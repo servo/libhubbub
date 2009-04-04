@@ -70,10 +70,6 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 /* This data is encoded in the input charset */
 hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
 		const uint8_t *data, size_t len);
-/* Pass a chunk of extraneous data to a hubbub parser for parsing */
-/* This data is UTF-8 encoded */
-hubbub_error hubbub_parser_parse_extraneous_chunk(hubbub_parser *parser,
-		const uint8_t *data, size_t len);
 /* Inform the parser that the last chunk of data has been parsed */
 hubbub_error hubbub_parser_completed(hubbub_parser *parser);
 
