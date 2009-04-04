@@ -208,7 +208,7 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
 hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
-		uint8_t *data, size_t len)
+		const uint8_t *data, size_t len)
 {
 	parserutils_error perror;
 	hubbub_error error;
@@ -254,7 +254,7 @@ hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
 hubbub_error hubbub_parser_parse_extraneous_chunk(hubbub_parser *parser,
-		uint8_t *data, size_t len)
+		const uint8_t *data, size_t len)
 {
 	hubbub_error error;
 
