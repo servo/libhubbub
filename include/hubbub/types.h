@@ -18,7 +18,7 @@ typedef enum hubbub_charset_source {
 	HUBBUB_CHARSET_UNKNOWN		= 0,	/**< Unknown */
 	HUBBUB_CHARSET_TENTATIVE	= 1,	/**< Charset may be changed
 						 * with further data */
-	HUBBUB_CHARSET_CONFIDENT	= 2,	/**< Charset definite */
+	HUBBUB_CHARSET_CONFIDENT	= 2	/**< Charset definite */
 } hubbub_charset_source;
 
 /**

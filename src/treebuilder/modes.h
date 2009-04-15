@@ -35,7 +35,7 @@ typedef enum
 	AFTER_AFTER_BODY,
 	AFTER_AFTER_FRAMESET,
 
-	GENERIC_RCDATA,
+	GENERIC_RCDATA
 } insertion_mode;
 
 

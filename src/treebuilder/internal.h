@@ -33,7 +33,7 @@ typedef enum
 /* SVG */
 	SVG, FOREIGNOBJECT, /* foreignobject is scoping, but only in SVG ns */
 	DESC,
-	UNKNOWN,
+	UNKNOWN
 } element_type;
 
 /**
