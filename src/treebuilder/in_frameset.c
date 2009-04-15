@@ -28,13 +28,16 @@ hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (process_characters_expect_whitespace(treebuilder,
-				token, true)) {
-			/** \todo parser error */
+		err = process_characters_expect_whitespace(treebuilder,
+				token, true);
+		if (err == HUBBUB_REPROCESS) {
+			/** \todo parse error */
+			/* Ignore the token */
+			err = HUBBUB_OK;
 		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 		break;
@@ -47,11 +50,13 @@ hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (type == HTML) {
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else if (type == FRAMESET) {
-			insert_element(treebuilder, &token->data.tag, true);
+			err = insert_element(treebuilder, &token->data.tag, 
+					true);
 		} else if (type == FRAME) {
-			insert_element(treebuilder, &token->data.tag, false);
+			err = insert_element(treebuilder, &token->data.tag, 
+					false);
 			/** \todo ack sc flag */
 		} else if (type == NOFRAMES) {
 			err = handle_in_head(treebuilder, token);
@@ -66,6 +71,7 @@ hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (type == FRAMESET) {
+			hubbub_error e;
 			hubbub_ns ns;
 			void *node;
 
@@ -75,10 +81,8 @@ hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 				break;
 			}
 
-			if (!element_stack_pop(treebuilder, &ns, &type,
-					&node)) {
-				/** \todo errors */
-			}
+			e = element_stack_pop(treebuilder, &ns, &type, &node);
+			assert(e == HUBBUB_OK);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,

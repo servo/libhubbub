@@ -74,25 +74,25 @@ node_t *Document;
 
 static void node_print(buf_t *buf, node_t *node, unsigned depth);
 
-static int create_comment(void *ctx, const hubbub_string *data, void **result);
-static int create_doctype(void *ctx, const hubbub_doctype *doctype,
+static hubbub_error create_comment(void *ctx, const hubbub_string *data, void **result);
+static hubbub_error create_doctype(void *ctx, const hubbub_doctype *doctype,
 		void **result);
-static int create_element(void *ctx, const hubbub_tag *tag, void **result);
-static int create_text(void *ctx, const hubbub_string *data, void **result);
-static int ref_node(void *ctx, void *node);
-static int unref_node(void *ctx, void *node);
-static int append_child(void *ctx, void *parent, void *child, void **result);
-static int insert_before(void *ctx, void *parent, void *child, void *ref_child,
+static hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result);
+static hubbub_error create_text(void *ctx, const hubbub_string *data, void **result);
+static hubbub_error ref_node(void *ctx, void *node);
+static hubbub_error unref_node(void *ctx, void *node);
+static hubbub_error append_child(void *ctx, void *parent, void *child, void **result);
+static hubbub_error insert_before(void *ctx, void *parent, void *child, void *ref_child,
 		void **result);
-static int remove_child(void *ctx, void *parent, void *child, void **result);
-static int clone_node(void *ctx, void *node, bool deep, void **result);
-static int reparent_children(void *ctx, void *node, void *new_parent);
-static int get_parent(void *ctx, void *node, bool element_only, void **result);
-static int has_children(void *ctx, void *node, bool *result);
-static int form_associate(void *ctx, void *form, void *node);
-static int add_attributes(void *ctx, void *node,
+static hubbub_error remove_child(void *ctx, void *parent, void *child, void **result);
+static hubbub_error clone_node(void *ctx, void *node, bool deep, void **result);
+static hubbub_error reparent_children(void *ctx, void *node, void *new_parent);
+static hubbub_error get_parent(void *ctx, void *node, bool element_only, void **result);
+static hubbub_error has_children(void *ctx, void *node, bool *result);
+static hubbub_error form_associate(void *ctx, void *form, void *node);
+static hubbub_error add_attributes(void *ctx, void *node,
 		const hubbub_attribute *attributes, uint32_t n_attributes);
-static int set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
+static hubbub_error set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
 
 static void delete_node(node_t *node);
 static void delete_attr(attr_t *attr);
@@ -278,7 +278,7 @@ int main(int argc, char **argv)
 
 /*** Tree construction functions ***/
 
-int create_comment(void *ctx, const hubbub_string *data, void **result)
+hubbub_error create_comment(void *ctx, const hubbub_string *data, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
@@ -291,10 +291,11 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 
 	*result = node;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
+hubbub_error create_doctype(void *ctx, const hubbub_doctype *doctype, 
+		void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
@@ -320,10 +321,10 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 
 	*result = node;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int create_element(void *ctx, const hubbub_tag *tag, void **result)
+hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
@@ -360,10 +361,10 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 
 	*result = node;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int create_text(void *ctx, const hubbub_string *data, void **result)
+hubbub_error create_text(void *ctx, const hubbub_string *data, void **result)
 {
 	node_t *node = calloc(1, sizeof *node);
 
@@ -376,10 +377,10 @@ int create_text(void *ctx, const hubbub_string *data, void **result)
 
 	*result = node;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int ref_node(void *ctx, void *node)
+hubbub_error ref_node(void *ctx, void *node)
 {
 	node_t *n = node;
 
@@ -388,10 +389,10 @@ int ref_node(void *ctx, void *node)
 	if (node != (void *) 1)
 		n->refcnt++;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int unref_node(void *ctx, void *node)
+hubbub_error unref_node(void *ctx, void *node)
 {
 	node_t *n = node;
 
@@ -409,10 +410,10 @@ int unref_node(void *ctx, void *node)
 		}
 	}
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int append_child(void *ctx, void *parent, void *child, void **result)
+hubbub_error append_child(void *ctx, void *parent, void *child, void **result)
 {
 	node_t *tparent = parent;
 	node_t *tchild = child;
@@ -467,12 +468,12 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 
 	ref_node(ctx, *result);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /* insert 'child' before 'ref_child', under 'parent' */
-int insert_before(void *ctx, void *parent, void *child, void *ref_child,
-		void **result)
+hubbub_error insert_before(void *ctx, void *parent, void *child, 
+		void *ref_child, void **result)
 {
 	node_t *tparent = parent;
 	node_t *tchild = child;
@@ -515,10 +516,10 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 
 	ref_node(ctx, *result);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int remove_child(void *ctx, void *parent, void *child, void **result)
+hubbub_error remove_child(void *ctx, void *parent, void *child, void **result)
 {
 	node_t *tparent = parent;
 	node_t *tchild = child;
@@ -545,10 +546,10 @@ int remove_child(void *ctx, void *parent, void *child, void **result)
 
 	ref_node(ctx, *result);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int clone_node(void *ctx, void *node, bool deep, void **result)
+hubbub_error clone_node(void *ctx, void *node, bool deep, void **result)
 {
 	node_t *old_node = node;
 	node_t *new_node = calloc(1, sizeof *new_node);
@@ -622,11 +623,11 @@ int clone_node(void *ctx, void *node, bool deep, void **result)
 		last = n;
 	}
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /* Take all of the child nodes of "node" and append them to "new_parent" */
-int reparent_children(void *ctx, void *node, void *new_parent)
+hubbub_error reparent_children(void *ctx, void *node, void *new_parent)
 {
 	node_t *parent = new_parent;
 	node_t *old_parent = node;
@@ -658,10 +659,10 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 		kids = kids->next;
 	}
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int get_parent(void *ctx, void *node, bool element_only, void **result)
+hubbub_error get_parent(void *ctx, void *node, bool element_only, void **result)
 {
 	UNUSED(element_only);
 
@@ -670,28 +671,28 @@ int get_parent(void *ctx, void *node, bool element_only, void **result)
 	if (*result != NULL)
 		ref_node(ctx, *result);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int has_children(void *ctx, void *node, bool *result)
+hubbub_error has_children(void *ctx, void *node, bool *result)
 {
 	UNUSED(ctx);
 
 	*result = ((node_t *)node)->child ? true : false;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int form_associate(void *ctx, void *form, void *node)
+hubbub_error form_associate(void *ctx, void *form, void *node)
 {
 	UNUSED(ctx);
 	UNUSED(form);
 	UNUSED(node);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int add_attributes(void *ctx, void *vnode,
+hubbub_error add_attributes(void *ctx, void *vnode,
 		const hubbub_attribute *attributes, uint32_t n_attributes)
 {
 	node_t *node = vnode;
@@ -722,15 +723,15 @@ int add_attributes(void *ctx, void *vnode,
 	}
 
 
-	return 0;
+	return HUBBUB_OK;
 }
 
-int set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
+hubbub_error set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
 {
 	UNUSED(ctx);
 	UNUSED(mode);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 

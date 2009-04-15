@@ -40,7 +40,7 @@ hubbub_error handle_in_caption(hubbub_treebuilder *treebuilder,
 			err = HUBBUB_REPROCESS;
 		} else {
 			/* Process as if "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		}
 	}
 		break;
@@ -61,7 +61,7 @@ hubbub_error handle_in_caption(hubbub_treebuilder *treebuilder,
 			/** \todo parse error */
 		} else {
 			/* Process as if "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		}
 	}
 		break;
@@ -70,12 +70,13 @@ hubbub_error handle_in_caption(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_DOCTYPE:
 	case HUBBUB_TOKEN_EOF:
 		/* Process as if "in body" */
-		handle_in_body(treebuilder, token);
+		err = handle_in_body(treebuilder, token);
 
 		break;
 	}
 
 	if (handled || err == HUBBUB_REPROCESS) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype = UNKNOWN;
 		void *node;
@@ -84,14 +85,11 @@ hubbub_error handle_in_caption(hubbub_treebuilder *treebuilder,
 
 		close_implied_end_tags(treebuilder, UNKNOWN);
 
-
 		while (otype != CAPTION) {
 			/** \todo parse error */
 
-			if (!element_stack_pop(treebuilder, &ns, &otype,
-					&node)) {
-				/** \todo errors */
-			}
+			e = element_stack_pop(treebuilder, &ns, &otype,	&node);
+			assert(e == HUBBUB_OK);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,

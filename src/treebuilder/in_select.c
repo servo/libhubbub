@@ -32,10 +32,10 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		append_text(treebuilder, &token->data.character);
+		err = append_text(treebuilder, &token->data.character);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 		break;
@@ -49,26 +49,27 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else if (type == OPTION) {
 			if (current_node(treebuilder) == OPTION) {
-				if (!element_stack_pop(treebuilder, &ns, &otype,
-						&node)) {
-					/** \todo errors */
-				}
+				hubbub_error e;
+				e = element_stack_pop(treebuilder, &ns, &otype,
+						&node);
+				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,
 						node);
 			}
 
-			insert_element(treebuilder, &token->data.tag, true);
+			err = insert_element(treebuilder, &token->data.tag, 
+					true);
 		} else if (type == OPTGROUP) {
 			if (current_node(treebuilder) == OPTION) {
-				if (!element_stack_pop(treebuilder, &ns, &otype,
-						&node)) {
-					/** \todo errors */
-				}
+				hubbub_error e;
+				e = element_stack_pop(treebuilder, &ns, &otype,
+						&node);
+				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,
@@ -76,31 +77,36 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 			}
 
 			if (current_node(treebuilder) == OPTGROUP) {
-				if (!element_stack_pop(treebuilder, &ns, &otype,
-						&node)) {
-					/** \todo errors */
-				}
+				hubbub_error e;
+				e = element_stack_pop(treebuilder, &ns, &otype,
+						&node);
+				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,
 						node);
 			}
 
-			insert_element(treebuilder, &token->data.tag, true);
+			err = insert_element(treebuilder, &token->data.tag, 
+					true);
 		} else if (type == SELECT || type == INPUT ||
 				type == TEXTAREA) {
 
 			if (element_in_scope(treebuilder, SELECT, true)) {
-				element_stack_pop_until(treebuilder, SELECT);
+				hubbub_error e;
+				e = element_stack_pop_until(treebuilder, 
+						SELECT);
+				assert(e == HUBBUB_OK);
 				reset_insertion_mode(treebuilder);
 			} else {
 				/* fragment case */
 				/** \todo parse error */
 			}
 
-			if (type != SELECT) err = HUBBUB_REPROCESS;
+			if (type != SELECT)
+				err = HUBBUB_REPROCESS;
 		} else if (type == SCRIPT) {
-			handle_in_head(treebuilder, token);
+			err = handle_in_head(treebuilder, token);
 		} else {
 			/** \todo parse error */
 		}
@@ -114,10 +120,10 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 		if (type == OPTGROUP) {
 			if (current_node(treebuilder) == OPTION &&
 					prev_node(treebuilder) == OPTGROUP) {
-				if (!element_stack_pop(treebuilder, &ns, &otype,
-						&node)) {
-					/** \todo errors */
-				}
+				hubbub_error e;
+				e = element_stack_pop(treebuilder, &ns, &otype,
+						&node);
+				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,
@@ -125,10 +131,10 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 			}
 
 			if (current_node(treebuilder) == OPTGROUP) {
-				if (!element_stack_pop(treebuilder, &ns, &otype,
-						&node)) {
-					/** \todo errors */
-				}
+				hubbub_error e;
+				e = element_stack_pop(treebuilder, &ns, &otype,
+						&node);
+				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,
@@ -138,10 +144,10 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 			}
 		} else if (type == OPTION) {
 			if (current_node(treebuilder) == OPTION) {
-				if (!element_stack_pop(treebuilder, &ns, &otype,
-						&node)) {
-					/** \todo errors */
-				}
+				hubbub_error e;
+				e = element_stack_pop(treebuilder, &ns, &otype,
+						&node);
+				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,
@@ -151,7 +157,10 @@ hubbub_error handle_in_select(hubbub_treebuilder *treebuilder,
 			}
 		} else if (type == SELECT) {
 			if (element_in_scope(treebuilder, SELECT, true)) {
-				element_stack_pop_until(treebuilder, SELECT);
+				hubbub_error e;
+				e = element_stack_pop_until(treebuilder, 
+						SELECT);
+				assert(e == HUBBUB_OK);
 				reset_insertion_mode(treebuilder);
 			} else {
 				/* fragment case */

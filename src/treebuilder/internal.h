@@ -73,6 +73,8 @@ typedef struct formatting_list_entry
 typedef struct hubbub_treebuilder_context
 {
 	insertion_mode mode;		/**< The current insertion mode */
+	uint32_t mode_state;		/**< Insertion mode specific state */
+
 	insertion_mode second_mode;	/**< The secondary insertion mode */
 
 #define ELEMENT_STACK_CHUNK 128
@@ -134,22 +136,25 @@ hubbub_error hubbub_treebuilder_token_handler(
 hubbub_error process_characters_expect_whitespace(
 		hubbub_treebuilder *treebuilder, const hubbub_token *token,
 		bool insert_into_current_node);
-void process_comment_append(hubbub_treebuilder *treebuilder,
+hubbub_error process_comment_append(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, void *parent);
-void parse_generic_rcdata(hubbub_treebuilder *treebuilder,
+hubbub_error parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token, bool rcdata);
 
 uint32_t element_in_scope(hubbub_treebuilder *treebuilder,
 		element_type type, bool in_table);
-void reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder);
+hubbub_error reconstruct_active_formatting_list(
+		hubbub_treebuilder *treebuilder);
 void clear_active_formatting_list_to_marker(
 		hubbub_treebuilder *treebuilder);
-void insert_element(hubbub_treebuilder *treebuilder, 
+hubbub_error remove_node_from_dom(hubbub_treebuilder *treebuilder, 
+		void *node);
+hubbub_error insert_element(hubbub_treebuilder *treebuilder, 
 		const hubbub_tag *tag_name, bool push);
 void close_implied_end_tags(hubbub_treebuilder *treebuilder, 
 		element_type except);
 void reset_insertion_mode(hubbub_treebuilder *treebuilder);
-void append_text(hubbub_treebuilder *treebuilder,
+hubbub_error append_text(hubbub_treebuilder *treebuilder,
 		const hubbub_string *string);
 
 element_type element_type_from_name(hubbub_treebuilder *treebuilder,
@@ -160,30 +165,31 @@ bool is_scoping_element(element_type type);
 bool is_formatting_element(element_type type);
 bool is_phrasing_element(element_type type);
 
-bool element_stack_push(hubbub_treebuilder *treebuilder,
+hubbub_error element_stack_push(hubbub_treebuilder *treebuilder,
 		hubbub_ns ns, element_type type, void *node);
-bool element_stack_pop(hubbub_treebuilder *treebuilder,
+hubbub_error element_stack_pop(hubbub_treebuilder *treebuilder,
 		hubbub_ns *ns, element_type *type, void **node);
-bool element_stack_pop_until(hubbub_treebuilder *treebuilder,
+hubbub_error element_stack_pop_until(hubbub_treebuilder *treebuilder,
 		element_type type);
-bool element_stack_remove(hubbub_treebuilder *treebuilder, uint32_t index,
-		hubbub_ns *ns, element_type *type, void **removed);
+hubbub_error element_stack_remove(hubbub_treebuilder *treebuilder, 
+		uint32_t index, hubbub_ns *ns, element_type *type, 
+		void **removed);
 uint32_t current_table(hubbub_treebuilder *treebuilder);
 element_type current_node(hubbub_treebuilder *treebuilder);
 element_type prev_node(hubbub_treebuilder *treebuilder);
 
-bool formatting_list_append(hubbub_treebuilder *treebuilder,
+hubbub_error formatting_list_append(hubbub_treebuilder *treebuilder,
 		hubbub_ns ns, element_type type, void *node, 
 		uint32_t stack_index);
-bool formatting_list_insert(hubbub_treebuilder *treebuilder,
+hubbub_error formatting_list_insert(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *prev, formatting_list_entry *next,
 		hubbub_ns ns, element_type type, void *node, 
 		uint32_t stack_index);
-bool formatting_list_remove(hubbub_treebuilder *treebuilder,
+hubbub_error formatting_list_remove(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry,
 		hubbub_ns *ns, element_type *type, void **node, 
 		uint32_t *stack_index);
-bool formatting_list_replace(hubbub_treebuilder *treebuilder,
+hubbub_error formatting_list_replace(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry,
 		hubbub_ns ns, element_type type, void *node, 
 		uint32_t stack_index,
@@ -200,7 +206,8 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 		hubbub_tag *tag);
 
 /* in_body.c */
-void *aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, void *node);
+hubbub_error aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder, 
+		void *node, void **inserted);
 
 #ifndef NDEBUG
 #include <stdio.h>

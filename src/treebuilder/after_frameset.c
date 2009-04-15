@@ -28,13 +28,17 @@ hubbub_error handle_after_frameset(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (process_characters_expect_whitespace(treebuilder,
-				token, true)) {
+		err = process_characters_expect_whitespace(treebuilder,
+				token, true);
+		if (err == HUBBUB_REPROCESS) {
 			/** \todo parse error */
+
+			/* Ignore the token */
+			err = HUBBUB_OK;
 		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 		break;
@@ -47,7 +51,7 @@ hubbub_error handle_after_frameset(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (type == HTML) {
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else if (type == NOFRAMES) {
 			err = handle_in_head(treebuilder, token);
 		} else {

@@ -45,7 +45,7 @@ hubbub_error handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else if (type == NOSCRIPT) {
 			handled = true;
 		} else if (type == LINK || type == META || type == NOFRAMES ||
@@ -82,13 +82,13 @@ hubbub_error handle_in_head_noscript(hubbub_treebuilder *treebuilder,
 	}
 
 	if (handled || err == HUBBUB_REPROCESS) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
-		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
-			/** \todo errors */
-		}
+		e = element_stack_pop(treebuilder, &ns, &otype, &node);
+		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,

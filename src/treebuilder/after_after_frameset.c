@@ -28,14 +28,13 @@ hubbub_error handle_after_after_frameset(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (process_characters_expect_whitespace(treebuilder,
-				token, true)) {
+		err = process_characters_expect_whitespace(treebuilder,
+				token, true);
+		if (err == HUBBUB_REPROCESS)
 			treebuilder->context.mode = IN_FRAMESET;
-			err = HUBBUB_REPROCESS;
-		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.document);
 		break;
 	case HUBBUB_TOKEN_END_TAG:

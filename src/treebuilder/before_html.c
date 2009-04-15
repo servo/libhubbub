@@ -32,7 +32,7 @@ hubbub_error handle_before_html(hubbub_treebuilder *treebuilder,
 		/** \todo parse error */
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.document);
 		break;
 	case HUBBUB_TOKEN_CHARACTER:
@@ -59,7 +59,7 @@ hubbub_error handle_before_html(hubbub_treebuilder *treebuilder,
 
 
 	if (handled || err == HUBBUB_REPROCESS) {
-		int success;
+		hubbub_error e;
 		void *html, *appended;
 
 		/* We can't use insert_element() here, as it assumes
@@ -78,30 +78,29 @@ hubbub_error handle_before_html(hubbub_treebuilder *treebuilder,
 			tag.n_attributes = 0;
 			tag.attributes = NULL;
 
-			success = treebuilder->tree_handler->create_element(
+			e = treebuilder->tree_handler->create_element(
 					treebuilder->tree_handler->ctx,
 					&tag, &html);
 		} else {
-			success = treebuilder->tree_handler->create_element(
+			e = treebuilder->tree_handler->create_element(
 					treebuilder->tree_handler->ctx,
 					&token->data.tag, &html);
 		}
 
-		if (success != 0) {
-			/** \todo errors */
-		}
+		if (e != HUBBUB_OK)
+			return e;
 
-		success = treebuilder->tree_handler->append_child(
+		e = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
 				treebuilder->context.document,
 				html, &appended);
-		if (success != 0) {
-			/** \todo errors */
-		}
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
 				html);
+
+		if (e != HUBBUB_OK)
+			return e;
 
 		/* We can't use element_stack_push() here, as it 
 		 * assumes that current_node is pointing at the index 

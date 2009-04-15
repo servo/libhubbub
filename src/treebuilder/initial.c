@@ -228,53 +228,50 @@ hubbub_error handle_initial(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (process_characters_expect_whitespace(treebuilder, token,
-				false)) {
+		err = process_characters_expect_whitespace(treebuilder, token,
+				false);
+		if (err == HUBBUB_REPROCESS) {
 			/** \todo parse error */
 
 			treebuilder->tree_handler->set_quirks_mode(
 					treebuilder->tree_handler->ctx,
 					HUBBUB_QUIRKS_MODE_FULL);
 			treebuilder->context.mode = BEFORE_HTML;
-			err = HUBBUB_REPROCESS;
 		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.document);
 		break;
 	case HUBBUB_TOKEN_DOCTYPE:
 	{
-		int success;
 		void *doctype, *appended;
 		const hubbub_doctype *cdoc;
 
 		/** \todo parse error */
 
-		success = treebuilder->tree_handler->create_doctype(
+		err = treebuilder->tree_handler->create_doctype(
 				treebuilder->tree_handler->ctx,
 				&token->data.doctype,
 				&doctype);
-		if (success != 0) {
-			/** \todo errors */
-		}
+		if (err != HUBBUB_OK)
+			return err;
 
 		/* Append to Document node */
-		success = treebuilder->tree_handler->append_child(
+		err = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
 				treebuilder->context.document,
 				doctype, &appended);
-		if (success != 0) {
-			/** \todo errors */
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					doctype);
-		}
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				doctype);
+
+		if (err != HUBBUB_OK)
+			return err;
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, appended);
-		treebuilder->tree_handler->unref_node(
-				treebuilder->tree_handler->ctx, doctype);
 
 		cdoc = &token->data.doctype;
 

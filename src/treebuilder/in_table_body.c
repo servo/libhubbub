@@ -25,13 +25,13 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 
 	while (cur_node != TBODY && cur_node != TFOOT &&
 			cur_node != THEAD && cur_node != HTML) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		if (!element_stack_pop(treebuilder, &ns, &type, &node)) {
-			/** \todo errors */
-		}
+		e = element_stack_pop(treebuilder, &ns, &type, &node);
+		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -55,6 +55,7 @@ static hubbub_error table_sub_start_or_table_end(hubbub_treebuilder *treebuilder
 	if (element_in_scope(treebuilder, TBODY, true) ||
 			element_in_scope(treebuilder, THEAD, true) ||
 			element_in_scope(treebuilder, TFOOT, true)) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
@@ -64,9 +65,8 @@ static hubbub_error table_sub_start_or_table_end(hubbub_treebuilder *treebuilder
 		/* "Act as if an end tag with the same name as the current
 		 * node had been seen" -- this behaviour should be identical
 		 * to handling for (tbody/tfoot/thead) end tags in this mode */
-		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
-			/** \todo errors */
-		}
+		e = element_stack_pop(treebuilder, &ns, &otype, &node);
+		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -103,8 +103,11 @@ hubbub_error handle_in_table_body(hubbub_treebuilder *treebuilder,
 
 		if (type == TR) {
 			table_clear_stack(treebuilder);
-			insert_element(treebuilder, &token->data.tag, true);
-			treebuilder->context.mode = IN_ROW;
+
+			err = insert_element(treebuilder, &token->data.tag, 
+					true);
+			if (err == HUBBUB_OK)
+				treebuilder->context.mode = IN_ROW;
 		} else if (type == TH || type == TD) {
 			hubbub_tag tag;
 
@@ -119,10 +122,13 @@ hubbub_error handle_in_table_body(hubbub_treebuilder *treebuilder,
 			tag.attributes = NULL;
 
 			table_clear_stack(treebuilder);
-			insert_element(treebuilder, &tag, true);
-			treebuilder->context.mode = IN_ROW;
 
-			err = HUBBUB_REPROCESS;
+			err = insert_element(treebuilder, &tag, true);
+			if (err == HUBBUB_OK) {
+				treebuilder->context.mode = IN_ROW;
+
+				err = HUBBUB_REPROCESS;
+			}
 		} else if (type == CAPTION || type == COL ||
 				type == COLGROUP || type == TBODY ||
 				type == TFOOT || type == THEAD) {
@@ -142,15 +148,16 @@ hubbub_error handle_in_table_body(hubbub_treebuilder *treebuilder,
 				/** \todo parse error */
 				/* Ignore the token */
 			} else {
+				hubbub_error e;
 				hubbub_ns ns;
 				element_type otype;
 				void *node;
 
 				table_clear_stack(treebuilder);
-				if (!element_stack_pop(treebuilder, &ns,
-						&otype, &node)) {
-					/** \todo errors */
-				}
+
+				e = element_stack_pop(treebuilder, &ns,
+						&otype, &node);
+				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,

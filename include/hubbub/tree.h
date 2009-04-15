@@ -16,11 +16,12 @@
  * \param ctx     Client's context
  * \param data    String content of node
  * \param result  Pointer to location to receive created node
- * \return 0 on success, 1 on failure.
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-typedef int (*hubbub_tree_create_comment)(void *ctx, const hubbub_string *data,
+typedef hubbub_error (*hubbub_tree_create_comment)(void *ctx, 
+		const hubbub_string *data,
 		void **result);
 
 /**
@@ -29,11 +30,11 @@ typedef int (*hubbub_tree_create_comment)(void *ctx, const hubbub_string *data,
  * \param ctx      Client's context
  * \param doctype  Data for doctype node (name, public id, system id)
  * \param result   Pointer to location to receive created node
- * \return 0 on success, 1 on failure.
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-typedef int (*hubbub_tree_create_doctype)(void *ctx,
+typedef hubbub_error (*hubbub_tree_create_doctype)(void *ctx,
 		const hubbub_doctype *doctype,
 		void **result);
 
@@ -43,11 +44,12 @@ typedef int (*hubbub_tree_create_doctype)(void *ctx,
  * \param ctx     Client's context
  * \param tag     Data for element node (namespace, name, attributes)
  * \param result  Pointer to location to receive created node
- * \return 0 on success, 1 on failure.
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-typedef int (*hubbub_tree_create_element)(void *ctx, const hubbub_tag *tag, 
+typedef hubbub_error (*hubbub_tree_create_element)(void *ctx, 
+		const hubbub_tag *tag, 
 		void **result);
 
 /**
@@ -56,11 +58,12 @@ typedef int (*hubbub_tree_create_element)(void *ctx, const hubbub_tag *tag,
  * \param ctx     Client's context
  * \param data    String content of node
  * \param result  Pointer to location to receive created node
- * \return 0 on success, 1 on failure.
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-typedef int (*hubbub_tree_create_text)(void *ctx, const hubbub_string *data,
+typedef hubbub_error (*hubbub_tree_create_text)(void *ctx, 
+		const hubbub_string *data,
 		void **result);
 
 /**
@@ -68,24 +71,24 @@ typedef int (*hubbub_tree_create_text)(void *ctx, const hubbub_string *data,
  *
  * \param ctx   Client's context
  * \param node  Node to reference
- * \param 0 on success, 1 on failure.
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: node's reference count is one larger than before
  */
-typedef int (*hubbub_tree_ref_node)(void *ctx, void *node);
+typedef hubbub_error (*hubbub_tree_ref_node)(void *ctx, void *node);
 
 /**
  * Decrease a node's reference count
  *
  * \param ctx   Client's context
  * \param node  Node to reference
- * \param 0 on success, 1 on failure.
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: If the node's reference count becomes zero, and it has no 
  * parent, and it is not the document node, then it is destroyed. Otherwise,
  * the reference count is one less than before.
  */
-typedef int (*hubbub_tree_unref_node)(void *ctx, void *node);
+typedef hubbub_error (*hubbub_tree_unref_node)(void *ctx, void *node);
 
 /**
  * Append a node to the end of another's child list
@@ -94,13 +97,15 @@ typedef int (*hubbub_tree_unref_node)(void *ctx, void *node);
  * \param parent  The node to append to
  * \param child   The node to append
  * \param result  Pointer to location to receive appended node
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: if successful, result's reference count is increased by 1
  *
  * Important: *result may not == child (e.g. if text nodes got coalesced)
  */
-typedef int (*hubbub_tree_append_child)(void *ctx, void *parent, void *child,
+typedef hubbub_error (*hubbub_tree_append_child)(void *ctx, 
+		void *parent, 
+		void *child,
 		void **result);
 
 /**
@@ -111,14 +116,17 @@ typedef int (*hubbub_tree_append_child)(void *ctx, void *parent, void *child,
  * \param child      The node to insert
  * \param ref_child  The node to insert before
  * \param result     Pointer to location to receive inserted node
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: if successful, result's reference count is increased by 1
  *
  * Important: *result may not == child (e.g. if text nodes got coalesced)
  */
-typedef int (*hubbub_tree_insert_before)(void *ctx, void *parent, void *child,
-		void *ref_child, void **result);
+typedef hubbub_error (*hubbub_tree_insert_before)(void *ctx, 
+		void *parent, 
+		void *child,
+		void *ref_child, 
+		void **result);
 
 /**
  * Remove a node from another's child list
@@ -127,11 +135,13 @@ typedef int (*hubbub_tree_insert_before)(void *ctx, void *parent, void *child,
  * \param parent  The node to remove from
  * \param child   The node to remove
  * \param result  Pointer to location to receive removed node
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: if successful, result's reference count is increased by 1
  */
-typedef int (*hubbub_tree_remove_child)(void *ctx, void *parent, void *child,
+typedef hubbub_error (*hubbub_tree_remove_child)(void *ctx, 
+		void *parent, 
+		void *child,
 		void **result);
 
 /**
@@ -141,11 +151,13 @@ typedef int (*hubbub_tree_remove_child)(void *ctx, void *parent, void *child,
  * \param node    The node to clone
  * \param deep    True to clone entire subtree, false to clone only the node
  * \param result  Pointer to location to receive clone
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-typedef int (*hubbub_tree_clone_node)(void *ctx, void *node, bool deep,
+typedef hubbub_error (*hubbub_tree_clone_node)(void *ctx, 
+		void *node, 
+		bool deep,
 		void **result);
 
 /**
@@ -154,9 +166,10 @@ typedef int (*hubbub_tree_clone_node)(void *ctx, void *node, bool deep,
  * \param ctx         Client's context
  * \param node        The initial parent node
  * \param new_parent  The new parent node
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  */
-typedef int (*hubbub_tree_reparent_children)(void *ctx, void *node, 
+typedef hubbub_error (*hubbub_tree_reparent_children)(void *ctx, 
+		void *node, 
 		void *new_parent);
 
 /**
@@ -166,7 +179,7 @@ typedef int (*hubbub_tree_reparent_children)(void *ctx, void *node,
  * \param node          Node to retrieve the parent of
  * \param element_only  True if the parent must be an element, false otherwise
  * \param result        Pointer to location to receive parent node
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  *
  * If there is a parent node, but it is not an element node and element_only
  * is true, then act as if no parent existed.
@@ -174,7 +187,9 @@ typedef int (*hubbub_tree_reparent_children)(void *ctx, void *node,
  * Postcondition: if there is a parent, then result's reference count must be
  * increased.
  */
-typedef int (*hubbub_tree_get_parent)(void *ctx, void *node, bool element_only, 
+typedef hubbub_error (*hubbub_tree_get_parent)(void *ctx, 
+		void *node, 
+		bool element_only, 
 		void **result);
 
 /**
@@ -183,9 +198,11 @@ typedef int (*hubbub_tree_get_parent)(void *ctx, void *node, bool element_only,
  * \param ctx     Client's context
  * \param node    The node to inspect
  * \param result  Location to receive result
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  */
-typedef int (*hubbub_tree_has_children)(void *ctx, void *node, bool *result);
+typedef hubbub_error (*hubbub_tree_has_children)(void *ctx, 
+		void *node, 
+		bool *result);
 
 /**
  * Associate a node with a form
@@ -193,9 +210,11 @@ typedef int (*hubbub_tree_has_children)(void *ctx, void *node, bool *result);
  * \param ctx   Client's context
  * \param form  The form to associate with
  * \param node  The node to associate
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  */
-typedef int (*hubbub_tree_form_associate)(void *ctx, void *form, void *node);
+typedef hubbub_error (*hubbub_tree_form_associate)(void *ctx, 
+		void *form, 
+		void *node);
 
 /**
  * Add attributes to a node
@@ -204,29 +223,35 @@ typedef int (*hubbub_tree_form_associate)(void *ctx, void *form, void *node);
  * \param node          The node to add to
  * \param attributes    Array of attributes to add
  * \param n_attributes  Number of entries in array
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  */
-typedef int (*hubbub_tree_add_attributes)(void *ctx, void *node,
-		const hubbub_attribute *attributes, uint32_t n_attributes);
+typedef hubbub_error (*hubbub_tree_add_attributes)(void *ctx, 
+		void *node,
+		const hubbub_attribute *attributes, 
+		uint32_t n_attributes);
 
 /**
  * Notification of the quirks mode of a document
  *
  * \param ctx   Client's context
  * \param mode  The quirks mode
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise.
  */
-typedef int (*hubbub_tree_set_quirks_mode)(void *ctx, hubbub_quirks_mode mode);
+typedef hubbub_error (*hubbub_tree_set_quirks_mode)(void *ctx, 
+		hubbub_quirks_mode mode);
 
 /**
  * Notification that a potential encoding change is required
  *
  * \param ctx      Client's context
  * \param charset  The new charset for the source data
- * \return 0 to ignore the change and continue using the current input handler,
- *         1 to stop processing immediately and return control to the client.
+ * \return HUBBUB_OK to continue using the current input handler, 
+ *         HUBBUB_ENCODINGCHANGE to stop processing immediately and 
+ *                               return control to the client,
+ *         appropriate error otherwise.
  */
-typedef int (*hubbub_tree_encoding_change)(void *ctx, const char *encname);
+typedef hubbub_error (*hubbub_tree_encoding_change)(void *ctx, 
+		const char *encname);
 
 /**
  * Hubbub tree handler

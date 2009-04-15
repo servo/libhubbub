@@ -33,7 +33,7 @@ hubbub_error handle_before_head(hubbub_treebuilder *treebuilder,
 				token, false);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token, 
+		err = process_comment_append(treebuilder, token, 
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 		break;
@@ -47,7 +47,7 @@ hubbub_error handle_before_head(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else if (type == HEAD) {
 			handled = true;
 		} else {
@@ -74,6 +74,7 @@ hubbub_error handle_before_head(hubbub_treebuilder *treebuilder,
 	}
 
 	if (handled || err == HUBBUB_REPROCESS) {
+		hubbub_error e;
 		hubbub_tag tag;
 
 		if (err == HUBBUB_REPROCESS) {
@@ -88,7 +89,9 @@ hubbub_error handle_before_head(hubbub_treebuilder *treebuilder,
 			tag = token->data.tag;
 		}
 
-		insert_element(treebuilder, &tag, true);
+		e = insert_element(treebuilder, &tag, true);
+		if (e != HUBBUB_OK)
+			return e;
 
 		treebuilder->tree_handler->ref_node(
 				treebuilder->tree_handler->ctx,

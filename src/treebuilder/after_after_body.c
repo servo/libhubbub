@@ -19,7 +19,9 @@
  *
  * \param treebuilder  The treebuilder instance
  * \param token        The token to handle
- * \return True to reprocess token, false otherwise
+ * \return HUBBUB_OK on completion,
+ *         HUBBUB_REPROCESS to reprocess the token,
+ *         appropriate error otherwise
  */
 hubbub_error handle_after_after_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
@@ -28,18 +30,17 @@ hubbub_error handle_after_after_body(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (process_characters_expect_whitespace(treebuilder,
-				token, true)) {
+		err = process_characters_expect_whitespace(treebuilder,
+				token, true);
+		if (err == HUBBUB_REPROCESS)
 			treebuilder->context.mode = IN_BODY;
-			err = HUBBUB_REPROCESS;
-		}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.document);
 		break;
 	case HUBBUB_TOKEN_DOCTYPE:
-		handle_in_body(treebuilder, token);
+		err = handle_in_body(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_START_TAG:
 	{
@@ -48,7 +49,7 @@ hubbub_error handle_after_after_body(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else {
 			/** \todo parse error */
 			treebuilder->context.mode = IN_BODY;

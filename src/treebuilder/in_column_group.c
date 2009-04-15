@@ -29,13 +29,11 @@ hubbub_error handle_in_column_group(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		if (process_characters_expect_whitespace(treebuilder,
-				token, true)) {
-			err = HUBBUB_REPROCESS;
-		}
+		err = process_characters_expect_whitespace(treebuilder,
+				token, true);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 		break;
@@ -49,9 +47,10 @@ hubbub_error handle_in_column_group(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else if (type == COL) {
-			insert_element(treebuilder, &token->data.tag, false);
+			err = insert_element(treebuilder, &token->data.tag, 
+					false);
 
 			/** \todo ack sc flag */
 		} else {
@@ -81,14 +80,14 @@ hubbub_error handle_in_column_group(hubbub_treebuilder *treebuilder,
 	}
 
 	if (handled || err == HUBBUB_REPROCESS) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
 		/* Pop the current node (which will be a colgroup) */
-		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
-			/** \todo errors */
-		}
+		e = element_stack_pop(treebuilder, &ns, &otype, &node);
+		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,

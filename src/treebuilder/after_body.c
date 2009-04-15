@@ -30,7 +30,6 @@ hubbub_error handle_after_body(hubbub_treebuilder *treebuilder,
 	case HUBBUB_TOKEN_CHARACTER:
 	{
 		/* mostly cribbed from process_characters_expect_whitespace */
-
 		const uint8_t *data = token->data.character.ptr;
 		size_t len = token->data.character.len;
 		size_t c;
@@ -42,12 +41,14 @@ hubbub_error handle_after_body(hubbub_treebuilder *treebuilder,
 				break;
 		}
 
-		/* Non-whitespace characters in token, so handle as in body */
+		/* Whitespace characters in token, so handle as in body */
 		if (c > 0) {
 			hubbub_token temp = *token;
 			temp.data.character.len = c;
 
-			handle_in_body(treebuilder, &temp);
+			err = handle_in_body(treebuilder, &temp);
+			if (err != HUBBUB_OK)
+				return err;
 		}
 
 		/* Anything else, switch to in body */
@@ -62,7 +63,7 @@ hubbub_error handle_after_body(hubbub_treebuilder *treebuilder,
 	}
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
 				0].node);
 		break;
@@ -76,7 +77,7 @@ hubbub_error handle_after_body(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else {
 			/** \todo parse error */
 			treebuilder->context.mode = IN_BODY;

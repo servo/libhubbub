@@ -50,7 +50,7 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		if (chars.len == 0)
 			break;
 
-		append_text(treebuilder, &chars);
+		err = append_text(treebuilder, &chars);
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
@@ -85,14 +85,14 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 	}
 
 	if (done) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
 		/* Pop the current node from the stack */
-		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
-			/** \todo errors */
-		}
+		e = element_stack_pop(treebuilder, &ns, &otype, &node);
+		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,

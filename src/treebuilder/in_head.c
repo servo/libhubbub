@@ -23,7 +23,7 @@
 /**
  * Process a meta tag as if "in head".
  *
- * \param treebuilder	The treebuilder instance
+ * \param treebuilder  The treebuilder instance
  * \param token        The token to process
  */
 static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
@@ -33,13 +33,16 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 	uint16_t charset_enc = 0;
 	uint16_t content_type_enc = 0;
 	size_t i;
+	hubbub_error err = HUBBUB_OK;
 
-	insert_element(treebuilder, &token->data.tag, false);
+	err = insert_element(treebuilder, &token->data.tag, false);
+	if (err != HUBBUB_OK)
+		return err;
 
 	/** \todo ack sc flag */
 
 	if (treebuilder->tree_handler->encoding_change == NULL)
-		return HUBBUB_OK;
+		return err;
 
 	/* Grab UTF-16 MIBenums */
 	if (utf16 == 0) {
@@ -89,14 +92,11 @@ static hubbub_error process_meta_in_head(hubbub_treebuilder *treebuilder,
 
 		name = parserutils_charset_mibenum_to_name(charset_enc);
 
-		/* 1 indicates the encoding should actually change */
-		if (treebuilder->tree_handler->encoding_change(
-				treebuilder->tree_handler->ctx,	name) == 1) {
-			return HUBBUB_ENCODINGCHANGE;
-		}
+		err = treebuilder->tree_handler->encoding_change(
+				treebuilder->tree_handler->ctx,	name);
 	}
 
-	return HUBBUB_OK;
+	return err;
 }
 
 /**
@@ -118,7 +118,7 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 				token, true);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 		break;
@@ -132,30 +132,35 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 
 		if (type == HTML) {
 			/* Process as if "in body" */
-			handle_in_body(treebuilder, token);
+			err = handle_in_body(treebuilder, token);
 		} else if (type == BASE || type == COMMAND || type == LINK) {
-			insert_element(treebuilder, &token->data.tag, false);
+			err = insert_element(treebuilder, &token->data.tag, 
+					false);
 
 			/** \todo ack sc flag */
 		} else if (type == META) {
 			err = process_meta_in_head(treebuilder, token);
 		} else if (type == TITLE) {
-			parse_generic_rcdata(treebuilder, token, true);
+			err = parse_generic_rcdata(treebuilder, token, true);
 		} else if (type == NOFRAMES || type == STYLE) {
-			parse_generic_rcdata(treebuilder, token, false);
+			err = parse_generic_rcdata(treebuilder, token, false);
 		} else if (type == NOSCRIPT) {
 			if (treebuilder->context.enable_scripting) {
-				parse_generic_rcdata(treebuilder, token, false);
+				err = parse_generic_rcdata(treebuilder, token, 
+						false);
 			} else {
-				insert_element(treebuilder, &token->data.tag,
-						true);
+				err = insert_element(treebuilder, 
+						&token->data.tag, true);
+				if (err != HUBBUB_OK)
+					return err;
+
 				treebuilder->context.mode = IN_HEAD_NOSCRIPT;
 			}
 		} else if (type == SCRIPT) {
 			/** \todo need to ensure that the client callback
 			 * sets the parser-inserted/already-executed script 
 			 * flags. */
-			parse_generic_rcdata(treebuilder, token, false);
+			err = parse_generic_rcdata(treebuilder, token, false);
 		} else if (type == HEAD) {
 			/** \todo parse error */
 		} else {
@@ -181,13 +186,13 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 	}
 
 	if (handled || err == HUBBUB_REPROCESS) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
-		if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
-			/** \todo errors */
-		}
+		e = element_stack_pop(treebuilder, &ns, &otype, &node);
+		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,

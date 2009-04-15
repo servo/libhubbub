@@ -24,13 +24,13 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 	element_type cur_node = current_node(treebuilder);
 
 	while (cur_node != TR && cur_node != HTML) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		if (!element_stack_pop(treebuilder, &ns, &type, &node)) {
-			/** \todo errors */
-		}
+		e = element_stack_pop(treebuilder, &ns, &type, &node);
+		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -51,6 +51,7 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
  */
 static hubbub_error act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
 {
+	hubbub_error e;
 	hubbub_ns ns;
 	element_type otype;
 	void *node;
@@ -58,9 +59,9 @@ static hubbub_error act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
 	/** \todo fragment case */
 
 	table_clear_stack(treebuilder);
-	if (!element_stack_pop(treebuilder, &ns, &otype, &node)) {
-		/** \todo errors */
-	}
+
+	e = element_stack_pop(treebuilder, &ns, &otype, &node);
+	assert(e == HUBBUB_OK);
 
 	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
 			node);
@@ -92,7 +93,11 @@ hubbub_error handle_in_row(hubbub_treebuilder *treebuilder,
 		if (type == TH || type == TD) {
 			table_clear_stack(treebuilder);
 
-			insert_element(treebuilder, &token->data.tag, true);
+			err = insert_element(treebuilder, &token->data.tag, 
+					true);
+			if (err != HUBBUB_OK)
+				return err;
+
 			treebuilder->context.mode = IN_CELL;
 
 			/* ref node for formatting list */
@@ -101,11 +106,30 @@ hubbub_error handle_in_row(hubbub_treebuilder *treebuilder,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 
-			formatting_list_append(treebuilder, 
+			err = formatting_list_append(treebuilder, 
 					token->data.tag.ns, type,
 					treebuilder->context.element_stack[
 					treebuilder->context.current_node].node,
 					treebuilder->context.current_node);
+			if (err != HUBBUB_OK) {
+				hubbub_error e;
+				hubbub_ns ns;
+				element_type type;
+				void *node;
+
+				/* Revert changes */
+
+				e = remove_node_from_dom(treebuilder, 
+					treebuilder->context.element_stack[
+					treebuilder->context.current_node].node);
+				assert(e == HUBBUB_OK);
+
+				e = element_stack_pop(treebuilder, &ns, &type, 
+						&node);
+				assert(e == HUBBUB_OK);
+
+				return err;
+			}
 		} else if (type == CAPTION || type == COL ||
 				type == COLGROUP || type == TBODY ||
 				type == TFOOT || type == THEAD || type == TR) {
@@ -121,7 +145,10 @@ hubbub_error handle_in_row(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (type == TR) {
-			(void)act_as_if_end_tag_tr(treebuilder);
+			/* We're done with this token, but act_as_if_end_tag_tr 
+			 * will return HUBBUB_REPROCESS. Therefore, ignore the 
+			 * return value. */
+			(void) act_as_if_end_tag_tr(treebuilder);
 		} else if (type == TABLE) {
 			err = act_as_if_end_tag_tr(treebuilder);
 		} else if (type == BODY || type == CAPTION || type == COL ||

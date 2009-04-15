@@ -325,9 +325,11 @@ static bool element_in_scope_in_non_html_ns(hubbub_treebuilder *treebuilder)
 /**
  * Process a token as if in the secondary insertion mode.
  */
-static void process_as_in_secondary(hubbub_treebuilder *treebuilder,
+static hubbub_error process_as_in_secondary(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
+	hubbub_error err;
+
 	/* Because we don't support calling insertion modes directly,
 	 * instead we set the current mode to the secondary mode,
 	 * call the token handler, and then reset the mode afterward
@@ -335,7 +337,11 @@ static void process_as_in_secondary(hubbub_treebuilder *treebuilder,
 
 	treebuilder->context.mode = treebuilder->context.second_mode;
 
-	hubbub_treebuilder_token_handler(token, treebuilder);
+	err = hubbub_treebuilder_token_handler(token, treebuilder);
+	if (err != HUBBUB_OK) {
+		treebuilder->context.mode = IN_FOREIGN_CONTENT;
+		return err;
+	}
 
 	if (treebuilder->context.mode == treebuilder->context.second_mode)
 		treebuilder->context.mode = IN_FOREIGN_CONTENT;
@@ -344,6 +350,8 @@ static void process_as_in_secondary(hubbub_treebuilder *treebuilder,
 			!element_in_scope_in_non_html_ns(treebuilder)) {
 		treebuilder->context.mode = treebuilder->context.second_mode;
 	}
+
+	return HUBBUB_OK;
 }
 
 /**
@@ -357,11 +365,13 @@ static void foreign_break_out(hubbub_treebuilder *treebuilder)
 
 	while (stack[treebuilder->context.current_node].ns !=
 			HUBBUB_NS_HTML) {
+		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		element_stack_pop(treebuilder, &ns, &type, &node);
+		e = element_stack_pop(treebuilder, &ns, &type, &node);
+		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -385,10 +395,10 @@ hubbub_error handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 
 	switch (token->type) {
 	case HUBBUB_TOKEN_CHARACTER:
-		append_text(treebuilder, &token->data.character);
+		err = append_text(treebuilder, &token->data.character);
 		break;
 	case HUBBUB_TOKEN_COMMENT:
-		process_comment_append(treebuilder, token,
+		err = process_comment_append(treebuilder, token,
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
 		break;
@@ -416,7 +426,7 @@ hubbub_error handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 				(cur_node == FOREIGNOBJECT ||
 				cur_node == DESC ||
 				cur_node == TITLE))) {
-			process_as_in_secondary(treebuilder, token);
+			err = process_as_in_secondary(treebuilder, token);
 		} else if (type == B || type ==  BIG || type == BLOCKQUOTE ||
 				type == BODY || type == BR || type == CENTER ||
 				type == CODE || type == DD || type == DIV ||
@@ -474,16 +484,16 @@ hubbub_error handle_in_foreign_content(hubbub_treebuilder *treebuilder,
 			tag.ns = cur_node_ns;
 
 			if (token->data.tag.self_closing) {
-				insert_element(treebuilder, &tag, false);
+				err = insert_element(treebuilder, &tag, false);
 				/** \todo ack sc flag */
 			} else {
-				insert_element(treebuilder, &tag, true);
+				err = insert_element(treebuilder, &tag, true);
 			}
 		}
 	}
 		break;
 	case HUBBUB_TOKEN_END_TAG:
-		process_as_in_secondary(treebuilder, token);
+		err = process_as_in_secondary(treebuilder, token);
 		break;
 	case HUBBUB_TOKEN_EOF:
 		foreign_break_out(treebuilder);
