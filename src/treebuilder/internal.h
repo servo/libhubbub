@@ -73,8 +73,6 @@ typedef struct formatting_list_entry
 typedef struct hubbub_treebuilder_context
 {
 	insertion_mode mode;		/**< The current insertion mode */
-	uint32_t mode_state;		/**< Insertion mode specific state */
-
 	insertion_mode second_mode;	/**< The secondary insertion mode */
 
 #define ELEMENT_STACK_CHUNK 128

@@ -15,14 +15,6 @@
 
 #undef DEBUG_IN_BODY
 
-/* In body mode states */
-enum {
-	IBS_INITIAL = 0,
-	IBS_DONE_FORMATTING_LIST = 1,
-	IBS_REMOVED_NODE = 2,
-	IBS_CLOSED_P = 3,
-};
-
 /**
  * Bookmark for formatting list. Used in adoption agency
  */
@@ -205,13 +197,9 @@ hubbub_error process_character(hubbub_treebuilder *treebuilder,
 	bool lr_flag = treebuilder->context.strip_leading_lr;
 	const uint8_t *p;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-
-		treebuilder->context.mode_state = IBS_DONE_FORMATTING_LIST;
-	}
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	if (treebuilder->context.strip_leading_lr) {
 		const uint8_t *str = dummy.ptr;
@@ -243,8 +231,6 @@ hubbub_error process_character(hubbub_treebuilder *treebuilder,
 			}
 		}
 	}
-
-	treebuilder->context.mode_state = IBS_INITIAL;
 
 	return HUBBUB_OK;
 }
@@ -319,14 +305,9 @@ hubbub_error process_start_tag(hubbub_treebuilder *treebuilder,
 		err = process_applet_marquee_object_in_body(treebuilder,
 				token, type);
 	} else if (type == XMP) {
-		if (treebuilder->context.mode_state == IBS_INITIAL) {
-			err = reconstruct_active_formatting_list(treebuilder);
-			if (err != HUBBUB_OK)
-				return err;
-
-			treebuilder->context.mode_state = 
-					IBS_DONE_FORMATTING_LIST;
-		}
+		err = reconstruct_active_formatting_list(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
 
 		treebuilder->context.frameset_ok = false;
 
@@ -344,14 +325,9 @@ hubbub_error process_start_tag(hubbub_treebuilder *treebuilder,
 			type == BGSOUND || type == BR || 
 			type == EMBED || type == IMG || type == INPUT ||
 			type == PARAM || type == SPACER || type == WBR) {
-		if (treebuilder->context.mode_state == IBS_INITIAL) {
-			err = reconstruct_active_formatting_list(treebuilder);
-			if (err != HUBBUB_OK)
-				return err;
-
-			treebuilder->context.mode_state = 
-					IBS_DONE_FORMATTING_LIST;
-		}
+		err = reconstruct_active_formatting_list(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
 
 		err = insert_element(treebuilder, &token->data.tag, false);
 		if (err == HUBBUB_OK)
@@ -393,14 +369,9 @@ hubbub_error process_start_tag(hubbub_treebuilder *treebuilder,
 	} else if (type == MATH || type == SVG) {
 		hubbub_tag tag = token->data.tag;
 
-		if (treebuilder->context.mode_state == IBS_INITIAL) {
-			err = reconstruct_active_formatting_list(treebuilder);
-			if (err != HUBBUB_OK)
-				return err;
-
-			treebuilder->context.mode_state = 
-					IBS_DONE_FORMATTING_LIST;
-		}
+		err = reconstruct_active_formatting_list(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
 
 		adjust_foreign_attributes(treebuilder, &tag);
 
@@ -431,9 +402,6 @@ hubbub_error process_start_tag(hubbub_treebuilder *treebuilder,
 	} else {
 		err = process_phrasing_in_body(treebuilder, token);
 	}
-
-	if (err == HUBBUB_OK || err == HUBBUB_REPROCESS)
-		treebuilder->context.mode_state = IBS_INITIAL;
 
 	return err;
 }
@@ -506,9 +474,6 @@ hubbub_error process_end_tag(hubbub_treebuilder *treebuilder,
 		err = process_0generic_in_body(treebuilder, type);
 	}
 
-	if (err == HUBBUB_OK || err == HUBBUB_REPROCESS)
-		treebuilder->context.mode_state = IBS_INITIAL;
-
 	return err;
 }
 
@@ -572,17 +537,13 @@ hubbub_error process_frameset_in_body(hubbub_treebuilder *treebuilder,
 	if (treebuilder->context.frameset_ok == false)
 		return HUBBUB_OK;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		err = remove_node_from_dom(treebuilder, 
-				treebuilder->context.element_stack[1].node);
-		if (err != HUBBUB_OK)
-			return err;
+	err = remove_node_from_dom(treebuilder, 
+			treebuilder->context.element_stack[1].node);
+	if (err != HUBBUB_OK)
+		return err;
 
-		err = element_stack_pop_until(treebuilder, BODY);
-		assert(err == HUBBUB_OK);
-
-		treebuilder->context.mode_state = IBS_REMOVED_NODE;
-	}
+	err = element_stack_pop_until(treebuilder, BODY);
+	assert(err == HUBBUB_OK);
 
 	err = insert_element(treebuilder, &token->data.tag, true);
 	if (err == HUBBUB_OK)
@@ -602,14 +563,10 @@ hubbub_error process_container_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_error err;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		if (element_in_scope(treebuilder, P, false)) {
-			err = process_0p_in_body(treebuilder);
-			if (err != HUBBUB_OK)
-				return err;
-		}
-
-		treebuilder->context.mode_state = IBS_CLOSED_P;
+	if (element_in_scope(treebuilder, P, false)) {
+		err = process_0p_in_body(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
 	}
 
 	return insert_element(treebuilder, &token->data.tag, true);
@@ -627,34 +584,29 @@ hubbub_error process_hN_in_body(hubbub_treebuilder *treebuilder,
 	hubbub_error err;
 	element_type type;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		if (element_in_scope(treebuilder, P, false)) {
-			err = process_0p_in_body(treebuilder);
-			if (err != HUBBUB_OK)
-				return err;
-		}
+	if (element_in_scope(treebuilder, P, false)) {
+		err = process_0p_in_body(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
+	}
 
-		type = treebuilder->context.element_stack[
-				treebuilder->context.current_node].type;
+	type = treebuilder->context.element_stack[
+			treebuilder->context.current_node].type;
 
-		if (type == H1 || type == H2 || type == H3 || type == H4 ||
-				type == H5 || type == H6) {
-			hubbub_ns ns;
-			element_type otype;
-			void *node;
+	if (type == H1 || type == H2 || type == H3 || type == H4 ||
+			type == H5 || type == H6) {
+		hubbub_ns ns;
+		element_type otype;
+		void *node;
 
-			/** \todo parse error */
+		/** \todo parse error */
 
-			err = element_stack_pop(treebuilder, 
-					&ns, &otype, &node);
-			assert(err == HUBBUB_OK);
+		err = element_stack_pop(treebuilder, &ns, &otype, &node);
+		assert(err == HUBBUB_OK);
 
-			treebuilder->tree_handler->unref_node(
-					treebuilder->tree_handler->ctx,
-					node);
-		}
-
-		treebuilder->context.mode_state = IBS_CLOSED_P;
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				node);
 	}
 
 	return insert_element(treebuilder, &token->data.tag, true);
@@ -674,14 +626,10 @@ hubbub_error process_form_in_body(hubbub_treebuilder *treebuilder,
 	if (treebuilder->context.form_element != NULL) {
 		/** \todo parse error */
 	} else {
-		if (treebuilder->context.mode_state == IBS_INITIAL) {
-			if (element_in_scope(treebuilder, P, false)) {
-				err = process_0p_in_body(treebuilder);
-				if (err != HUBBUB_OK)
-					return err;
-			}
-
-			treebuilder->context.mode_state = IBS_CLOSED_P;
+		if (element_in_scope(treebuilder, P, false)) {
+			err = process_0p_in_body(treebuilder);
+			if (err != HUBBUB_OK)
+				return err;
 		}
 
 		err = insert_element(treebuilder, &token->data.tag, true);
@@ -717,59 +665,54 @@ hubbub_error process_dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 	element_context *stack = treebuilder->context.element_stack;
 	uint32_t node;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		treebuilder->context.frameset_ok = false;
+	treebuilder->context.frameset_ok = false;
 
-		if (element_in_scope(treebuilder, P, false)) {
-			err = process_0p_in_body(treebuilder);
-			if (err != HUBBUB_OK)
-				return err;
+	if (element_in_scope(treebuilder, P, false)) {
+		err = process_0p_in_body(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
+	}
+
+	/* Find last LI/(DD,DT) on stack, if any */
+	for (node = treebuilder->context.current_node; node > 0; node--) {
+		element_type ntype = stack[node].type;
+
+		if (type == LI && ntype == LI)
+			break;
+
+		if (((type == DD || type == DT) && 
+				(ntype == DD || ntype == DT)))
+			break;
+
+		if (!is_formatting_element(ntype) &&
+				!is_phrasing_element(ntype) &&
+				ntype != ADDRESS && 
+				ntype != DIV)
+			break;
+	}
+
+	/* If we found one, then pop all nodes up to and including it */
+	if (stack[node].type == LI || stack[node].type == DD ||
+			stack[node].type == DT) {
+		/* Check that we're only popping one node 
+		 * and emit a parse error if not */
+		if (treebuilder->context.current_node > node) {
+			/** \todo parse error */
 		}
 
-		/* Find last LI/(DD,DT) on stack, if any */
-		for (node = treebuilder->context.current_node; node > 0; 
-				node--) {
-			element_type ntype = stack[node].type;
+		do {
+			hubbub_ns ns;
+			element_type otype;
+			void *node;
 
-			if (type == LI && ntype == LI)
-				break;
+			err = element_stack_pop(treebuilder, &ns, 
+					&otype, &node);
+			assert(err == HUBBUB_OK);
 
-			if (((type == DD || type == DT) && 
-					(ntype == DD || ntype == DT)))
-				break;
-
-			if (!is_formatting_element(ntype) &&
-					!is_phrasing_element(ntype) &&
-					ntype != ADDRESS && 
-					ntype != DIV)
-				break;
-		}
-
-		/* If we found one, then pop all nodes up to and including it */
-		if (stack[node].type == LI || stack[node].type == DD ||
-				stack[node].type == DT) {
-			/* Check that we're only popping one node 
-			 * and emit a parse error if not */
-			if (treebuilder->context.current_node > node) {
-				/** \todo parse error */
-			}
-
-			do {
-				hubbub_ns ns;
-				element_type otype;
-				void *node;
-
-				err = element_stack_pop(treebuilder, &ns,
-						&otype, &node);
-				assert(err == HUBBUB_OK);
-
-				treebuilder->tree_handler->unref_node(
+			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
 					node);
-			} while (treebuilder->context.current_node >= node);
-		}
-
-		treebuilder->context.mode_state = IBS_CLOSED_P;
+		} while (treebuilder->context.current_node >= node);
 	}
 
 	return insert_element(treebuilder, &token->data.tag, true);
@@ -787,14 +730,10 @@ hubbub_error process_plaintext_in_body(hubbub_treebuilder *treebuilder,
 	hubbub_error err;
 	hubbub_tokeniser_optparams params;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		if (element_in_scope(treebuilder, P, false)) {
-			err = process_0p_in_body(treebuilder);
-			if (err != HUBBUB_OK)
-				return err;
-		}
-
-		treebuilder->context.mode_state = IBS_CLOSED_P;
+	if (element_in_scope(treebuilder, P, false)) {
+		err = process_0p_in_body(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
 	}
 
 	err = insert_element(treebuilder, &token->data.tag, true);
@@ -820,7 +759,7 @@ hubbub_error process_plaintext_in_body(hubbub_treebuilder *treebuilder,
 hubbub_error process_a_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-/** \todo error recovery */
+	hubbub_error err;
 	formatting_list_entry *entry = 
 			aa_find_formatting_element(treebuilder, A);
 
@@ -832,7 +771,9 @@ hubbub_error process_a_in_body(hubbub_treebuilder *treebuilder,
 		/** \todo parse error */
 
 		/* Act as if </a> were seen */
-		process_0presentational_in_body(treebuilder, A);
+		err = process_0presentational_in_body(treebuilder, A);
+		if (err != HUBBUB_OK)
+			return err;
 
 		entry2 = aa_find_formatting_element(treebuilder, A);
 
@@ -843,8 +784,9 @@ hubbub_error process_a_in_body(hubbub_treebuilder *treebuilder,
 			void *onode;
 			uint32_t oindex;
 
-			formatting_list_remove(treebuilder, entry,
+			err = formatting_list_remove(treebuilder, entry,
 					&ons, &otype, &onode, &oindex);
+			assert(err == HUBBUB_OK);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx, onode);
@@ -859,26 +801,54 @@ hubbub_error process_a_in_body(hubbub_treebuilder *treebuilder,
 			element_type otype;
 			void *onode;
 
-			element_stack_remove(treebuilder, index, &ns, &otype,
-					&onode);
+			err = element_stack_remove(treebuilder, index, &ns, 
+					&otype,	&onode);
+			assert(err == HUBBUB_OK);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx, onode);
 		}
 	}
 
-	reconstruct_active_formatting_list(treebuilder);
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
-	insert_element(treebuilder, &token->data.tag, true);
+	err = insert_element(treebuilder, &token->data.tag, true);
+	if (err != HUBBUB_OK)
+		return err;
 
 	treebuilder->tree_handler->ref_node(treebuilder->tree_handler->ctx,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node);
 
-	formatting_list_append(treebuilder, token->data.tag.ns, A, 
+	err = formatting_list_append(treebuilder, token->data.tag.ns, A, 
 		treebuilder->context.element_stack[
 			treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
+	if (err != HUBBUB_OK) {
+		hubbub_error e;
+		hubbub_ns ns;
+		element_type type;
+		void *node;
+
+		e = remove_node_from_dom(treebuilder, 
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node);
+		assert(e == HUBBUB_OK);
+
+		e = element_stack_pop(treebuilder, &ns, &type, &node);
+		assert(e == HUBBUB_OK);
+
+		/* Unref twice (once for stack, once for formatting list) */
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, node);
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, node);
+
+		return err;
+	}
 
 	return HUBBUB_OK;
 }
@@ -896,13 +866,9 @@ hubbub_error process_presentational_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_error err;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-
-		treebuilder->context.mode_state = IBS_DONE_FORMATTING_LIST;
-	}
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	err = insert_element(treebuilder, &token->data.tag, true);
 	if (err != HUBBUB_OK)
@@ -952,30 +918,62 @@ hubbub_error process_presentational_in_body(hubbub_treebuilder *treebuilder,
 hubbub_error process_nobr_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-/** \todo error recovery */
-	reconstruct_active_formatting_list(treebuilder);
+	hubbub_error err;
+
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	if (element_in_scope(treebuilder, NOBR, false)) {
 		/** \todo parse error */
 
 		/* Act as if </nobr> were seen */
-		process_0presentational_in_body(treebuilder, NOBR);
+		err = process_0presentational_in_body(treebuilder, NOBR);
+		if (err != HUBBUB_OK)
+			return err;
 
 		/* Yes, again */
-		reconstruct_active_formatting_list(treebuilder);
+		err = reconstruct_active_formatting_list(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
 	}
 
-	insert_element(treebuilder, &token->data.tag, true);
+	err = insert_element(treebuilder, &token->data.tag, true);
+	if (err != HUBBUB_OK)
+		return err;
 
 	treebuilder->tree_handler->ref_node(
 		treebuilder->tree_handler->ctx,
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node);
 
-	formatting_list_append(treebuilder, token->data.tag.ns, NOBR, 
+	err = formatting_list_append(treebuilder, token->data.tag.ns, NOBR, 
 		treebuilder->context.element_stack[
 		treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
+	if (err != HUBBUB_OK) {
+		hubbub_error e;
+		hubbub_ns ns;
+		element_type type;
+		void *node;
+
+		e = remove_node_from_dom(treebuilder, 
+				treebuilder->context.element_stack[
+				treebuilder->context.current_node].node);
+		assert(e == HUBBUB_OK);
+
+		e = element_stack_pop(treebuilder, &ns, &type, &node);
+		assert(e == HUBBUB_OK);
+
+		/* Unref twice (once for stack, once for formatting list) */
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, node);
+
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx, node);
+
+		return err;
+	}
 
 	return HUBBUB_OK;
 }
@@ -991,22 +989,18 @@ hubbub_error process_button_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_error err;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		if (element_in_scope(treebuilder, BUTTON, false)) {
-			/** \todo parse error */
+	if (element_in_scope(treebuilder, BUTTON, false)) {
+		/** \todo parse error */
 
-			/* Act as if </button> has been seen */
-			err = process_0applet_button_marquee_object_in_body(
-					treebuilder, BUTTON);
-			assert(err == HUBBUB_OK);
-		}
-
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-
-		treebuilder->context.mode_state = IBS_DONE_FORMATTING_LIST;
+		/* Act as if </button> has been seen */
+		err = process_0applet_button_marquee_object_in_body(
+				treebuilder, BUTTON);
+		assert(err == HUBBUB_OK);
 	}
+
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	err = insert_element(treebuilder, &token->data.tag, true);
 	if (err != HUBBUB_OK)
@@ -1063,13 +1057,9 @@ hubbub_error process_applet_marquee_object_in_body(
 {
 	hubbub_error err;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-
-		treebuilder->context.mode_state = IBS_DONE_FORMATTING_LIST;
-	}
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	err = insert_element(treebuilder, &token->data.tag, true);
 	if (err != HUBBUB_OK)
@@ -1124,14 +1114,10 @@ hubbub_error process_hr_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_error err;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		if (element_in_scope(treebuilder, P, false)) {
-			err = process_0p_in_body(treebuilder);
-			if (err != HUBBUB_OK)
-				return err;
-		}
-
-		treebuilder->context.mode_state = IBS_CLOSED_P;
+	if (element_in_scope(treebuilder, P, false)) {
+		err = process_0p_in_body(treebuilder);
+		if (err != HUBBUB_OK)
+			return err;
 	}
 
 	err = insert_element(treebuilder, &token->data.tag, false);
@@ -1160,13 +1146,9 @@ hubbub_error process_image_in_body(hubbub_treebuilder *treebuilder,
 	tag.n_attributes = token->data.tag.n_attributes;
 	tag.attributes = token->data.tag.attributes;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-
-		treebuilder->context.mode_state = IBS_DONE_FORMATTING_LIST;
-	}
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	return insert_element(treebuilder, &tag, false);
 }
@@ -1180,7 +1162,7 @@ hubbub_error process_image_in_body(hubbub_treebuilder *treebuilder,
 hubbub_error process_isindex_in_body(hubbub_treebuilder *treebuilder,
 		const hubbub_token *token)
 {
-/** \todo error recovery */
+	hubbub_error err;
 	hubbub_token dummy;
 	hubbub_attribute *action = NULL;
 	hubbub_attribute *prompt = NULL;
@@ -1240,7 +1222,11 @@ hubbub_error process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	dummy.data.tag.n_attributes = action != NULL ? 1 : 0;
 	dummy.data.tag.attributes = action;
 
-	process_form_in_body(treebuilder, &dummy);
+	err = process_form_in_body(treebuilder, &dummy);
+	if (err != HUBBUB_OK) {
+		treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
+		return err;
+	}
 
 	/* Act as if <hr> were seen */
 	dummy.data.tag.name.ptr = (const uint8_t *) "hr";
@@ -1248,7 +1234,11 @@ hubbub_error process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	dummy.data.tag.n_attributes = 0;
 	dummy.data.tag.attributes = NULL;
 
-	process_hr_in_body(treebuilder, &dummy);
+	err = process_hr_in_body(treebuilder, &dummy);
+	if (err != HUBBUB_OK) {
+		treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
+		return err;
+	}
 
 	/* Act as if <p> were seen */
 	dummy.data.tag.name.ptr = (const uint8_t *) "p";
@@ -1256,7 +1246,11 @@ hubbub_error process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	dummy.data.tag.n_attributes = 0;
 	dummy.data.tag.attributes = NULL;
 
-	process_container_in_body(treebuilder, &dummy);
+	err = process_container_in_body(treebuilder, &dummy);
+	if (err != HUBBUB_OK) {
+		treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
+		return err;
+	}
 
 	/* Act as if <label> were seen */
 	dummy.data.tag.name.ptr = (const uint8_t *) "label";
@@ -1264,7 +1258,11 @@ hubbub_error process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	dummy.data.tag.n_attributes = 0;
 	dummy.data.tag.attributes = NULL;
 
-	process_phrasing_in_body(treebuilder, &dummy);
+	err = process_phrasing_in_body(treebuilder, &dummy);
+	if (err != HUBBUB_OK) {
+		treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
+		return err;
+	}
 
 	/* Act as if a stream of characters were seen */
 	dummy.type = HUBBUB_TOKEN_CHARACTER;
@@ -1278,7 +1276,11 @@ hubbub_error process_isindex_in_body(hubbub_treebuilder *treebuilder,
 #undef PROMPT
 	}
 	
-	process_character(treebuilder, &dummy);
+	err = process_character(treebuilder, &dummy);
+	if (err != HUBBUB_OK) {
+		treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
+		return err;
+	}
 
 	/* Act as if <input> was seen */
 	dummy.type = HUBBUB_TOKEN_START_TAG;
@@ -1289,15 +1291,31 @@ hubbub_error process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	dummy.data.tag.n_attributes = n_attrs;
 	dummy.data.tag.attributes = attrs;
 
-	reconstruct_active_formatting_list(treebuilder);
-	insert_element(treebuilder, &dummy.data.tag, false);
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK) {
+		treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
+		return err;
+	}
+
+	err = insert_element(treebuilder, &dummy.data.tag, false);
+	if (err != HUBBUB_OK) {
+		treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
+		return err;
+	}
+
+	/* No longer need attrs */
+	treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
+
 	treebuilder->context.frameset_ok = false;
 
 	/* Act as if </label> was seen */
-	process_0generic_in_body(treebuilder, LABEL);
+	err = process_0generic_in_body(treebuilder, LABEL);
+	assert(err == HUBBUB_OK);
 
 	/* Act as if </p> was seen */
-	process_0p_in_body(treebuilder);
+	err = process_0p_in_body(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	/* Act as if <hr> was seen */
 	dummy.data.tag.name.ptr = (const uint8_t *) "hr";
@@ -1305,15 +1323,12 @@ hubbub_error process_isindex_in_body(hubbub_treebuilder *treebuilder,
 	dummy.data.tag.n_attributes = 0;
 	dummy.data.tag.attributes = NULL;
 
-	process_hr_in_body(treebuilder, &dummy);
+	err = process_hr_in_body(treebuilder, &dummy);
+	if (err != HUBBUB_OK)
+		return err;
 
 	/* Act as if </form> was seen */
-	process_0container_in_body(treebuilder, FORM);
-
-	/* Clean up */
-	treebuilder->alloc(attrs, 0, treebuilder->alloc_pw);
-
-	return HUBBUB_OK;
+	return process_0container_in_body(treebuilder, FORM);
 }
 
 /**
@@ -1341,13 +1356,9 @@ hubbub_error process_select_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_error err;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-
-		treebuilder->context.mode_state = IBS_DONE_FORMATTING_LIST;
-	}
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	err = insert_element(treebuilder, &token->data.tag, true);
 	if (err == HUBBUB_OK)
@@ -1367,19 +1378,15 @@ hubbub_error process_opt_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_error err; 
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		if (element_in_scope(treebuilder, OPTION, false)) {
-			err = process_0generic_in_body(treebuilder, OPTION);
-			/* Cannot fail */
-			assert(err == HUBBUB_OK);
-		}
-	
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-
-		treebuilder->context.mode_state = IBS_DONE_FORMATTING_LIST;
+	if (element_in_scope(treebuilder, OPTION, false)) {
+		err = process_0generic_in_body(treebuilder, OPTION);
+		/* Cannot fail */
+		assert(err == HUBBUB_OK);
 	}
+	
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	return insert_element(treebuilder, &token->data.tag, true);
 }
@@ -1395,11 +1402,9 @@ hubbub_error process_phrasing_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_error err;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-	}
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	return insert_element(treebuilder, &token->data.tag, true);
 }
@@ -1688,7 +1693,6 @@ hubbub_error process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 {
 	hubbub_error err;
 
-/** \todo error recovery */
 	/* Welcome to the adoption agency */
 
 	while (true) {
@@ -1798,16 +1802,24 @@ hubbub_error process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		err = treebuilder->tree_handler->reparent_children(
 				treebuilder->tree_handler->ctx,
 				stack[furthest_block].node, fe_clone);
-		if (err != HUBBUB_OK)
+		if (err != HUBBUB_OK) {
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					fe_clone);
 			return err;
+		}
 
 		/* 10 */
 		err = treebuilder->tree_handler->append_child(
 				treebuilder->tree_handler->ctx,
 				stack[furthest_block].node, fe_clone,
 				&clone_appended);
-		if (err != HUBBUB_OK)
+		if (err != HUBBUB_OK) {
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					fe_clone);
 			return err;
+		}
 
 		if (clone_appended != fe_clone) {
 			/* No longer interested in fe_clone */
@@ -1848,8 +1860,12 @@ hubbub_error process_0presentational_in_body(hubbub_treebuilder *treebuilder,
 		err = formatting_list_insert(treebuilder,
 				bookmark.prev, bookmark.next,
 				ons, otype, clone_appended, furthest_block + 1);
-		if (err != HUBBUB_OK)
+		if (err != HUBBUB_OK) {
+			treebuilder->tree_handler->unref_node(
+					treebuilder->tree_handler->ctx,
+					clone_appended);
 			return err;
+		}
 
 		/* 13 */
 	}
@@ -2082,10 +2098,8 @@ hubbub_error aa_find_bookmark_location_reparenting_misnested(
 
 		/* v */
 		err = aa_clone_and_replace_entries(treebuilder, node_entry);
-		if (err != HUBBUB_OK) {
-			/** \todo error recovery */
+		if (err != HUBBUB_OK)
 			return err;
-		}
 
 		/* vi */
 		err = aa_reparent_node(treebuilder, stack[last].node, 
@@ -2274,8 +2288,12 @@ hubbub_error aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder,
 	}
 
 	err = remove_node_from_dom(treebuilder, node);
-	if (err != HUBBUB_OK)
+	if (err != HUBBUB_OK) {
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				foster_parent);
 		return err;
+	}
 
 	if (insert) {
 		err = treebuilder->tree_handler->insert_before(
@@ -2289,8 +2307,12 @@ hubbub_error aa_insert_into_foster_parent(hubbub_treebuilder *treebuilder,
 				foster_parent, node,
 				inserted);
 	}
-	if (err != HUBBUB_OK)
+	if (err != HUBBUB_OK) {
+		treebuilder->tree_handler->unref_node(
+				treebuilder->tree_handler->ctx,
+				foster_parent);
 		return err;
+	}
 
 	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
 			foster_parent);
@@ -2362,13 +2384,9 @@ hubbub_error process_0br_in_body(hubbub_treebuilder *treebuilder)
 	tag.n_attributes = 0;
 	tag.attributes = NULL;
 
-	if (treebuilder->context.mode_state == IBS_INITIAL) {
-		err = reconstruct_active_formatting_list(treebuilder);
-		if (err != HUBBUB_OK)
-			return err;
-
-		treebuilder->context.mode_state = IBS_DONE_FORMATTING_LIST;
-	}
+	err = reconstruct_active_formatting_list(treebuilder);
+	if (err != HUBBUB_OK)
+		return err;
 
 	return insert_element(treebuilder, &tag, false);
 }
