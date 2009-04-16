@@ -89,10 +89,11 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	hubbub_parser_optparams params;
 	FILE *fp;
 	size_t len, origlen;
-	uint8_t buf[CHUNK_SIZE];
+	uint8_t *buf = alloca(CHUNK_SIZE);
 	const char *charset;
 	hubbub_charset_source cssource;
 	bool passed = true;
+	uintptr_t n;
 
 	UNUSED(argc);
 
@@ -148,7 +149,7 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	hubbub_parser_destroy(parser);
 
 	/* Ensure that all nodes have been released by the treebuilder */
-	for (uintptr_t n = 1; n <= node_counter; n++) {
+	for (n = 1; n <= node_counter; n++) {
 		if (node_ref[n] != 0) {
 			printf("%" PRIuPTR " still referenced (=%u)\n", n, node_ref[n]);
 			passed = false;
@@ -232,11 +233,13 @@ hubbub_error create_doctype(void *ctx, const hubbub_doctype *doctype,
 
 hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
+	uint32_t i;
+
 	printf("Creating (%" PRIuPTR ") [element '%.*s']\n", ++node_counter,
 			(int) tag->name.len, tag->name.ptr);
 
 	assert(memchr(tag->name.ptr, 0xff, tag->name.len) == NULL);
-	for (uint32_t i = 0; i < tag->n_attributes; i++) {
+	for (i = 0; i < tag->n_attributes; i++) {
 		hubbub_attribute *attr = &tag->attributes[i];
 
 		assert(memchr(attr->name.ptr, 0xff, attr->name.len) == NULL);
@@ -382,13 +385,15 @@ hubbub_error form_associate(void *ctx, void *form, void *node)
 hubbub_error add_attributes(void *ctx, void *node, 
 		const hubbub_attribute *attributes, uint32_t n_attributes)
 {
+	uint32_t i;
+
 	UNUSED(ctx);
 	UNUSED(attributes);
 	UNUSED(n_attributes);
 
 	printf("Adding attributes to %" PRIuPTR "\n", (uintptr_t) node);
 
-	for (uint32_t i = 0; i < n_attributes; i++) {
+	for (i = 0; i < n_attributes; i++) {
 		const hubbub_attribute *attr = &attributes[i];
 
 		assert(memchr(attr->name.ptr, 0xff, attr->name.len) == NULL);

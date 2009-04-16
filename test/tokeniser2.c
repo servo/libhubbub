@@ -149,14 +149,14 @@ void run_test(context *ctx)
 
 		if (ctx->last_start_tag != NULL) {
 			/* Fake up a start tag, in PCDATA state */
-			uint8_t buf [strlen(ctx->last_start_tag) + 3];
+			size_t len = strlen(ctx->last_start_tag) + 3;
+			uint8_t *buf = alloca(len);
 
-			snprintf((char *) buf, sizeof buf, "<%s>",
+			snprintf((char *) buf, len, "<%s>", 
 					ctx->last_start_tag);
 
 			assert(parserutils_inputstream_append(stream,
-				buf, strlen(ctx->last_start_tag) + 2) ==
-				HUBBUB_OK);
+				buf, len - 1) == HUBBUB_OK);
 
 			assert(hubbub_tokeniser_run(tok) == HUBBUB_OK);
 		}

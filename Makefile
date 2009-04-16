@@ -46,7 +46,9 @@ ifeq ($(WANT_TEST),yes)
     TESTLDFLAGS := $(TESTLDFLAGS) -ljson
   endif
 
-  TESTCFLAGS := $(TESTCFLAGS) -Wno-unused-parameter
+  ifneq ($(GCCVER),2)
+    TESTCFLAGS := $(TESTCFLAGS) -Wno-unused-parameter
+  endif
 endif
 
 # Extra installation rules

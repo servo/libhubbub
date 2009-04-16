@@ -64,7 +64,7 @@ struct buf_t {
 
 
 #define NUM_NAMESPACES 7
-const char const *ns_names[NUM_NAMESPACES] =
+const char * const ns_names[NUM_NAMESPACES] =
 		{ NULL, NULL /*html*/, "math", "svg", "xlink", "xml", "xmlns" };
 
 
@@ -206,7 +206,7 @@ enum reading_state {
 	READING_DATA,
 	READING_DATA_AFTER_FIRST,
 	READING_ERRORS,
-	READING_TREE,
+	READING_TREE
 };
 
 int main(int argc, char **argv)
@@ -406,6 +406,7 @@ hubbub_error create_doctype(void *ctx, const hubbub_doctype *doctype,
 
 hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
+	size_t i;
 	node_t *node = calloc(1, sizeof *node);
 
 	UNUSED(ctx);
@@ -422,7 +423,7 @@ hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 	node->data.element.attrs = calloc(node->data.element.n_attrs,
 			sizeof *node->data.element.attrs);
 
-	for (size_t i = 0; i < tag->n_attributes; i++) {
+	for (i = 0; i < tag->n_attributes; i++) {
 		attr_t *attr = &node->data.element.attrs[i];
 
 		assert(tag->attributes[i].ns < NUM_NAMESPACES);
@@ -634,6 +635,9 @@ hubbub_error clone_node(void *ctx, void *node, bool deep, void **result)
 {
 	node_t *old_node = node;
 	node_t *new_node = calloc(1, sizeof *new_node);
+	node_t *last;
+	node_t *child;
+	size_t i;
 
 	new_node->type = old_node->type;
 
@@ -659,7 +663,7 @@ hubbub_error clone_node(void *ctx, void *node, bool deep, void **result)
 		new_node->data.element.attrs = 
 				calloc(old_node->data.element.n_attrs, 
 					sizeof *new_node->data.element.attrs);
-		for (size_t i = 0; i < old_node->data.element.n_attrs; i++) {
+		for (i = 0; i < old_node->data.element.n_attrs; i++) {
 			attr_t *attr = &new_node->data.element.attrs[i];
 
 			attr->ns = old_node->data.element.attrs[i].ns;
@@ -683,10 +687,9 @@ hubbub_error clone_node(void *ctx, void *node, bool deep, void **result)
 	if (deep == false)
 		return 0;
 
-	node_t *last = NULL;
+	last = NULL;
 
-	for (node_t *child = old_node->child; child != NULL; 
-			child = child->next) {
+	for (child = old_node->child; child != NULL; child = child->next) {
 		node_t *n;
 
 		clone_node(ctx, child, true, (void **) (void *) &n);
@@ -778,6 +781,7 @@ hubbub_error add_attributes(void *ctx, void *vnode,
 {
 	node_t *node = vnode;
 	size_t old_elems = node->data.element.n_attrs;
+	size_t i;
 
 	UNUSED(ctx);
 
@@ -787,7 +791,7 @@ hubbub_error add_attributes(void *ctx, void *vnode,
 			node->data.element.n_attrs *
 				sizeof *node->data.element.attrs);
 
-	for (size_t i = 0; i < n_attributes; i++) {
+	for (i = 0; i < n_attributes; i++) {
 		attr_t *attr = &node->data.element.attrs[old_elems + i];
 
 		assert(attributes[i].ns < NUM_NAMESPACES);
@@ -831,8 +835,11 @@ static int compare_attrs(const void *a, const void *b) {
 
 static void indent(buf_t *buf, unsigned depth)
 {
+	unsigned int i;
+
 	buf_add(buf, "| ");
-	for (unsigned i = 0; i < depth; i++) {
+
+	for (i = 0; i < depth; i++) {
 		buf_add(buf, "  ");
 	}
 }
@@ -847,6 +854,8 @@ static void print_ns(buf_t *buf, hubbub_ns ns)
 
 static void node_print(buf_t *buf, node_t *node, unsigned depth)
 {
+	size_t i;
+
 	if (!node) return;
 
 	indent(buf, depth);
@@ -888,7 +897,7 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 				sizeof *node->data.element.attrs,
 				compare_attrs);
 
-		for (size_t i = 0; i < node->data.element.n_attrs; i++) {
+		for (i = 0; i < node->data.element.n_attrs; i++) {
 			indent(buf, depth + 1);
 			print_ns(buf, node->data.element.attrs[i].ns);
 			buf_add(buf, node->data.element.attrs[i].name);
@@ -925,6 +934,9 @@ static void node_print(buf_t *buf, node_t *node, unsigned depth)
 
 static void delete_node(node_t *node)
 {
+	size_t i;
+	node_t *c, *d;
+
 	if (node == NULL)
 		return;
 
@@ -946,13 +958,11 @@ static void delete_node(node_t *node)
 		break;
 	case ELEMENT:
 		free(node->data.element.name);
-		for (size_t i = 0; i < node->data.element.n_attrs; i++)
+		for (i = 0; i < node->data.element.n_attrs; i++)
 			delete_attr(&node->data.element.attrs[i]);
 		free(node->data.element.attrs);
 		break;
 	}
-
-	node_t *c, *d;
 
 	for (c = node->child; c != NULL; c = d) {
 		d = c->next;

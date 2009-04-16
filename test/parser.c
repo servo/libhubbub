@@ -25,7 +25,7 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	hubbub_parser_optparams params;
 	FILE *fp;
 	size_t len, origlen;
-	uint8_t buf[CHUNK_SIZE];
+	uint8_t *buf = alloca(CHUNK_SIZE);
 	const char *charset;
 	hubbub_charset_source cssource;
 
