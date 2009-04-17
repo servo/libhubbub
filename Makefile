@@ -44,6 +44,7 @@ ifeq ($(WANT_TEST),yes)
     TESTLDFLAGS := $(TESTLDFLAGS) \
 		$(shell $(PKGCONFIG) $(PKGCONFIGFLAGS) --libs json)
   else
+    TESTCFLAGS := $(TESTCFLAGS) -I$(PREFIX)/include/json
     TESTLDFLAGS := $(TESTLDFLAGS) -ljson
   endif
 
