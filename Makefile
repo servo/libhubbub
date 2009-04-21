@@ -26,12 +26,14 @@ else
 endif
 
 # Parserutils
-ifneq ($(PKGCONFIG),)
-  CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils-0 --cflags)
-  LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils-0 --libs)
-else
-  CFLAGS := $(CFLAGS) -I$(PREFIX)/include/parserutils0
-  LDFLAGS := $(LDFLAGS) -lparserutils0
+ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
+  ifneq ($(PKGCONFIG),)
+    CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils-0 --cflags)
+    LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils-0 --libs)
+  else
+    CFLAGS := $(CFLAGS) -I$(PREFIX)/include/parserutils0
+    LDFLAGS := $(LDFLAGS) -lparserutils0
+  endif
 endif
 
 include build/makefiles/Makefile.top
