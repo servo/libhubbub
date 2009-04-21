@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: libhubbub
 Description: HTML5 parsing library
 Version: VERSION
-Requires: libparserutils-0
-Libs: -L${libdir} -lhubbubMAJOR
-Cflags: -I${includedir}/hubbubMAJOR
+Requires: libparserutils
+Libs: -L${libdir} -lhubbub
+Cflags: -I${includedir}

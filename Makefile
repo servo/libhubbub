@@ -28,10 +28,10 @@ endif
 # Parserutils
 ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
   ifneq ($(PKGCONFIG),)
-    CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils-0 --cflags)
-    LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils-0 --libs)
+    CFLAGS := $(CFLAGS) $(shell $(PKGCONFIG) libparserutils --cflags)
+    LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils --libs)
   else
-    CFLAGS := $(CFLAGS) -I$(PREFIX)/include/parserutils0
+    CFLAGS := $(CFLAGS) -I$(PREFIX)/include
     LDFLAGS := $(LDFLAGS) -lparserutils0
   endif
 endif
@@ -56,7 +56,7 @@ ifeq ($(WANT_TEST),yes)
 endif
 
 # Extra installation rules
-I := /include/hubbub$(major-version)/hubbub
+I := /include/hubbub
 INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/errors.h
 INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/functypes.h
 INSTALL_ITEMS := $(INSTALL_ITEMS) $(I):include/hubbub/hubbub.h
