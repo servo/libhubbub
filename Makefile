@@ -32,7 +32,7 @@ ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
     LDFLAGS := $(LDFLAGS) $(shell $(PKGCONFIG) libparserutils --libs)
   else
     CFLAGS := $(CFLAGS) -I$(PREFIX)/include
-    LDFLAGS := $(LDFLAGS) -lparserutils0
+    LDFLAGS := $(LDFLAGS) -lparserutils
   endif
 endif
 
