@@ -787,7 +787,7 @@ hubbub_error hubbub_tokeniser_handle_character_reference_data(
 							+ 1);
 		} else {
 			parserutils_error error;
-			const uint8_t *cptr;
+			const uint8_t *cptr = NULL;
 			error = parserutils_inputstream_peek(
 					tokeniser->input,
 					tokeniser->context.pending,
@@ -1590,8 +1590,8 @@ hubbub_error hubbub_tokeniser_handle_character_reference_in_attribute_value(
 					tokeniser->context.match_entity.length
 					+ 1;
 		} else {
-			size_t len;
-			const uint8_t *cptr;
+			size_t len = 0;
+			const uint8_t *cptr = NULL;
 			parserutils_error error;
 
 			error = parserutils_inputstream_peek(
@@ -3137,7 +3137,7 @@ hubbub_error emit_current_chars(hubbub_tokeniser *tokeniser)
 {
 	hubbub_token token;
 	size_t len;
-	const uint8_t *cptr;
+	const uint8_t *cptr = NULL;
 	parserutils_error error;
 
 	/* Calling this with nothing to output is a probable bug */
