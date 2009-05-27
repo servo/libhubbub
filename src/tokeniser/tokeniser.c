@@ -918,19 +918,6 @@ hubbub_error hubbub_tokeniser_handle_close_tag_open(hubbub_tokeniser *tokeniser)
 /*	assert(tokeniser->context.chars.ptr[0] == '<'); */
 /*	assert(tokeniser->context.chars.ptr[1] == '/'); */
 
-	error = parserutils_inputstream_peek(tokeniser->input, 
-			tokeniser->context.pending, &cptr, &len);
-	if (error != PARSERUTILS_OK) {
-		if (error == PARSERUTILS_EOF) {
-			tokeniser->state = STATE_DATA;
-			return emit_current_chars(tokeniser);
-		} else {
-			return hubbub_error_from_parserutils_error(error);
-		}
-	}
-
-	c = *cptr;
-
 	/**\todo fragment case */
 
 	if (tokeniser->content_model == HUBBUB_CONTENT_MODEL_RCDATA ||
