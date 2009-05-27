@@ -1514,7 +1514,7 @@ hubbub_error process_0form_in_body(hubbub_treebuilder *treebuilder)
 	} else {
 		hubbub_ns ns;
 		element_type otype;
-		void *node;
+		void *onode;
 
 		close_implied_end_tags(treebuilder, UNKNOWN);
 
@@ -1525,12 +1525,12 @@ hubbub_error process_0form_in_body(hubbub_treebuilder *treebuilder)
 		}
 
 		err = element_stack_remove(treebuilder, idx, 
-				&ns, &otype, &node);
+				&ns, &otype, &onode);
 		assert(err == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
-				node);
+				onode);
 	}
 
 	return HUBBUB_OK;
