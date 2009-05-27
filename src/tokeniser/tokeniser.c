@@ -3268,7 +3268,6 @@ hubbub_error emit_current_doctype(hubbub_tokeniser *tokeniser,
 		bool force_quirks)
 {
 	hubbub_token token;
-	uint8_t *ptr;
 
 	/* Emit doctype */
 	token.type = HUBBUB_TOKEN_DOCTYPE;
@@ -3277,19 +3276,17 @@ hubbub_error emit_current_doctype(hubbub_tokeniser *tokeniser,
 		token.data.doctype.force_quirks = true;
 
 	/* Set pointers correctly */
-	ptr = tokeniser->buffer->data;
-
-	token.data.doctype.name.ptr = ptr;
-	ptr += token.data.doctype.name.len;
+	token.data.doctype.name.ptr = tokeniser->buffer->data;
 
 	if (token.data.doctype.public_missing == false) {
-		token.data.doctype.public_id.ptr = ptr;
-		ptr += token.data.doctype.public_id.len;
+		token.data.doctype.public_id.ptr = tokeniser->buffer->data + 
+				token.data.doctype.name.len;
 	}
 
 	if (token.data.doctype.system_missing == false) {
-		token.data.doctype.system_id.ptr = ptr;
-		ptr += token.data.doctype.system_id.len;
+		token.data.doctype.system_id.ptr = tokeniser->buffer->data +
+				token.data.doctype.name.len +
+				token.data.doctype.public_id.len;
 	}
 
 	return hubbub_tokeniser_emit_token(tokeniser, &token);
