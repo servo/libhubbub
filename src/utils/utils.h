@@ -8,6 +8,13 @@
 #ifndef hubbub_utils_h_
 #define hubbub_utils_h_
 
+/* If we're building with Norcroft, then we need to haul in 
+ * unixlib.h from TCPIPLibs for useful things like strncasecmp
+ */
+#ifdef __CC_NORCROFT
+#include <unixlib.h>
+#endif
+
 #ifndef max
 #define max(a,b) ((a)>(b)?(a):(b))
 #endif

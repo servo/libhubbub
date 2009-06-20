@@ -60,7 +60,7 @@ hubbub_error hubbub_parser_create(const char *enc, bool fix_enc,
 	/* If we have an encoding and we're permitted to fix up likely broken
 	 * ones, then attempt to do so. */
 	if (enc != NULL && fix_enc == true) {
-		uint16_t mibenum = parserutils_charset_mibenum_from_name(enc, 
+		uint16_t mibenum = parserutils_charset_mibenum_from_name(enc,
 				strlen(enc));
 
 		if (mibenum != 0) {
@@ -143,7 +143,7 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 	switch (type) {
 	case HUBBUB_PARSER_TOKEN_HANDLER:
 		if (parser->tb != NULL) {
-			/* Client is defining their own token handler, 
+			/* Client is defining their own token handler,
 			 * so we must destroy the default treebuilder */
 			hubbub_treebuilder_destroy(parser->tb);
 			parser->tb = NULL;
@@ -295,8 +295,8 @@ hubbub_error hubbub_parser_completed(hubbub_parser *parser)
 		return HUBBUB_BADPARM;
 
 	perror = parserutils_inputstream_append(parser->stream, NULL, 0);
-	if (perror != HUBBUB_OK)
-		return !HUBBUB_OK;
+	if (perror != PARSERUTILS_OK)
+		return hubbub_error_from_parserutils_error(perror);
 
 	error = hubbub_tokeniser_run(parser->tok);
 	if (error != HUBBUB_OK)
@@ -315,9 +315,16 @@ hubbub_error hubbub_parser_completed(hubbub_parser *parser)
 const char *hubbub_parser_read_charset(hubbub_parser *parser,
 		hubbub_charset_source *source)
 {
+	const char *name;
+	uint32_t src;
+
 	if (parser == NULL || source == NULL)
 		return NULL;
 
-	return parserutils_inputstream_read_charset(parser->stream, source);
+	name = parserutils_inputstream_read_charset(parser->stream, &src);
+
+	*source = (hubbub_charset_source) src;
+
+	return name;
 }
 

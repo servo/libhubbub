@@ -48,12 +48,12 @@ static const struct {
 	{ S("noframes"), NOFRAMES },	{ S("noscript"), NOSCRIPT },
 	{ S("ol"), OL },		{ S("optgroup"), OPTGROUP },
 	{ S("option"), OPTION },	{ S("output"), OUTPUT },
-	{ S("p"), P },			{ S("param"), PARAM },	
+	{ S("p"), P },			{ S("param"), PARAM },
 	{ S("plaintext"), PLAINTEXT },	{ S("pre"), PRE },
 	{ S("script"), SCRIPT },	{ S("select"), SELECT },
 	{ S("spacer"), SPACER },	{ S("style"), STYLE },
  	{ S("tbody"), TBODY },		{ S("textarea"), TEXTAREA },
-	{ S("tfoot"), TFOOT },		{ S("thead"), THEAD },	
+	{ S("tfoot"), TFOOT },		{ S("thead"), THEAD },
 	{ S("title"), TITLE },		{ S("tr"), TR },
 	{ S("ul"), UL },		{ S("wbr"), WBR },
 	{ S("applet"), APPLET },	{ S("button"), BUTTON },
@@ -93,7 +93,7 @@ static bool is_form_associated(element_type type);
  *         HUBBUB_NOMEM on memory exhaustion
  */
 hubbub_error hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
-		hubbub_allocator_fn alloc, void *pw, 
+		hubbub_allocator_fn alloc, void *pw,
 		hubbub_treebuilder **treebuilder)
 {
 	hubbub_error error;
@@ -125,7 +125,7 @@ hubbub_error hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 	/* We rely on HTML not being equal to zero to determine
 	 * if the first item in the stack is in use. Assert this here. */
 	assert(HTML != 0);
-	tb->context.element_stack[0].type = 0;
+	tb->context.element_stack[0].type = (element_type) 0;
 
 	tb->context.strip_leading_lr = false;
 	tb->context.frameset_ok = true;
@@ -139,7 +139,7 @@ hubbub_error hubbub_treebuilder_create(hubbub_tokeniser *tokeniser,
 	tokparams.token_handler.handler = hubbub_treebuilder_token_handler;
 	tokparams.token_handler.pw = tb;
 
-	error = hubbub_tokeniser_setopt(tokeniser, 
+	error = hubbub_tokeniser_setopt(tokeniser,
 			HUBBUB_TOKENISER_TOKEN_HANDLER, &tokparams);
 	if (error != HUBBUB_OK) {
 		alloc(tb->context.element_stack, 0, pw);
@@ -194,7 +194,7 @@ hubbub_error hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 					treebuilder->context.document);
 		}
 
-		for (n = treebuilder->context.current_node; 
+		for (n = treebuilder->context.current_node;
 				n > 0; n--) {
 			treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -206,7 +206,7 @@ hubbub_error hubbub_treebuilder_destroy(hubbub_treebuilder *treebuilder)
 				treebuilder->context.element_stack[0].node);
 		}
 	}
-	treebuilder->alloc(treebuilder->context.element_stack, 0, 
+	treebuilder->alloc(treebuilder->context.element_stack, 0,
 			treebuilder->alloc_pw);
 	treebuilder->context.element_stack = NULL;
 
@@ -255,7 +255,7 @@ hubbub_error hubbub_treebuilder_setopt(hubbub_treebuilder *treebuilder,
 		treebuilder->context.document = params->document_node;
 		break;
 	case HUBBUB_TREEBUILDER_ENABLE_SCRIPTING:
-		treebuilder->context.enable_scripting = 
+		treebuilder->context.enable_scripting =
 				params->enable_scripting;
 		break;
 	}
@@ -269,7 +269,7 @@ hubbub_error hubbub_treebuilder_setopt(hubbub_treebuilder *treebuilder,
  * \param token  The emitted token
  * \param pw     Pointer to treebuilder instance
  */
-hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token, 
+hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token,
 		void *pw)
 {
 	hubbub_treebuilder *treebuilder = (hubbub_treebuilder *) pw;
@@ -372,9 +372,9 @@ hubbub_error hubbub_treebuilder_token_handler(const hubbub_token *token,
  *
  * \param treebuilder               The treebuilder instance
  * \param token                     The character token
- * \param insert_into_current_node  Whether to insert whitespace into 
+ * \param insert_into_current_node  Whether to insert whitespace into
  *                                  current node
- * \return HUBBUB_REPROCESS if the token needs reprocessing 
+ * \return HUBBUB_REPROCESS if the token needs reprocessing
  *                          (token data updated to skip any leading whitespace),
  *         HUBBUB_OK if it contained only whitespace,
  *         appropriate error otherwise
@@ -481,7 +481,7 @@ hubbub_error parse_generic_rcdata(hubbub_treebuilder *treebuilder,
 	if (error != HUBBUB_OK)
 		return error;
 
-	params.content_model.model = rcdata ? HUBBUB_CONTENT_MODEL_RCDATA 
+	params.content_model.model = rcdata ? HUBBUB_CONTENT_MODEL_RCDATA
 					    : HUBBUB_CONTENT_MODEL_CDATA;
 	error = hubbub_tokeniser_setopt(treebuilder->tokeniser,
 				HUBBUB_TOKENISER_CONTENT_MODEL, &params);
@@ -575,7 +575,7 @@ hubbub_error reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 	/* Save initial entry for later */
 	initial_entry = entry;
 
-	/* Process formatting list entries, cloning nodes and 
+	/* Process formatting list entries, cloning nodes and
 	 * inserting them into the DOM and element stack */
 	while (entry != NULL) {
 		void *clone, *appended;
@@ -596,7 +596,7 @@ hubbub_error reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 					type == TR);
 
 		if (foster) {
-			error = aa_insert_into_foster_parent(treebuilder, 
+			error = aa_insert_into_foster_parent(treebuilder,
 					clone, &appended);
 		} else {
 			error = treebuilder->tree_handler->append_child(
@@ -615,7 +615,7 @@ hubbub_error reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 		if (error != HUBBUB_OK)
 			goto cleanup;
 
-		error = element_stack_push(treebuilder, entry->details.ns, 
+		error = element_stack_push(treebuilder, entry->details.ns,
 				entry->details.type, appended);
 		if (error != HUBBUB_OK) {
 			hubbub_error err;
@@ -647,7 +647,7 @@ hubbub_error reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 				treebuilder->tree_handler->ctx, node);
 
 		error = formatting_list_replace(treebuilder, entry,
-				entry->details.ns, entry->details.type, 
+				entry->details.ns, entry->details.type,
 				node, sp,
 				&prev_ns, &prev_type, &prev_node,
 				&prev_stack_index);
@@ -662,7 +662,7 @@ hubbub_error reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 	return HUBBUB_OK;
 
 cleanup:
-	/* An error occurred while cloning nodes and inserting them. 
+	/* An error occurred while cloning nodes and inserting them.
 	 * We must restore the state on entry here. */
 	while (treebuilder->context.current_node > sp) {
 		hubbub_ns ns;
@@ -742,7 +742,7 @@ void clear_active_formatting_list_to_marker(hubbub_treebuilder *treebuilder)
 		if (is_scoping_element(entry->details.type))
 			done = true;
 
-		error = formatting_list_remove(treebuilder, entry, 
+		error = formatting_list_remove(treebuilder, entry,
 				&ns, &type, &node, &stack_index);
 		/* Can't fail. Ensure this. */
 		assert(error == HUBBUB_OK);
@@ -757,7 +757,7 @@ void clear_active_formatting_list_to_marker(hubbub_treebuilder *treebuilder)
 }
 
 /**
- * Create element and insert it into the DOM, 
+ * Create element and insert it into the DOM,
  * potentially pushing it on the stack
  *
  * \param treebuilder  The treebuilder instance
@@ -765,7 +765,7 @@ void clear_active_formatting_list_to_marker(hubbub_treebuilder *treebuilder)
  * \param push         Whether to push the element onto the stack
  * \return HUBBUB_OK on success, appropriate error otherwise.
  */
-hubbub_error insert_element(hubbub_treebuilder *treebuilder, 
+hubbub_error insert_element(hubbub_treebuilder *treebuilder,
 		const hubbub_tag *tag, bool push)
 {
 	element_type type = current_node(treebuilder);
@@ -780,7 +780,7 @@ hubbub_error insert_element(hubbub_treebuilder *treebuilder,
 	if (treebuilder->context.in_table_foster &&
 			(type == TABLE || type == TBODY || type == TFOOT ||
 			type == THEAD || type == TR)) {
-		error = aa_insert_into_foster_parent(treebuilder, node, 
+		error = aa_insert_into_foster_parent(treebuilder, node,
 				&appended);
 	} else {
 		error = treebuilder->tree_handler->append_child(
@@ -798,7 +798,7 @@ hubbub_error insert_element(hubbub_treebuilder *treebuilder,
 		return error;
 
 	type = element_type_from_name(treebuilder, &tag->name);
-	if (treebuilder->context.form_element != NULL && 
+	if (treebuilder->context.form_element != NULL &&
 			is_form_associated(type)) {
 		/* Consideration of @form is left to the client */
 		error = treebuilder->tree_handler->form_associate(
@@ -820,7 +820,7 @@ hubbub_error insert_element(hubbub_treebuilder *treebuilder,
 	}
 
 	if (push) {
-		error = element_stack_push(treebuilder, 
+		error = element_stack_push(treebuilder,
 				tag->ns, type, appended);
 		if (error != HUBBUB_OK) {
 			hubbub_error err;
@@ -942,7 +942,7 @@ void reset_insertion_mode(hubbub_treebuilder *treebuilder)
 }
 
 /**
- * Append text to the current node, inserting into the last child of the 
+ * Append text to the current node, inserting into the last child of the
  * current node, iff it's a Text node.
  *
  * \param treebuilder  The treebuilder instance
@@ -973,7 +973,7 @@ hubbub_error append_text(hubbub_treebuilder *treebuilder,
 					treebuilder->context.current_node].node,
 						text, &appended);
 	}
-	
+
 	if (error == HUBBUB_OK) {
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, appended);
@@ -1088,10 +1088,10 @@ hubbub_error element_stack_push(hubbub_treebuilder *treebuilder,
 
 	if (slot >= treebuilder->context.stack_alloc) {
 		element_context *temp = treebuilder->alloc(
-				treebuilder->context.element_stack, 
-				(treebuilder->context.stack_alloc + 
-					ELEMENT_STACK_CHUNK) * 
-					sizeof(element_context), 
+				treebuilder->context.element_stack,
+				(treebuilder->context.stack_alloc +
+					ELEMENT_STACK_CHUNK) *
+					sizeof(element_context),
 				treebuilder->alloc_pw);
 
 		if (temp == NULL)
@@ -1135,16 +1135,16 @@ hubbub_error element_stack_pop(hubbub_treebuilder *treebuilder,
 		}
 	}
 
-	if (is_formatting_element(stack[slot].type) || 
-			(is_scoping_element(stack[slot].type) && 
-			stack[slot].type != HTML && 
+	if (is_formatting_element(stack[slot].type) ||
+			(is_scoping_element(stack[slot].type) &&
+			stack[slot].type != HTML &&
 			stack[slot].type != TABLE)) {
-		/* Find occurrences of the node we're about to pop in the list 
-		 * of active formatting elements. We need to invalidate their 
+		/* Find occurrences of the node we're about to pop in the list
+		 * of active formatting elements. We need to invalidate their
 		 * stack index information. */
-		for (entry = treebuilder->context.formatting_list_end; 
+		for (entry = treebuilder->context.formatting_list_end;
 				entry != NULL; entry = entry->prev) {
-			/** \todo Can we optimise this? 
+			/** \todo Can we optimise this?
 			 * (i.e. by not traversing the entire list) */
 			if (entry->stack_index == slot)
 				entry->stack_index = 0;
@@ -1200,8 +1200,8 @@ hubbub_error element_stack_pop_until(hubbub_treebuilder *treebuilder,
  * \param removed      Pointer to location to receive removed node
  * \return HUBBUB_OK on success, appropriate error otherwise.
  */
-hubbub_error element_stack_remove(hubbub_treebuilder *treebuilder, 
-		uint32_t index, hubbub_ns *ns, element_type *type, 
+hubbub_error element_stack_remove(hubbub_treebuilder *treebuilder,
+		uint32_t index, hubbub_ns *ns, element_type *type,
 		void **removed)
 {
 	element_context *stack = treebuilder->context.element_stack;
@@ -1236,7 +1236,7 @@ hubbub_error element_stack_remove(hubbub_treebuilder *treebuilder,
 	/* Now, shuffle the stack up one, removing node in the process */
 	if (index < treebuilder->context.current_node) {
 		memmove(&stack[index], &stack[index + 1],
-				(treebuilder->context.current_node - index) * 
+				(treebuilder->context.current_node - index) *
 				sizeof(element_context));
 	}
 
@@ -1302,7 +1302,7 @@ element_type prev_node(hubbub_treebuilder *treebuilder)
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
 hubbub_error formatting_list_append(hubbub_treebuilder *treebuilder,
-		hubbub_ns ns, element_type type, void *node, 
+		hubbub_ns ns, element_type type, void *node,
 		uint32_t stack_index)
 {
 	formatting_list_entry *entry;
@@ -1344,7 +1344,7 @@ hubbub_error formatting_list_append(hubbub_treebuilder *treebuilder,
  */
 hubbub_error formatting_list_insert(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *prev, formatting_list_entry *next,
-		hubbub_ns ns, element_type type, void *node, 
+		hubbub_ns ns, element_type type, void *node,
 		uint32_t stack_index)
 {
 	formatting_list_entry *entry;
@@ -1397,7 +1397,7 @@ hubbub_error formatting_list_insert(hubbub_treebuilder *treebuilder,
  */
 hubbub_error formatting_list_remove(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry,
-		hubbub_ns *ns, element_type *type, void **node, 
+		hubbub_ns *ns, element_type *type, void **node,
 		uint32_t *stack_index)
 {
 	*ns = entry->details.ns;
@@ -1437,9 +1437,9 @@ hubbub_error formatting_list_remove(hubbub_treebuilder *treebuilder,
  */
 hubbub_error formatting_list_replace(hubbub_treebuilder *treebuilder,
 		formatting_list_entry *entry,
-		hubbub_ns ns, element_type type, void *node, 
+		hubbub_ns ns, element_type type, void *node,
 		uint32_t stack_index,
-		hubbub_ns *ons, element_type *otype, void **onode, 
+		hubbub_ns *ons, element_type *otype, void **onode,
 		uint32_t *ostack_index)
 {
 	UNUSED(treebuilder);
@@ -1473,7 +1473,7 @@ void element_stack_dump(hubbub_treebuilder *treebuilder, FILE *fp)
 	uint32_t i;
 
 	for (i = 0; i <= treebuilder->context.current_node; i++) {
-		fprintf(fp, "%u: %s %p\n", 
+		fprintf(fp, "%u: %s %p\n",
 				i,
 				element_type_to_name(stack[i].type),
 				stack[i].node);
@@ -1490,9 +1490,9 @@ void formatting_list_dump(hubbub_treebuilder *treebuilder, FILE *fp)
 {
 	formatting_list_entry *entry;
 
-	for (entry = treebuilder->context.formatting_list; entry != NULL; 
+	for (entry = treebuilder->context.formatting_list; entry != NULL;
 			entry = entry->next) {
-		fprintf(fp, "%s %p %u\n", 
+		fprintf(fp, "%s %p %u\n",
 				element_type_to_name(entry->details.type),
 				entry->details.node, entry->stack_index);
 	}
@@ -1508,7 +1508,7 @@ const char *element_type_to_name(element_type type)
 {
 	size_t i;
 
-	for (i = 0; 
+	for (i = 0;
 			i < sizeof(name_type_map) / sizeof(name_type_map[0]);
 			i++) {
 		if (name_type_map[i].type == type)
