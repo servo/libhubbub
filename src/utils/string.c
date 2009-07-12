@@ -26,7 +26,7 @@ bool hubbub_string_match(const uint8_t *a, size_t a_len,
 	if (a_len != b_len)
 		return false;
 
-	return strncmp((const char *) a, (const char *) b, b_len) == 0;
+	return memcmp((const char *) a, (const char *) b, b_len) == 0;
 }
 
 /**
@@ -43,5 +43,16 @@ bool hubbub_string_match_ci(const uint8_t *a, size_t a_len,
 	if (a_len != b_len)
 		return false;
 
-	return strncasecmp((const char *) a, (const char *) b, b_len) == 0;
+	while (b_len-- > 0) {
+		uint8_t aa = *(a++);
+		uint8_t bb = *(b++);
+
+		aa = ('a' <= aa && aa <= 'z') ? (aa - 0x20) : aa; 
+		bb = ('a' <= bb && bb <= 'z') ? (bb - 0x20) : bb;
+
+		if (aa != bb)
+			return false;
+	}
+
+	return true;
 }
