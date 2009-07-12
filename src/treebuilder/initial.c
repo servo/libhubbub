@@ -94,7 +94,8 @@ static bool starts_with(const uint8_t *a, size_t a_len, const uint8_t *b,
 	if (a_len < b_len)
 		return false;
 
-	return strncasecmp((const char *) a, (const char *) b, b_len) == 0;
+	/* Now perform an insensitive comparison on the prefix */
+	return hubbub_string_match_ci(a, b_len, b, b_len);
 }
 
 
