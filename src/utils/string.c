@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <string.h>
 #include "utils/string.h"
 
 
@@ -22,17 +23,10 @@
 bool hubbub_string_match(const uint8_t *a, size_t a_len,
 		const uint8_t *b, size_t b_len)
 {
-	const uint8_t *s1, *s2;
-
 	if (a_len != b_len)
 		return false;
 
-	for (s1 = a, s2 = b; b_len > 0; s1++, s2++, b_len--)
-	{
-		if (*s1 != *s2) return false;
-	}
-
-	return true;
+	return strncmp((const char *) a, (const char *) b, b_len) == 0;
 }
 
 /**
@@ -46,18 +40,8 @@ bool hubbub_string_match(const uint8_t *a, size_t a_len,
 bool hubbub_string_match_ci(const uint8_t *a, size_t a_len,
 		const uint8_t *b, size_t b_len)
 {
-	uint8_t z1, z2;
-	const uint8_t *s1, *s2;
-
 	if (a_len != b_len)
 		return false;
 
-	for (s1 = a, s2 = b; b_len > 0; s1++, s2++, b_len--)
-	{
-		z1 = (*s1 & ~0x20);
-		z2 = (*s2 & ~0x20);
-		if (z1 != z2) return false;
-	}
-
-	return true;
+	return strncasecmp((const char *) a, (const char *) b, b_len) == 0;
 }
