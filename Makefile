@@ -10,11 +10,12 @@ include build/makefiles/Makefile.tools
 TESTRUNNER := $(PERL) build/testtools/testrunner.pl
 
 # Toolchain flags
-WARNFLAGS := -Wall -Wundef -Wpointer-arith -Wcast-align \
+WARNFLAGS := -Wall -W -Wundef -Wpointer-arith -Wcast-align \
 	-Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wnested-externs -pedantic
-ifneq ($(GCCVER),2)
-  WARNFLAGS := $(WARNFLAGS) -Wextra -Werror
+# BeOS/Haiku have standard library errors that issue warnings.
+ifneq ($(TARGET),beos)
+  WARNFLAGS := $(WARNFLAGS) -Werror
 endif
 CFLAGS := -D_BSD_SOURCE -I$(CURDIR)/include/ \
 	-I$(CURDIR)/src $(WARNFLAGS) $(CFLAGS)
