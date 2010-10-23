@@ -8,6 +8,11 @@
 #ifndef hubbub_types_h_
 #define hubbub_types_h_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <stdbool.h>
 #include <inttypes.h>
 
@@ -124,5 +129,9 @@ typedef struct hubbub_token {
 		hubbub_string character;
 	} data;				/**< Type-specific data */
 } hubbub_token;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

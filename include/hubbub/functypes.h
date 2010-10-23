@@ -8,6 +8,11 @@
 #ifndef hubbub_functypes_h_
 #define hubbub_functypes_h_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -46,6 +51,10 @@ typedef hubbub_error (*hubbub_token_handler)(
  */
 typedef void (*hubbub_error_handler)(uint32_t line, uint32_t col,
 		const char *message, void *pw);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

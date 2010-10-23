@@ -8,6 +8,11 @@
 #ifndef hubbub_parser_h_
 #define hubbub_parser_h_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <stdbool.h>
 #include <inttypes.h>
 
@@ -76,6 +81,10 @@ hubbub_error hubbub_parser_completed(hubbub_parser *parser);
 /* Read the document charset */
 const char *hubbub_parser_read_charset(hubbub_parser *parser,
 		hubbub_charset_source *source);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

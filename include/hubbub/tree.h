@@ -8,6 +8,11 @@
 #ifndef hubbub_tree_h_
 #define hubbub_tree_h_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <hubbub/functypes.h>
 
 /**
@@ -276,6 +281,10 @@ typedef struct hubbub_tree_handler {
 	hubbub_tree_encoding_change encoding_change;	/**< Change encoding */
 	void *ctx;					/**< Context pointer */
 } hubbub_tree_handler;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

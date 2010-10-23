@@ -8,6 +8,11 @@
 #ifndef hubbub_errors_h_
 #define hubbub_errors_h_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <stddef.h>
 
 typedef enum hubbub_error {
@@ -27,6 +32,10 @@ typedef enum hubbub_error {
 
 /* Convert a hubbub error value to a string */
 const char *hubbub_error_to_string(hubbub_error error);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

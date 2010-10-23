@@ -8,6 +8,11 @@
 #ifndef hubbub_h_
 #define hubbub_h_
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <hubbub/errors.h>
 #include <hubbub/functypes.h>
 #include <hubbub/types.h>
@@ -18,6 +23,10 @@ hubbub_error hubbub_initialise(const char *aliases_file,
 
 /* Clean up after Hubbub */
 hubbub_error hubbub_finalise(hubbub_allocator_fn alloc, void *pw);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
