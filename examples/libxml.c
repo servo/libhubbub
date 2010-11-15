@@ -78,26 +78,32 @@ static struct {
 static inline char *c_string_from_hubbub_string(context *ctx, 
 		const hubbub_string *str);
 static void create_namespaces(context *ctx, xmlNode *root);
-static int create_comment(void *ctx, const hubbub_string *data, void **result);
-static int create_doctype(void *ctx, const hubbub_doctype *doctype,
+static hubbub_error create_comment(void *ctx, const hubbub_string *data, 
 		void **result);
-static int create_element(void *ctx, const hubbub_tag *tag, void **result);
-static int create_text(void *ctx, const hubbub_string *data, void **result);
-static int ref_node(void *ctx, void *node);
-static int unref_node(void *ctx, void *node);
-static int append_child(void *ctx, void *parent, void *child, void **result);
-static int insert_before(void *ctx, void *parent, void *child, void *ref_child,
+static hubbub_error create_doctype(void *ctx, const hubbub_doctype *doctype,
 		void **result);
-static int remove_child(void *ctx, void *parent, void *child, void **result);
-static int clone_node(void *ctx, void *node, bool deep, void **result);
-static int reparent_children(void *ctx, void *node, void *new_parent);
-static int get_parent(void *ctx, void *node, bool element_only, void **result);
-static int has_children(void *ctx, void *node, bool *result);
-static int form_associate(void *ctx, void *form, void *node);
-static int add_attributes(void *ctx, void *node,
+static hubbub_error create_element(void *ctx, const hubbub_tag *tag, 
+		void **result);
+static hubbub_error create_text(void *ctx, const hubbub_string *data, 
+		void **result);
+static hubbub_error ref_node(void *ctx, void *node);
+static hubbub_error unref_node(void *ctx, void *node);
+static hubbub_error append_child(void *ctx, void *parent, void *child, 
+		void **result);
+static hubbub_error insert_before(void *ctx, void *parent, void *child, 
+		void *ref_child, void **result);
+static hubbub_error remove_child(void *ctx, void *parent, void *child, 
+		void **result);
+static hubbub_error clone_node(void *ctx, void *node, bool deep, void **result);
+static hubbub_error reparent_children(void *ctx, void *node, void *new_parent);
+static hubbub_error get_parent(void *ctx, void *node, bool element_only, 
+		void **result);
+static hubbub_error has_children(void *ctx, void *node, bool *result);
+static hubbub_error form_associate(void *ctx, void *form, void *node);
+static hubbub_error add_attributes(void *ctx, void *node,
 		const hubbub_attribute *attributes, uint32_t n_attributes);
-static int set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
-static int change_encoding(void *ctx, const char *charset);
+static hubbub_error set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
+static hubbub_error change_encoding(void *ctx, const char *charset);
 
 /* Prototype tree handler struct */
 static hubbub_tree_handler tree_handler = {
@@ -462,11 +468,11 @@ void create_namespaces(context *ctx, xmlNode *root)
  * \param ctx     Our context
  * \param data    The comment body
  * \param result  Location to receive manufactured node
- * \return 0 on success, 1 on memory exhaustion
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-int create_comment(void *ctx, const hubbub_string *data, void **result)
+hubbub_error create_comment(void *ctx, const hubbub_string *data, void **result)
 {
 	context *c = (context *) ctx;
 	char *content;
@@ -474,12 +480,12 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 
 	content = c_string_from_hubbub_string(c, data);
 	if (content == NULL)
-		return 1;
+		return HUBBUB_NOMEM;
 
 	n = xmlNewDocComment(c->document, BAD_CAST content);
 	if (n == NULL) {
 		free(content);
-		return 1;
+		return HUBBUB_NOMEM;
 	}
 	/* We use the _private field of libXML's xmlNode struct for the 
 	 * reference count. */
@@ -489,7 +495,7 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
 
 	*result = (void *) n;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -498,11 +504,11 @@ int create_comment(void *ctx, const hubbub_string *data, void **result)
  * \param ctx      Our context
  * \param doctype  Data for doctype node (name, public ID and system ID)
  * \param result   Location to receive manufactured node
- * \return 0 on success, 1 on memory exhaustion
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
+hubbub_error create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 {
 	context *c = (context *) ctx;
 	char *name, *public = NULL, *system = NULL;
@@ -510,14 +516,14 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 
 	name = c_string_from_hubbub_string(c, &doctype->name);
 	if (name == NULL)
-		return 1;
+		return HUBBUB_NOMEM;
 
 	/* May not have public ID */
 	if (!doctype->public_missing) {
 		public = c_string_from_hubbub_string(c, &doctype->public_id);
 		if (public == NULL) {
 			free(name);
-			return 1;
+			return HUBBUB_NOMEM;
 		}
 	}
 
@@ -527,7 +533,7 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 		if (system == NULL) {
 			free(public);
 			free(name);
-			return 1;
+			return HUBBUB_NOMEM;
 		}
 	}
 
@@ -538,7 +544,7 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 		free(system);
 		free(public);
 		free(name);
-		return 1;
+		return HUBBUB_NOMEM;
 	}
 	/* Again, reference count must be 1 */
 	n->_private = (void *) (uintptr_t) 1;
@@ -549,7 +555,7 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
 	free(public);
 	free(name);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -558,11 +564,11 @@ int create_doctype(void *ctx, const hubbub_doctype *doctype, void **result)
  * \param ctx     Our context
  * \param tag     Data for node
  * \param result  Location to receive manufactured node
- * \return 0 on success, 1 on memory exhaustion.
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-int create_element(void *ctx, const hubbub_tag *tag, void **result)
+hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	context *c = (context *) ctx;
 	char *name;
@@ -570,7 +576,7 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 
 	name = c_string_from_hubbub_string(c, &tag->name);
 	if (name == NULL)
-		return 1;
+		return HUBBUB_NOMEM;
 
 	if (c->namespaces[0] != NULL) {
 		n = xmlNewDocNode(c->document, c->namespaces[tag->ns - 1], 
@@ -588,7 +594,7 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 	}
 	if (n == NULL) {
 		free(name);
-		return 1;
+		return HUBBUB_NOMEM;
 	}
 	/* Reference count must be 1 */
 	n->_private = (void *) (uintptr_t) 1;
@@ -598,14 +604,14 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
 			tag->attributes, tag->n_attributes) != 0) {
 		xmlFreeNode(n);
 		free(name);
-		return 1;
+		return HUBBUB_NOMEM;
 	}
 
 	*result = (void *) n;
 
 	free(name);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -614,25 +620,25 @@ int create_element(void *ctx, const hubbub_tag *tag, void **result)
  * \param ctx     Our context
  * \param data    Node data
  * \param result  Location to receive manufactured node
- * \return 0 on success, 1 on memory exhaustion.
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if successfult, result's reference count must be 1.
  */
-int create_text(void *ctx, const hubbub_string *data, void **result)
+hubbub_error create_text(void *ctx, const hubbub_string *data, void **result)
 {
 	context *c = (context *) ctx;
 	xmlNodePtr n;
 
 	n = xmlNewDocTextLen(c->document, BAD_CAST data->ptr, (int) data->len);
 	if (n == NULL) {
-		return 1;
+		return HUBBUB_NOMEM;
 	}
 	/* Reference count must be 1 */
 	n->_private = (void *) (uintptr_t) 1;
 
 	*result = (void *) n;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -640,9 +646,9 @@ int create_text(void *ctx, const hubbub_string *data, void **result)
  *
  * \param ctx   Our context
  * \param node  The node to reference
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-int ref_node(void *ctx, void *node)
+hubbub_error ref_node(void *ctx, void *node)
 {
 	context *c = (context *) ctx;
 
@@ -658,7 +664,7 @@ int ref_node(void *ctx, void *node)
 		n->_private = (void *) ++count;
 	}
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -666,12 +672,12 @@ int ref_node(void *ctx, void *node)
  *
  * \param ctx   Our context
  * \param node  The node to unreference
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: If the node's reference count becomes zero, and it has no 
  * parent, and it is not the document node, then it is destroyed.
  */
-int unref_node(void *ctx, void *node)
+hubbub_error unref_node(void *ctx, void *node)
 {
 	context *c = (context *) ctx;
 
@@ -700,7 +706,7 @@ int unref_node(void *ctx, void *node)
 		}
 	}
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -710,13 +716,13 @@ int unref_node(void *ctx, void *node)
  * \param parent  The node to append to
  * \param child   The node to append
  * \param result  Location to receive appended node
- * \return 0 on success, 1 on memory exhaustion
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if successful, result's reference count is increased by 1
  *
  * Important: *result may not == child (e.g. if text nodes got coalesced)
  */
-int append_child(void *ctx, void *parent, void *child, void **result)
+hubbub_error append_child(void *ctx, void *parent, void *child, void **result)
 {
 	xmlNode *chld = (xmlNode *) child;
 	xmlNode *p = (xmlNode *) parent;
@@ -733,7 +739,7 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 		 * merges the content with a pre-existing text node. */
 		chld = xmlCopyNode(chld, 0);
 		if (chld == NULL)
-			return 1;
+			return HUBBUB_NOMEM;
 
 		*result = xmlAddChild(p, chld);
 
@@ -743,11 +749,11 @@ int append_child(void *ctx, void *parent, void *child, void **result)
 	}
 
 	if (*result == NULL)
-		return 1;
+		return HUBBUB_NOMEM;
 
 	ref_node(ctx, *result);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -758,13 +764,13 @@ int append_child(void *ctx, void *parent, void *child, void **result)
  * \param child      The node to insert
  * \param ref_child  The node to insert before
  * \param result     Location to receive inserted node
- * \return 0 on success, 1 on memory exhaustion
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if successful, result's reference count is increased by 1
  *
  * Important: *result may not == child (e.g. if text nodes got coalesced)
  */
-int insert_before(void *ctx, void *parent, void *child, void *ref_child,
+hubbub_error insert_before(void *ctx, void *parent, void *child, void *ref_child,
 		void **result)
 {
 	xmlNode *chld = (xmlNode *) child;
@@ -775,7 +781,7 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 		/* Clone text node, as it'll be freed by libxml */
 		chld = xmlCopyNode(chld, 0);
 		if (chld == NULL)
-			return 1;
+			return HUBBUB_NOMEM;
 
 		*result = xmlAddNextSibling(ref->prev, chld);
 
@@ -785,11 +791,11 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
 	}
 
 	if (*result == NULL)
-		return 1;
+		return HUBBUB_NOMEM;
 
 	ref_node(ctx, *result);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -799,11 +805,11 @@ int insert_before(void *ctx, void *parent, void *child, void *ref_child,
  * \param parent  The node to remove from
  * \param child   The node to remove
  * \param result  Location to receive removed node
- * \return 0 on success, 1 on memory exhaustion
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if successful, result's reference count is increased by 1
  */
-int remove_child(void *ctx, void *parent, void *child, void **result)
+hubbub_error remove_child(void *ctx, void *parent, void *child, void **result)
 {
 	xmlNode *chld = (xmlNode *) child;
 
@@ -813,7 +819,7 @@ int remove_child(void *ctx, void *parent, void *child, void **result)
 
 	ref_node(ctx, *result);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -823,22 +829,22 @@ int remove_child(void *ctx, void *parent, void *child, void **result)
  * \param node    The node to clone
  * \param deep    True to clone entire subtree, false to clone only the node
  * \param result  Location to receive clone
- * \return 0 on success, 1 on memory exhaustion
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if successful, result's reference count must be 1.
  */
-int clone_node(void *ctx, void *node, bool deep, void **result)
+hubbub_error clone_node(void *ctx, void *node, bool deep, void **result)
 {
 	xmlNode *n = (xmlNode *) node;
 
 	*result = xmlCopyNode(n, deep ? 1 : 2);
 
 	if (*result == NULL)
-		return 1;
+		return HUBBUB_NOMEM;
 
 	((xmlNode *)(*result))->_private = (void *) (uintptr_t) 1;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -847,9 +853,9 @@ int clone_node(void *ctx, void *node, bool deep, void **result)
  * \param ctx         Our context
  * \param node        The initial parent node
  * \param new_parent  The new parent node
- * \return 0 on success, 1 on memory exhaustion
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-int reparent_children(void *ctx, void *node, void *new_parent)
+hubbub_error reparent_children(void *ctx, void *node, void *new_parent)
 {
 	xmlNode *n = (xmlNode *) node;
 	xmlNode *p = (xmlNode *) new_parent;
@@ -861,12 +867,12 @@ int reparent_children(void *ctx, void *node, void *new_parent)
 		xmlUnlinkNode(child);
 
 		if (xmlAddChild(p, child) == NULL)
-			return 1;
+			return HUBBUB_NOMEM;
 
 		child = next;
 	}
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -876,12 +882,12 @@ int reparent_children(void *ctx, void *node, void *new_parent)
  * \param node          Node to retrieve the parent of
  * \param element_only  True if the parent must be an element, false otherwise
  * \param result        Location to receive parent node
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise
  *
  * Postcondition: if there is a parent, then result's reference count must be
  * increased.
  */
-int get_parent(void *ctx, void *node, bool element_only, void **result)
+hubbub_error get_parent(void *ctx, void *node, bool element_only, void **result)
 {
 	xmlNode *n = (xmlNode *) node;
 
@@ -895,7 +901,7 @@ int get_parent(void *ctx, void *node, bool element_only, void **result)
 	if (*result != NULL)
 		ref_node(ctx, *result);
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -904,15 +910,15 @@ int get_parent(void *ctx, void *node, bool element_only, void **result)
  * \param ctx     Our context
  * \param node    The node to inspect
  * \param result  Location to receive result
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-int has_children(void *ctx, void *node, bool *result)
+hubbub_error has_children(void *ctx, void *node, bool *result)
 {
 	xmlNode *n = (xmlNode *) node;
 
 	*result = n->children != NULL;
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -921,9 +927,9 @@ int has_children(void *ctx, void *node, bool *result)
  * \param ctx   Our context
  * \param form  The form to associate with
  * \param node  The node to associate
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-int form_associate(void *ctx, void *form, void *node)
+hubbub_error form_associate(void *ctx, void *form, void *node)
 {
 	/* In this implementation, we do nothing here.
 	 * 
@@ -938,7 +944,7 @@ int form_associate(void *ctx, void *form, void *node)
 	 * and the form identified by the ID in @form. This may not be the same
 	 * as the form passed in.
 	 */
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -948,9 +954,9 @@ int form_associate(void *ctx, void *form, void *node)
  * \param node          The node to add to
  * \param attributes    Array of attributes to add
  * \param n_attributes  Number of entries in array
- * \return 0 on success, 1 on memory exhaustion
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-int add_attributes(void *ctx, void *node, 
+hubbub_error add_attributes(void *ctx, void *node, 
 		const hubbub_attribute *attributes, uint32_t n_attributes)
 {
 	context *c = (context *) ctx;
@@ -963,12 +969,12 @@ int add_attributes(void *ctx, void *node,
 
 		name = c_string_from_hubbub_string(c, &attributes[attr].name);
 		if (name == NULL)
-			return 1;
+			return HUBBUB_NOMEM;
 
 		value = c_string_from_hubbub_string(c, &attributes[attr].value);
 		if (value == NULL) {
 			free(name);
-			return 1;
+			return HUBBUB_NOMEM;
 		}
 
 		if (attributes[attr].ns != HUBBUB_NS_NULL && 
@@ -982,14 +988,14 @@ int add_attributes(void *ctx, void *node,
 		if (prop == NULL) {
 			free(value);
 			free(name);
-			return 1;
+			return HUBBUB_NOMEM;
 		}
 
 		free(value);
 		free(name);
 	}
 
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -997,16 +1003,16 @@ int add_attributes(void *ctx, void *node,
  *
  * \param ctx   Our context
  * \param mode  The quirks mode
- * \return 0 on success, 1 on failure
+ * \return HUBBUB_OK on success, appropriate error otherwise
  */
-int set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
+hubbub_error set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
 {
 	/* In this implementation, we do nothing.
 	 * 
 	 * The quirks mode is really only of any use when applying CSS 
 	 * to the resulting DOM tree.
 	 */
-	return 0;
+	return HUBBUB_OK;
 }
 
 /**
@@ -1014,10 +1020,12 @@ int set_quirks_mode(void *ctx, hubbub_quirks_mode mode)
  *
  * \param ctx      Our context
  * \param charset  The new charset for the source data
- * \return 0 to ignore the change and continue using the current input handler,
- *         1 to stop processing immediately and return control to the client.
+ * \return HUBBUB_OK to continue using the current input handler, 
+ *         HUBBUB_ENCODINGCHANGE to stop processing immediately and 
+ *                               return control to the client,
+ *         appropriate error otherwise.
  */
-int change_encoding(void *ctx, const char *charset)
+hubbub_error change_encoding(void *ctx, const char *charset)
 {
 	context *c = (context *) ctx;
 	uint32_t source;
@@ -1025,7 +1033,7 @@ int change_encoding(void *ctx, const char *charset)
 
 	/* If we have an encoding here, it means we are *certain* */
 	if (c->encoding != NULL) {
-		return 0;
+		return HUBBUB_OK;
 	}
 
 	/* Find the confidence otherwise (can only be from a BOM) */
@@ -1034,7 +1042,7 @@ int change_encoding(void *ctx, const char *charset)
 	if (source == HUBBUB_CHARSET_CONFIDENT) {
 		c->enc_source = ENCODING_SOURCE_DETECTED;
 		c->encoding = (char *) charset;
-		return 0;
+		return HUBBUB_OK;
 	}
 
 	/* So here we have something of confidence tentative... */
@@ -1051,6 +1059,6 @@ int change_encoding(void *ctx, const char *charset)
 	c->enc_source = ENCODING_SOURCE_META;
 
 	/* Equal encodings will have the same string pointers */
-	return (charset == name) ? 0 : 1;
+	return (charset == name) ? HUBBUB_OK : HUBBUB_ENCODINGCHANGE;
 }
 
