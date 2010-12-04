@@ -116,9 +116,9 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	assert(hubbub_parser_setopt(parser, HUBBUB_PARSER_DOCUMENT_NODE,
 			&params) == HUBBUB_OK);
 
-	fp = fopen(argv[2], "rb");
+	fp = fopen(argv[1], "rb");
 	if (fp == NULL) {
-		printf("Failed opening %s\n", argv[2]);
+		printf("Failed opening %s\n", argv[1]);
 		return 1;
 	}
 
@@ -169,8 +169,8 @@ int main(int argc, char **argv)
 	int ret;
         int shift;
         int offset;
-	if (argc != 3) {
-		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
+	if (argc != 2) {
+		printf("Usage: %s <filename>\n", argv[0]);
 		return 1;
 	}
 

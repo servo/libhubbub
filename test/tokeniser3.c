@@ -47,12 +47,12 @@ int main(int argc, char **argv)
 	int i;
 	context ctx;
 
-	if (argc != 3) {
-		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
+	if (argc != 2) {
+		printf("Usage: %s <filename>\n", argv[0]);
 		return 1;
 	}
 
-	json = json_object_from_file(argv[2]);
+	json = json_object_from_file(argv[1]);
 	assert(!is_error(json));
 
 	assert(strcmp((char *) ((json_object_get_object(json)->head)->k),

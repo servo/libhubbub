@@ -224,14 +224,14 @@ int main(int argc, char **argv)
 	buf_t got = { NULL, 0, 0 };
 
 
-	if (argc != 3) {
-		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
+	if (argc != 2) {
+		printf("Usage: %s <filename>\n", argv[0]);
 		return 1;
 	}
 
-	fp = fopen(argv[2], "rb");
+	fp = fopen(argv[1], "rb");
 	if (fp == NULL) {
-		printf("Failed opening %s\n", argv[2]);
+		printf("Failed opening %s\n", argv[1]);
 		return 1;
 	}
 

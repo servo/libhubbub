@@ -30,8 +30,8 @@ int main(int argc, char **argv)
 #define CHUNK_SIZE (4096)
 	uint8_t buf[CHUNK_SIZE];
 
-	if (argc != 3) {
-		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
+	if (argc != 2) {
+		printf("Usage: %s <filename>\n", argv[0]);
 		return 1;
 	}
 
@@ -46,9 +46,9 @@ int main(int argc, char **argv)
 	assert(hubbub_tokeniser_setopt(tok, HUBBUB_TOKENISER_TOKEN_HANDLER,
 			&params) == HUBBUB_OK);
 
-	fp = fopen(argv[2], "rb");
+	fp = fopen(argv[1], "rb");
 	if (fp == NULL) {
-		printf("Failed opening %s\n", argv[2]);
+		printf("Failed opening %s\n", argv[1]);
 		return 1;
 	}
 
