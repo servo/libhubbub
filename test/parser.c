@@ -31,9 +31,6 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 
 	UNUSED(argc);
 
-	/* Initialise library */
-	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
-
 	assert(hubbub_parser_create("UTF-8", false, myrealloc, NULL, &parser) ==
 			HUBBUB_OK);
 
@@ -73,8 +70,6 @@ static int run_test(int argc, char **argv, unsigned int CHUNK_SIZE)
 	printf("Charset: %s (from %d)\n", charset, cssource);
 
 	hubbub_parser_destroy(parser);
-
-	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
 
 	printf("PASS\n");
 

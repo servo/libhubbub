@@ -35,9 +35,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* Initialise library */
-	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
-
 	assert(parserutils_inputstream_create("UTF-8", 0, NULL,
 			myrealloc, NULL, &stream) == PARSERUTILS_OK);
 
@@ -80,8 +77,6 @@ int main(int argc, char **argv)
 	hubbub_tokeniser_destroy(tok);
 
 	parserutils_inputstream_destroy(stream);
-
-	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
 
 	printf("PASS\n");
 

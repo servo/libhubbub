@@ -1,4 +1,4 @@
 # Sources
-DIR_SOURCES := hubbub.c parser.c
+DIR_SOURCES := parser.c
 
 include build/makefiles/Makefile.subdir

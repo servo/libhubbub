@@ -54,9 +54,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* Initialise library */
-	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
-
 	json = json_object_from_file(argv[2]);
 	assert(!is_error(json));
 
@@ -112,8 +109,6 @@ int main(int argc, char **argv)
 	}
 
 	json_object_put(json);
-
-	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
 
 	printf("PASS\n");
 

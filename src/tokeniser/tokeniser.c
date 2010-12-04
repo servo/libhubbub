@@ -135,7 +135,7 @@ typedef struct hubbub_tokeniser_context {
 						 * character references */
 		uint8_t base;			/**< Base for numeric
 						 * entities */
-		void *context;			/**< Context for named
+		int32_t context;		/**< Context for named
 						 * entity search */
 		size_t prev_len;		/**< Previous byte length
 						 * of str */
@@ -2870,7 +2870,7 @@ hubbub_error hubbub_tokeniser_consume_character_reference(
 	tokeniser->context.match_entity.return_state = tokeniser->state;
 	tokeniser->context.match_entity.complete = false;
 	tokeniser->context.match_entity.overflow = false;
-	tokeniser->context.match_entity.context = NULL;
+	tokeniser->context.match_entity.context = -1;
 	tokeniser->context.match_entity.prev_len = len;
 
 	/* Reset allowed character for future calls */

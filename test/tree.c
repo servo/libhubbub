@@ -174,15 +174,10 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* Initialise library */
-	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
-
 #define DO_TEST(n) if ((ret = run_test(argc, argv, (n))) != 0) return ret
         for (shift = 0; (1 << shift) != 16384; shift++)
         	for (offset = 0; offset < 10; offset += 3)
 	                DO_TEST((1 << shift) + offset);
-
-	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
 
         return 0;
 #undef DO_TEST

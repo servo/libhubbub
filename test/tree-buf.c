@@ -208,9 +208,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* Initialise library */
-	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
-
 	fp = fopen(argv[2], "rb");
 	if (fp == NULL) {
 		printf("Failed opening %s\n", argv[2]);
@@ -270,8 +267,6 @@ int main(int argc, char **argv)
 	fclose(fp);
 
 	free(got.buf);
-
-	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
 
 	return 0;
 }

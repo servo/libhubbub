@@ -2,8 +2,6 @@
 #
 # Test		Description				DataDir
 
-hubbub		Library initialisation/finalisation
-dict		Generic string dictionary
 entities	Named entity dictionary
 csdetect	Charset detection			csdetect
 parser		Public parser API			html

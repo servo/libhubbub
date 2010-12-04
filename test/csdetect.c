@@ -25,13 +25,6 @@ typedef struct line_ctx {
 static bool handle_line(const char *data, size_t datalen, void *pw);
 static void run_test(const uint8_t *data, size_t len, char *expected);
 
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	UNUSED(pw);
-
-	return realloc(ptr, len);
-}
-
 int main(int argc, char **argv)
 {
 	line_ctx ctx;
@@ -40,8 +33,6 @@ int main(int argc, char **argv)
 		printf("Usage: %s <aliases_file> <filename>\n", argv[0]);
 		return 1;
 	}
-
-	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
 
 	ctx.buflen = parse_filesize(argv[2]);
 	if (ctx.buflen == 0)
@@ -69,8 +60,6 @@ int main(int argc, char **argv)
 	run_test(ctx.buf, ctx.bufused, ctx.enc);
 
 	free(ctx.buf);
-
-	assert(hubbub_finalise(myrealloc, NULL) == HUBBUB_OK);
 
 	printf("PASS\n");
 

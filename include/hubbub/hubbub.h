@@ -17,13 +17,6 @@ extern "C"
 #include <hubbub/functypes.h>
 #include <hubbub/types.h>
 
-/* Initialise the Hubbub library for use */
-hubbub_error hubbub_initialise(const char *aliases_file,
-		hubbub_allocator_fn alloc, void *pw);
-
-/* Clean up after Hubbub */
-hubbub_error hubbub_finalise(hubbub_allocator_fn alloc, void *pw);
-
 #ifdef __cplusplus
 }
 #endif
