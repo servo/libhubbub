@@ -7,6 +7,8 @@ $(DIR)entities.inc: build/make-entities.pl build/Entities
 	$(VQ)$(ECHO) "ENTITIES: $@"
 	$(Q)$(PERL) build/make-entities.pl
 
-CLEAN_ITEMS := $(CLEAN_ITEMS) $(DIR)entities.inc
+ifeq ($(findstring clean,$(MAKECMDGOALS)),clean)
+  CLEAN_ITEMS := $(CLEAN_ITEMS) $(DIR)entities.inc
+endif
 
 include build/makefiles/Makefile.subdir
