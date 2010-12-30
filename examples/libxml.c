@@ -163,21 +163,17 @@ int main(int argc, char **argv)
 	uint8_t *buf;
 	size_t len;
 
-	if (argc != 3) {
-		fprintf(stderr, "Usage: %s <Aliases> <input>\n", argv[0]);
+	if (argc != 2) {
+		fprintf(stderr, "Usage: %s <input>\n", argv[0]);
 		return 1;
 	}
-
-	/* Initialise hubbub */
-	assert(hubbub_initialise(argv[1], myrealloc, NULL) == HUBBUB_OK);
 
 	/* Read input file into memory. If we wanted to, we could read into
 	 * a fixed-size buffer and pass each chunk to the parser sequentially.
 	 */
-	input = fopen(argv[2], "r");
+	input = fopen(argv[1], "r");
 	if (input == NULL) {
-		hubbub_finalise(myrealloc, NULL);
-		fprintf(stderr, "Failed opening %s\n", argv[2]);
+		fprintf(stderr, "Failed opening %s\n", argv[1]);
 		return 1;
 	}
 
@@ -188,7 +184,6 @@ int main(int argc, char **argv)
 	buf = malloc(len);
 	if (buf == NULL) {
 		fclose(input);
-		hubbub_finalise(myrealloc, NULL);
 		fprintf(stderr, "No memory for buf\n");
 		return 1;
 	}
@@ -200,7 +195,6 @@ int main(int argc, char **argv)
 	if (error != OK) {
 		free(buf);
 		fclose(input);
-		hubbub_finalise(myrealloc, NULL);
 		fprintf(stderr, "Failed creating parsing context\n");
 		return 1;
 	}
@@ -226,7 +220,6 @@ int main(int argc, char **argv)
 			destroy_context(c);
 			free(buf);
 			fclose(input);
-			hubbub_finalise(myrealloc, NULL);
 			fprintf(stderr, "Failed recreating parser\n");
 			return 1;
 		}
@@ -242,7 +235,6 @@ int main(int argc, char **argv)
 		destroy_context(c);
 		free(buf);
 		fclose(input);
-		hubbub_finalise(myrealloc, NULL);
 		fprintf(stderr, "Failed parsing document\n");
 		return 1;
 	}
@@ -254,7 +246,6 @@ int main(int argc, char **argv)
 		destroy_context(c);
 		free(buf);
 		fclose(input);
-		hubbub_finalise(myrealloc, NULL);
 		fprintf(stderr, "Failed parsing document\n");
 		return 1;
 	}
@@ -273,8 +264,6 @@ int main(int argc, char **argv)
 	destroy_context(c);
 
 	fclose(input);
-
-	hubbub_finalise(myrealloc, NULL);
 
 	return 0;
 }
