@@ -43,13 +43,10 @@ hubbub_error handle_in_select_in_table(hubbub_treebuilder *treebuilder,
 					element_in_scope(treebuilder, type,
 							true)) ||
 					token->type == HUBBUB_TOKEN_START_TAG) {
-				hubbub_error e;
-
 				/** \todo fragment case */
 
-				e = element_stack_pop_until(treebuilder, 
+				element_stack_pop_until(treebuilder, 
 						SELECT);
-				assert(e == HUBBUB_OK);
 				reset_insertion_mode(treebuilder);
 				err = HUBBUB_REPROCESS;
 			}

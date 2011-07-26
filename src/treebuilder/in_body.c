@@ -827,18 +827,15 @@ hubbub_error process_a_in_body(hubbub_treebuilder *treebuilder,
 			treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
 	if (err != HUBBUB_OK) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		e = remove_node_from_dom(treebuilder, 
+		remove_node_from_dom(treebuilder, 
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
-		assert(e == HUBBUB_OK);
 
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		/* Unref twice (once for stack, once for formatting list) */
 		treebuilder->tree_handler->unref_node(
@@ -883,18 +880,15 @@ hubbub_error process_presentational_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
 	if (err != HUBBUB_OK) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		e = remove_node_from_dom(treebuilder, 
+		remove_node_from_dom(treebuilder, 
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
-		assert(e == HUBBUB_OK);
 
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		/* Unref twice (once for stack, once for formatting list) */
 		treebuilder->tree_handler->unref_node(
@@ -952,18 +946,15 @@ hubbub_error process_nobr_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
 	if (err != HUBBUB_OK) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		e = remove_node_from_dom(treebuilder, 
+		remove_node_from_dom(treebuilder, 
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
-		assert(e == HUBBUB_OK);
 
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		/* Unref twice (once for stack, once for formatting list) */
 		treebuilder->tree_handler->unref_node(
@@ -1016,18 +1007,15 @@ hubbub_error process_button_in_body(hubbub_treebuilder *treebuilder,
 		treebuilder->context.current_node].node,
 		treebuilder->context.current_node);
 	if (err != HUBBUB_OK) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		e = remove_node_from_dom(treebuilder, 
+		remove_node_from_dom(treebuilder, 
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
-		assert(e == HUBBUB_OK);
 
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		/* Unref twice (once for stack, once for formatting list) */
 		treebuilder->tree_handler->unref_node(
@@ -1075,18 +1063,15 @@ hubbub_error process_applet_marquee_object_in_body(
 		treebuilder->context.current_node].node, 
 		treebuilder->context.current_node);
 	if (err != HUBBUB_OK) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		e = remove_node_from_dom(treebuilder, 
+		remove_node_from_dom(treebuilder, 
 				treebuilder->context.element_stack[
 				treebuilder->context.current_node].node);
-		assert(e == HUBBUB_OK);
 
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		/* Unref twice (once for stack, once for formatting list) */
 		treebuilder->tree_handler->unref_node(
@@ -1467,12 +1452,10 @@ hubbub_error process_0container_in_body(hubbub_treebuilder *treebuilder,
 		close_implied_end_tags(treebuilder, UNKNOWN);
 
 		do {
-			hubbub_error e;
 			hubbub_ns ns;
 			void *node;
 
-			e = element_stack_pop(treebuilder, &ns, &otype,	&node);
-			assert(e == HUBBUB_OK);
+			element_stack_pop(treebuilder, &ns, &otype, &node);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -1496,7 +1479,6 @@ hubbub_error process_0container_in_body(hubbub_treebuilder *treebuilder,
  */
 hubbub_error process_0form_in_body(hubbub_treebuilder *treebuilder)
 {
-	hubbub_error err;
 	void *node = treebuilder->context.form_element;
 	uint32_t idx = 0;
 
@@ -1524,9 +1506,8 @@ hubbub_error process_0form_in_body(hubbub_treebuilder *treebuilder)
 			/** \todo parse error */
 		}
 
-		err = element_stack_remove(treebuilder, idx, 
+		element_stack_remove(treebuilder, idx, 
 				&ns, &otype, &onode);
-		assert(err == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -1599,8 +1580,6 @@ hubbub_error process_0p_in_body(hubbub_treebuilder *treebuilder)
 hubbub_error process_0dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 		element_type type)
 {
-	hubbub_error err;
-
 	if (!element_in_scope(treebuilder, type, false)) {
 		/** \todo parse error */
 	} else {
@@ -1613,9 +1592,8 @@ hubbub_error process_0dd_dt_li_in_body(hubbub_treebuilder *treebuilder,
 			hubbub_ns ns;
 			void *node;
 
-			err = element_stack_pop(treebuilder, 
+			element_stack_pop(treebuilder, 
 					&ns, &otype, &node);
-			assert(err == HUBBUB_OK);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -1656,12 +1634,10 @@ hubbub_error process_0h_in_body(hubbub_treebuilder *treebuilder,
 		close_implied_end_tags(treebuilder, UNKNOWN);
 
 		do {
-			hubbub_error e;
 			hubbub_ns ns;
 			void *node;
 
-			e = element_stack_pop(treebuilder, &ns, &otype, &node);
-			assert(e == HUBBUB_OK);
+			element_stack_pop(treebuilder, &ns, &otype, &node);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -1897,7 +1873,6 @@ hubbub_error aa_find_and_validate_formatting_element(
 
 	if (entry->stack_index == 0) {
 		/* Not in element stack => remove from formatting list */
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
@@ -1905,9 +1880,8 @@ hubbub_error aa_find_and_validate_formatting_element(
 
 		/** \todo parse error */
 
-		e = formatting_list_remove(treebuilder, entry,
+		formatting_list_remove(treebuilder, entry,
 				&ns, &type, &node, &index);
-		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, node);
@@ -1976,7 +1950,6 @@ hubbub_error aa_find_furthest_block(hubbub_treebuilder *treebuilder,
 	}
 
 	if (fb > treebuilder->context.current_node) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
@@ -1985,8 +1958,7 @@ hubbub_error aa_find_furthest_block(hubbub_treebuilder *treebuilder,
 		/* Pop all elements off the stack up to,
 		 * and including, the formatting element */
 		do {
-			e = element_stack_pop(treebuilder, &ns, &type, &node);
-			assert(e == HUBBUB_OK);
+			element_stack_pop(treebuilder, &ns, &type, &node);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -1994,9 +1966,8 @@ hubbub_error aa_find_furthest_block(hubbub_treebuilder *treebuilder,
 		} while (treebuilder->context.current_node >= fe_index);
 
 		/* Remove the formatting element from the list */
-		e = formatting_list_remove(treebuilder, formatting_element,
+		formatting_list_remove(treebuilder, formatting_element,
 				&ns, &type, &node, &index);
-		assert(e == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, node);
@@ -2339,12 +2310,10 @@ hubbub_error process_0applet_button_marquee_object_in_body(
 		close_implied_end_tags(treebuilder, UNKNOWN);
 
 		do {
-			hubbub_error e;
 			hubbub_ns ns;
 			void *node;
 
-			e = element_stack_pop(treebuilder, &ns, &otype, &node);
-			assert(e == HUBBUB_OK);
+			element_stack_pop(treebuilder, &ns, &otype, &node);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -2411,13 +2380,11 @@ hubbub_error process_0generic_in_body(hubbub_treebuilder *treebuilder,
 			close_implied_end_tags(treebuilder, UNKNOWN);
 
 			while (treebuilder->context.current_node >= node) {
-				hubbub_error e;
 				hubbub_ns ns;
 				void *node;
 
-				e = element_stack_pop(treebuilder,
+				element_stack_pop(treebuilder,
 						&ns, &otype, &node);
-				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,

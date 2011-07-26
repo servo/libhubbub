@@ -71,7 +71,6 @@ hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (type == FRAMESET) {
-			hubbub_error e;
 			hubbub_ns ns;
 			void *node;
 
@@ -81,8 +80,7 @@ hubbub_error handle_in_frameset(hubbub_treebuilder *treebuilder,
 				break;
 			}
 
-			e = element_stack_pop(treebuilder, &ns, &type, &node);
-			assert(e == HUBBUB_OK);
+			element_stack_pop(treebuilder, &ns, &type, &node);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,

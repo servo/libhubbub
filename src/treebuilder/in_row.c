@@ -24,13 +24,11 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 	element_type cur_node = current_node(treebuilder);
 
 	while (cur_node != TR && cur_node != HTML) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -51,7 +49,6 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
  */
 static hubbub_error act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
 {
-	hubbub_error e;
 	hubbub_ns ns;
 	element_type otype;
 	void *node;
@@ -60,8 +57,7 @@ static hubbub_error act_as_if_end_tag_tr(hubbub_treebuilder *treebuilder)
 
 	table_clear_stack(treebuilder);
 
-	e = element_stack_pop(treebuilder, &ns, &otype, &node);
-	assert(e == HUBBUB_OK);
+	element_stack_pop(treebuilder, &ns, &otype, &node);
 
 	treebuilder->tree_handler->unref_node(treebuilder->tree_handler->ctx,
 			node);
@@ -112,21 +108,17 @@ hubbub_error handle_in_row(hubbub_treebuilder *treebuilder,
 					treebuilder->context.current_node].node,
 					treebuilder->context.current_node);
 			if (err != HUBBUB_OK) {
-				hubbub_error e;
 				hubbub_ns ns;
 				element_type type;
 				void *node;
 
 				/* Revert changes */
 
-				e = remove_node_from_dom(treebuilder, 
+				remove_node_from_dom(treebuilder, 
 					treebuilder->context.element_stack[
 					treebuilder->context.current_node].node);
-				assert(e == HUBBUB_OK);
-
-				e = element_stack_pop(treebuilder, &ns, &type, 
+				element_stack_pop(treebuilder, &ns, &type, 
 						&node);
-				assert(e == HUBBUB_OK);
 
 				return err;
 			}

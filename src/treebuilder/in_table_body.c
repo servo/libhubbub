@@ -25,13 +25,11 @@ static void table_clear_stack(hubbub_treebuilder *treebuilder)
 
 	while (cur_node != TBODY && cur_node != TFOOT &&
 			cur_node != THEAD && cur_node != HTML) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -55,7 +53,6 @@ static hubbub_error table_sub_start_or_table_end(hubbub_treebuilder *treebuilder
 	if (element_in_scope(treebuilder, TBODY, true) ||
 			element_in_scope(treebuilder, THEAD, true) ||
 			element_in_scope(treebuilder, TFOOT, true)) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
@@ -65,8 +62,7 @@ static hubbub_error table_sub_start_or_table_end(hubbub_treebuilder *treebuilder
 		/* "Act as if an end tag with the same name as the current
 		 * node had been seen" -- this behaviour should be identical
 		 * to handling for (tbody/tfoot/thead) end tags in this mode */
-		e = element_stack_pop(treebuilder, &ns, &otype, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &otype, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -148,16 +144,14 @@ hubbub_error handle_in_table_body(hubbub_treebuilder *treebuilder,
 				/** \todo parse error */
 				/* Ignore the token */
 			} else {
-				hubbub_error e;
 				hubbub_ns ns;
 				element_type otype;
 				void *node;
 
 				table_clear_stack(treebuilder);
 
-				e = element_stack_pop(treebuilder, &ns,
+				element_stack_pop(treebuilder, &ns,
 						&otype, &node);
-				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,

@@ -76,7 +76,6 @@ hubbub_error handle_in_caption(hubbub_treebuilder *treebuilder,
 	}
 
 	if (handled || err == HUBBUB_REPROCESS) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype = UNKNOWN;
 		void *node;
@@ -88,8 +87,7 @@ hubbub_error handle_in_caption(hubbub_treebuilder *treebuilder,
 		while (otype != CAPTION) {
 			/** \todo parse error */
 
-			e = element_stack_pop(treebuilder, &ns, &otype,	&node);
-			assert(e == HUBBUB_OK);
+			element_stack_pop(treebuilder, &ns, &otype,	&node);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,

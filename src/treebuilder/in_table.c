@@ -27,10 +27,7 @@ static inline void clear_stack_table_context(hubbub_treebuilder *treebuilder)
 	void *node;
 
 	while (type != TABLE && type != HTML) {
-		hubbub_error e;
-
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -133,16 +130,14 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 			err = insert_element(treebuilder, &token->data.tag, 
 					true);
 			if (err != HUBBUB_OK) {
-				hubbub_error e;
 				hubbub_ns ns;
 				element_type type;
 				void *node;
 				uint32_t index;
 
-				e = formatting_list_remove(treebuilder,
+				formatting_list_remove(treebuilder,
 					treebuilder->context.formatting_list_end,
 					&ns, &type, &node, &index);
-				assert(e == HUBBUB_OK);
 
 				treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -196,12 +191,10 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 
 			treebuilder->context.mode = IN_TABLE_BODY;
 		} else if (type == TABLE) {
-			hubbub_error e;
 			/** \todo parse error */
 
 			/* This should match "</table>" handling */
-			e = element_stack_pop_until(treebuilder, TABLE);
-			assert(e == HUBBUB_OK);
+			element_stack_pop_until(treebuilder, TABLE);
 
 			reset_insertion_mode(treebuilder);
 
@@ -222,11 +215,9 @@ hubbub_error handle_in_table(hubbub_treebuilder *treebuilder,
 				&token->data.tag.name);
 
 		if (type == TABLE) {
-			hubbub_error e;
 			/** \todo fragment case */
 
-			e = element_stack_pop_until(treebuilder, TABLE);
-			assert(e == HUBBUB_OK);
+			element_stack_pop_until(treebuilder, TABLE);
 
 			reset_insertion_mode(treebuilder);
 		} else if (type == BODY || type == CAPTION || type == COL ||

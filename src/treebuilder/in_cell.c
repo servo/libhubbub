@@ -21,7 +21,6 @@
  */
 static inline void close_cell(hubbub_treebuilder *treebuilder)
 {
-	hubbub_error e;
 	hubbub_ns ns;
 	element_type otype = UNKNOWN;
 	void *node;
@@ -40,8 +39,7 @@ static inline void close_cell(hubbub_treebuilder *treebuilder)
 	/** \todo parse error */
 
 	while (otype != type) {
-		e = element_stack_pop(treebuilder, &ns, &otype, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &otype, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -92,7 +90,6 @@ hubbub_error handle_in_cell(hubbub_treebuilder *treebuilder,
 
 		if (type == TH || type == TD) {
 			if (element_in_scope(treebuilder, type, true)) {
-				hubbub_error e;
 				hubbub_ns ns;
 				element_type otype = UNKNOWN;
 				void *node;
@@ -101,9 +98,8 @@ hubbub_error handle_in_cell(hubbub_treebuilder *treebuilder,
 				/** \todo parse error */
 
 				while (otype != type) {
-					e = element_stack_pop(treebuilder,
+					element_stack_pop(treebuilder,
 							&ns, &otype, &node);
-					assert(e == HUBBUB_OK);
 
 					treebuilder->tree_handler->unref_node(
 						treebuilder->tree_handler->ctx,

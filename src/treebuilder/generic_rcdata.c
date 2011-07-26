@@ -85,14 +85,12 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 	}
 
 	if (done) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
 		/* Pop the current node from the stack */
-		e = element_stack_pop(treebuilder, &ns, &otype, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &otype, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,

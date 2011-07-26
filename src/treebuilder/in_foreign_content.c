@@ -365,13 +365,11 @@ static void foreign_break_out(hubbub_treebuilder *treebuilder)
 
 	while (stack[treebuilder->context.current_node].ns !=
 			HUBBUB_NS_HTML) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type type;
 		void *node;
 
-		e = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,

@@ -186,13 +186,11 @@ hubbub_error handle_in_head(hubbub_treebuilder *treebuilder,
 	}
 
 	if (handled || err == HUBBUB_REPROCESS) {
-		hubbub_error e;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
 
-		e = element_stack_pop(treebuilder, &ns, &otype, &node);
-		assert(e == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &otype, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,

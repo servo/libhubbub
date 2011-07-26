@@ -618,10 +618,7 @@ hubbub_error reconstruct_active_formatting_list(hubbub_treebuilder *treebuilder)
 		error = element_stack_push(treebuilder, entry->details.ns,
 				entry->details.type, appended);
 		if (error != HUBBUB_OK) {
-			hubbub_error err;
-
-			err = remove_node_from_dom(treebuilder, appended);
-			assert(err == HUBBUB_OK);
+			remove_node_from_dom(treebuilder, appended);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -668,13 +665,10 @@ cleanup:
 		hubbub_ns ns;
 		element_type type;
 		void *node;
-		hubbub_error err;
 
-		err = element_stack_pop(treebuilder, &ns, &type, &node);
-		assert(err == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &type, &node);
 
-		err = remove_node_from_dom(treebuilder, node);
-		assert(err == HUBBUB_OK);
+		remove_node_from_dom(treebuilder, node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -737,15 +731,12 @@ void clear_active_formatting_list_to_marker(hubbub_treebuilder *treebuilder)
 		element_type type;
 		void *node;
 		uint32_t stack_index;
-		hubbub_error error;
 
 		if (is_scoping_element(entry->details.type))
 			done = true;
 
-		error = formatting_list_remove(treebuilder, entry,
+		formatting_list_remove(treebuilder, entry,
 				&ns, &type, &node, &stack_index);
-		/* Can't fail. Ensure this. */
-		assert(error == HUBBUB_OK);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -806,10 +797,7 @@ hubbub_error insert_element(hubbub_treebuilder *treebuilder,
 				treebuilder->context.form_element,
 				appended);
 		if (error != HUBBUB_OK) {
-			hubbub_error err;
-
-			err = remove_node_from_dom(treebuilder, appended);
-			assert(err == HUBBUB_OK);
+			remove_node_from_dom(treebuilder, appended);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -823,10 +811,7 @@ hubbub_error insert_element(hubbub_treebuilder *treebuilder,
 		error = element_stack_push(treebuilder,
 				tag->ns, type, appended);
 		if (error != HUBBUB_OK) {
-			hubbub_error err;
-
-			err = remove_node_from_dom(treebuilder, appended);
-			assert(err == HUBBUB_OK);
+			remove_node_from_dom(treebuilder, appended);
 
 			treebuilder->tree_handler->unref_node(
 					treebuilder->tree_handler->ctx,
@@ -859,7 +844,6 @@ void close_implied_end_tags(hubbub_treebuilder *treebuilder,
 	while (type == DD || type == DT || type == LI || type == OPTION ||
 			type == OPTGROUP || type == P || type == RP ||
 			type == RT) {
-		hubbub_error error;
 		hubbub_ns ns;
 		element_type otype;
 		void *node;
@@ -867,8 +851,7 @@ void close_implied_end_tags(hubbub_treebuilder *treebuilder,
 		if (except != UNKNOWN && type == except)
 			break;
 
-		error = element_stack_pop(treebuilder, &ns, &otype, &node);
-		assert(error == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &otype, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx,
@@ -1174,12 +1157,9 @@ hubbub_error element_stack_pop_until(hubbub_treebuilder *treebuilder,
 	element_type otype = UNKNOWN;
 	void *node;
 	hubbub_ns ns;
-	hubbub_error error;
 
 	while (otype != type) {
-		error = element_stack_pop(treebuilder, &ns, &otype, &node);
-		/* No error can occur here. Ensure this. */
-		assert(error == HUBBUB_OK);
+		element_stack_pop(treebuilder, &ns, &otype, &node);
 
 		treebuilder->tree_handler->unref_node(
 				treebuilder->tree_handler->ctx, node);

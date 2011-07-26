@@ -62,7 +62,6 @@ hubbub_error handle_after_head(hubbub_treebuilder *treebuilder,
 			element_type otype;
 			void *node;
 			uint32_t index;
-			hubbub_error e;
 
 			/** \todo parse error */
 
@@ -78,10 +77,8 @@ hubbub_error handle_after_head(hubbub_treebuilder *treebuilder,
 			/* Process as "in head" */
 			err = handle_in_head(treebuilder, token);
 
-			e = element_stack_remove(treebuilder, index,
+			element_stack_remove(treebuilder, index,
 					&ns, &otype, &node);
-			/* Can't result in error -- ensure this. */
-			assert(e == HUBBUB_OK);
 
 			/* No need to unref node as we never increased
 			 * its reference count when pushing it on the stack */

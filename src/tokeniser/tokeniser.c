@@ -788,13 +788,16 @@ hubbub_error hubbub_tokeniser_handle_character_reference_data(
 		} else {
 			parserutils_error error;
 			const uint8_t *cptr = NULL;
+
 			error = parserutils_inputstream_peek(
 					tokeniser->input,
 					tokeniser->context.pending,
 					&cptr,
 					&len);
-
-			assert(error == PARSERUTILS_OK);
+			if (error != PARSERUTILS_OK) {
+				return hubbub_error_from_parserutils_error(
+						error);
+			}
 
 			token.data.character.ptr = cptr;
 			token.data.character.len = len;
@@ -1586,8 +1589,10 @@ hubbub_error hubbub_tokeniser_handle_character_reference_in_attribute_value(
 					tokeniser->context.pending, 
 					&cptr,
 					&len);
-
-			assert(error == PARSERUTILS_OK);
+			if (error != PARSERUTILS_OK) {
+				return hubbub_error_from_parserutils_error(
+						error);
+			}
 
 			/* Insert the ampersand */
 			COLLECT_MS(attr->value, cptr, len);
@@ -3131,8 +3136,8 @@ hubbub_error emit_current_chars(hubbub_tokeniser *tokeniser)
 	assert(tokeniser->context.pending > 0);
 
 	error = parserutils_inputstream_peek(tokeniser->input, 0, &cptr, &len);
-
-	assert(error == PARSERUTILS_OK);
+	if (error != PARSERUTILS_OK)
+		return hubbub_error_from_parserutils_error(error);
 
 	token.type = HUBBUB_TOKEN_CHARACTER;
 	token.data.character.ptr = cptr;
