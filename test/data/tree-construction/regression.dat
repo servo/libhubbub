@@ -75,3 +75,13 @@
 |         <tr>
 |           <td>
 |             "transparent"
+
+#data
+<svg xmlns="http://www.w3.org/2000/svg"></svg>
+#errors
+#document
+| <html>
+|   <head>
+|   <body>
+|     <svg svg>
+|       xmlns xmlns="http://www.w3.org/2000/svg"

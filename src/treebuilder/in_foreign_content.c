@@ -275,8 +275,9 @@ void adjust_foreign_attributes(hubbub_treebuilder *treebuilder,
 				attr->name.len -= 4;
 			}
 		} else if (hubbub_string_match(name, attr->name.len,
-						S("xmlns")) ||
-				hubbub_string_match(name, attr->name.len,
+						S("xmlns"))) {
+			attr->ns = HUBBUB_NS_XMLNS;
+		} else if (hubbub_string_match(name, attr->name.len,
 						S("xmlns:xlink"))) {
 			attr->ns = HUBBUB_NS_XMLNS;
 			attr->name.ptr += 6;
