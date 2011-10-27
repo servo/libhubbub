@@ -13,9 +13,11 @@ TESTRUNNER := $(PERL) build/testtools/testrunner.pl
 WARNFLAGS := -Wall -W -Wundef -Wpointer-arith -Wcast-align \
 	-Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wnested-externs -pedantic
-# BeOS/Haiku have standard library errors that issue warnings.
+# BeOS/Haiku/AmigaOS have standard library errors that issue warnings.
 ifneq ($(TARGET),beos)
-  WARNFLAGS := $(WARNFLAGS) -Werror
+  ifneq ($(TARGET),amiga)
+    WARNFLAGS := $(WARNFLAGS) -Werror
+  endif
 endif
 CFLAGS := -D_BSD_SOURCE -I$(CURDIR)/include/ \
 	-I$(CURDIR)/src $(WARNFLAGS) $(CFLAGS)
