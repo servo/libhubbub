@@ -8,4 +8,4 @@ DIR_SOURCES := treebuilder.c \
 		after_frameset.c after_after_body.c after_after_frameset.c \
 		generic_rcdata.c
 
-include build/makefiles/Makefile.subdir
+include $(NSBUILD)/Makefile.subdir

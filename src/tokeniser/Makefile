@@ -11,4 +11,4 @@ ifeq ($(findstring clean,$(MAKECMDGOALS)),clean)
   CLEAN_ITEMS := $(CLEAN_ITEMS) $(DIR)entities.inc
 endif
 
-include build/makefiles/Makefile.subdir
+include $(NSBUILD)/Makefile.subdir

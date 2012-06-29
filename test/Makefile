@@ -4,4 +4,4 @@ DIR_TEST_ITEMS := csdetect:csdetect.c entities:entities.c \
 	tokeniser2:tokeniser2.c tokeniser3:tokeniser3.c tree:tree.c \
 	tree2:tree2.c tree-buf:tree-buf.c
 
-include build/makefiles/Makefile.subdir
+include $(NSBUILD)/Makefile.subdir
