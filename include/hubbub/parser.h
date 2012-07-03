@@ -75,6 +75,23 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
 /* This data is encoded in the input charset */
 hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
 		const uint8_t *data, size_t len);
+
+/**
+ * Insert a chunk of data into a hubbub parser input stream
+ *
+ * This data is encoded in the input charset
+ *
+ * Inserts the given data into the input stream ready for parsing but
+ * does not cause any additional processing of the input. This is
+ * useful to allow hubbub callbacks to add computed data to the input.
+ * 
+ * \param parser  Parser instance to use
+ * \param data    Data to parse (encoded in the input charset)
+ * \param len     Length, in bytes, of data
+ * \return HUBBUB_OK on success, appropriate error otherwise
+ */
+hubbub_error hubbub_parser_insert_chunk(hubbub_parser *parser,
+					const uint8_t *data, size_t len);
 /* Inform the parser that the last chunk of data has been parsed */
 hubbub_error hubbub_parser_completed(hubbub_parser *parser);
 
