@@ -62,7 +62,8 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 			/** \todo parse error */
 		}
 
-		if (type == SCRIPT) {
+		if ((treebuilder->context.enable_scripting == true) &&
+		    (type == SCRIPT)) {
 			err = complete_script(treebuilder);
 		}
 
