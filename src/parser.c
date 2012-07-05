@@ -207,23 +207,17 @@ hubbub_error hubbub_parser_setopt(hubbub_parser *parser,
  * useful to allow hubbub callbacks to add computed data to the input.
  * 
  * \param parser  Parser instance to use
- * \param data    Data to parse (encoded in the input charset)
+ * \param data    Data to parse (encoded in UTF-8)
  * \param len     Length, in bytes, of data
  * \return HUBBUB_OK on success, appropriate error otherwise
  */
 hubbub_error hubbub_parser_insert_chunk(hubbub_parser *parser,
 		const uint8_t *data, size_t len)
 {
-	parserutils_error perror;
-
 	if (parser == NULL || data == NULL)
 		return HUBBUB_BADPARM;
 
-	perror = parserutils_inputstream_insert(parser->stream, data, len);
-	if (perror != PARSERUTILS_OK)
-		return hubbub_error_from_parserutils_error(perror);
-
-	return HUBBUB_OK;
+	return hubbub_tokeniser_insert_chunk(parser->tok, data, len);
 }
 
 /**

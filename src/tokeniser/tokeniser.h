@@ -62,6 +62,10 @@ hubbub_error hubbub_tokeniser_setopt(hubbub_tokeniser *tokeniser,
 		hubbub_tokeniser_opttype type,
 		hubbub_tokeniser_optparams *params);
 
+/* Insert a chunk of data into the input stream */
+hubbub_error hubbub_tokeniser_insert_chunk(hubbub_tokeniser *tokeniser,
+		const uint8_t *data, size_t len);
+
 /* Process remaining data in the input stream */
 hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser);
 

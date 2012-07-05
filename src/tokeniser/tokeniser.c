@@ -169,6 +169,7 @@ struct hubbub_tokeniser {
 
 	parserutils_inputstream *input;	/**< Input stream */
 	parserutils_buffer *buffer;	/**< Input buffer */
+	parserutils_buffer *insert_buf; /**< Stream insertion buffer */
 
 	hubbub_tokeniser_context context;	/**< Tokeniser context */
 
@@ -303,6 +304,13 @@ hubbub_error hubbub_tokeniser_create(parserutils_inputstream *input,
 		return hubbub_error_from_parserutils_error(perror);
 	}
 
+	perror = parserutils_buffer_create(alloc, pw, &tok->insert_buf);
+	if (perror != PARSERUTILS_OK) {
+		parserutils_buffer_destroy(tok->buffer);
+		alloc(tok, 0, pw);
+		return hubbub_error_from_parserutils_error(perror);
+	}
+
 	tok->state = STATE_DATA;
 	tok->content_model = HUBBUB_CONTENT_MODEL_PCDATA;
 
@@ -343,6 +351,8 @@ hubbub_error hubbub_tokeniser_destroy(hubbub_tokeniser *tokeniser)
 				0, tokeniser->alloc_pw);
 	}
 
+	parserutils_buffer_destroy(tokeniser->insert_buf);
+
 	parserutils_buffer_destroy(tokeniser->buffer);
 
 	tokeniser->alloc(tokeniser, 0, tokeniser->alloc_pw);
@@ -381,6 +391,32 @@ hubbub_error hubbub_tokeniser_setopt(hubbub_tokeniser *tokeniser,
 		tokeniser->process_cdata_section = params->process_cdata;
 		break;
 	}
+
+	return HUBBUB_OK;
+}
+
+/**
+ * Insert a chunk of data into the input stream.
+ *
+ * Inserts the given data into the input stream ready for parsing but
+ * does not cause any additional processing of the input.
+ *
+ * \param tokeniser  Tokeniser instance
+ * \param data       Data to insert (UTF-8 encoded)
+ * \param len        Length, in bytes, of data
+ * \return HUBBUB_OK on success, appropriate error otherwise
+ */
+hubbub_error hubbub_tokeniser_insert_chunk(hubbub_tokeniser *tokeniser,
+		const uint8_t *data, size_t len)
+{
+	parserutils_error perror;
+
+	if (tokeniser == NULL || data == NULL)
+		return HUBBUB_BADPARM;
+
+	perror = parserutils_buffer_append(tokeniser->insert_buf, data, len);
+	if (perror != PARSERUTILS_OK)
+		return hubbub_error_from_parserutils_error(perror);
 
 	return HUBBUB_OK;
 }
@@ -3310,6 +3346,7 @@ hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 
 	assert(tokeniser != NULL);
 	assert(token != NULL);
+	assert(tokeniser->insert_buf->length == 0);
 
 #ifndef NDEBUG
 	/* Sanity checks */
@@ -3369,6 +3406,14 @@ hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 		parserutils_inputstream_advance(tokeniser->input,
 				tokeniser->context.pending);
 		tokeniser->context.pending = 0;
+	}
+
+	if (tokeniser->insert_buf->length > 0) {
+		parserutils_inputstream_insert(tokeniser->input,
+				tokeniser->insert_buf->data,
+				tokeniser->insert_buf->length);
+		parserutils_buffer_discard(tokeniser->insert_buf, 0,
+				tokeniser->insert_buf->length);
 	}
 
 	return err;
