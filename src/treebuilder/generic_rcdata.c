@@ -63,7 +63,7 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 		}
 
 		if (type == SCRIPT) {
-			/** \todo script processing and execution */
+			err = complete_script(treebuilder);
 		}
 
 		done = true;

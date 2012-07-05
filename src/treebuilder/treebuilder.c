@@ -925,6 +925,22 @@ void reset_insertion_mode(hubbub_treebuilder *treebuilder)
 }
 
 /**
+ * Script processing and execution
+ *
+ * \param treebuilder  The treebuilder instance
+ * \return HUBBUB_OK on success, appropriate error otherwise
+ */
+hubbub_error complete_script(hubbub_treebuilder *treebuilder)
+{
+	hubbub_error error = HUBBUB_OK;
+	error = treebuilder->tree_handler->complete_script(
+		treebuilder->tree_handler->ctx,
+		treebuilder->context.element_stack[
+			treebuilder->context.current_node].node);
+	return error;
+}
+
+/**
  * Append text to the current node, inserting into the last child of the
  * current node, iff it's a Text node.
  *
