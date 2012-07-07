@@ -266,41 +266,6 @@ hubbub_error hubbub_parser_parse_chunk(hubbub_parser *parser,
 	return HUBBUB_OK;
 }
 
-#if 0
-/**
- * Pass a chunk of extraneous data to a hubbub parser for parsing
- *
- * \param parser  Parser instance to use
- * \param data    Data to parse (encoded in UTF-8)
- * \param len     Length, in byte, of data
- * \return HUBBUB_OK on success, appropriate error otherwise
- */
-hubbub_error hubbub_parser_parse_extraneous_chunk(hubbub_parser *parser,
-		const uint8_t *data, size_t len)
-{
-	hubbub_error error;
-
-	/** \todo In some cases, we don't actually want script-inserted
-	 * data to be parsed until later. We'll need some way of flagging
-	 * this through the public API, and the inputstream API will need
-	 * some way of marking the insertion point so that, when the
-	 * tokeniser is run, only the inserted chunk is parsed. */
-
-	if (parser == NULL || data == NULL)
-		return HUBBUB_BADPARM;
-
-	error = parserutils_inputstream_insert(parser->stream, data, len);
-	if (error != HUBBUB_OK)
-		return error;
-
-	error = hubbub_tokeniser_run(parser->tok);
-	if (error != HUBBUB_OK)
-		return error;
-
-	return HUBBUB_OK;
-}
-#endif
-
 /**
  * Inform the parser that the last chunk of data has been parsed
  *
