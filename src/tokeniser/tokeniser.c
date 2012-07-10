@@ -16,6 +16,7 @@
 #include "utils/parserutilserror.h"
 #include "utils/utils.h"
 
+#include "hubbub/errors.h"
 #include "tokeniser/entities.h"
 #include "tokeniser/tokeniser.h"
 
@@ -155,6 +156,7 @@ typedef struct hubbub_tokeniser_context {
 	} position;				/**< Position in source data */
 
 	uint32_t allowed_char;			/**< Used for quote matching */
+
 } hubbub_tokeniser_context;
 
 /**
@@ -166,6 +168,7 @@ struct hubbub_tokeniser {
 						 * model flag */
 	bool escape_flag;		/**< Escape flag **/
 	bool process_cdata_section;	/**< Whether to process CDATA sections*/
+	bool paused; /**< flag for if parsing is currently paused */
 
 	parserutils_inputstream *input;	/**< Input stream */
 	parserutils_buffer *buffer;	/**< Input buffer */
@@ -372,6 +375,8 @@ hubbub_error hubbub_tokeniser_setopt(hubbub_tokeniser *tokeniser,
 		hubbub_tokeniser_opttype type,
 		hubbub_tokeniser_optparams *params)
 {
+	hubbub_error err = HUBBUB_OK;
+
 	if (tokeniser == NULL || params == NULL)
 		return HUBBUB_BADPARM;
 
@@ -390,9 +395,18 @@ hubbub_error hubbub_tokeniser_setopt(hubbub_tokeniser *tokeniser,
 	case HUBBUB_TOKENISER_PROCESS_CDATA:
 		tokeniser->process_cdata_section = params->process_cdata;
 		break;
+	case HUBBUB_TOKENISER_PAUSE:
+		if (params->pause_parse == true) {
+			tokeniser->paused = true;
+		} else {
+			if (tokeniser->paused == true) {
+				tokeniser->paused = false;
+				err = hubbub_tokeniser_run(tokeniser);
+			}
+		}
 	}
 
-	return HUBBUB_OK;
+	return err;
 }
 
 /**
@@ -433,6 +447,9 @@ hubbub_error hubbub_tokeniser_run(hubbub_tokeniser *tokeniser)
 
 	if (tokeniser == NULL)
 		return HUBBUB_BADPARM;
+
+	if (tokeniser->paused == true)
+		return HUBBUB_PAUSED;
 
 #if 0
 #define state(x) \
@@ -3414,6 +3431,11 @@ hubbub_error hubbub_tokeniser_emit_token(hubbub_tokeniser *tokeniser,
 				tokeniser->insert_buf->length);
 		parserutils_buffer_discard(tokeniser->insert_buf, 0,
 				tokeniser->insert_buf->length);
+	}
+
+	/* Ensure callback can pause the tokenise */
+	if (err == HUBBUB_PAUSED) {
+		tokeniser->paused = true;
 	}
 
 	return err;

@@ -16,9 +16,10 @@ extern "C"
 #include <stddef.h>
 
 typedef enum hubbub_error {
-	HUBBUB_OK               = 0,
+	HUBBUB_OK               = 0, /**< No error */
 	HUBBUB_REPROCESS	= 1,
 	HUBBUB_ENCODINGCHANGE	= 2,
+	HUBBUB_PAUSED		= 3, /**< tokenisation is paused */
 
 	HUBBUB_NOMEM            = 5,
 	HUBBUB_BADPARM          = 6,

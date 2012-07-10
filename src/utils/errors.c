@@ -29,6 +29,9 @@ const char *hubbub_error_to_string(hubbub_error error)
 	case HUBBUB_ENCODINGCHANGE:
 		result = "Encoding of document has changed";
 		break;
+	case HUBBUB_PAUSED:
+		result = "Parser is paused";
+		break;
 	case HUBBUB_NOMEM:
 		result = "Insufficient memory";
 		break;
