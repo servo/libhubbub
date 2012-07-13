@@ -320,6 +320,8 @@ hubbub_error hubbub_tokeniser_create(parserutils_inputstream *input,
 	tok->escape_flag = false;
 	tok->process_cdata_section = false;
 
+	tok->paused = false;
+
 	tok->input = input;
 
 	tok->token_handler = NULL;
