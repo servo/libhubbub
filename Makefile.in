@@ -1,0 +1,68 @@
+VPATH=%VPATH%
+
+UNAME=$(shell uname)
+
+ifeq ($(UNAME),Darwin)
+    OSTYPE=darwin
+endif
+ifeq ($(UNAME),Linux)
+    OSTYPE=linux
+endif
+
+C_SRC= \
+	src/charset/detect.c \
+	src/parser.c \
+	src/tokeniser/entities.c \
+	src/tokeniser/tokeniser.c \
+	src/treebuilder/after_after_body.c \
+	src/treebuilder/after_after_frameset.c \
+	src/treebuilder/after_body.c \
+	src/treebuilder/after_frameset.c \
+	src/treebuilder/after_head.c \
+	src/treebuilder/before_head.c \
+	src/treebuilder/before_html.c \
+	src/treebuilder/generic_rcdata.c \
+	src/treebuilder/in_body.c \
+	src/treebuilder/in_caption.c \
+	src/treebuilder/in_cell.c \
+	src/treebuilder/in_column_group.c \
+	src/treebuilder/in_foreign_content.c \
+	src/treebuilder/in_frameset.c \
+	src/treebuilder/in_head.c \
+	src/treebuilder/in_head_noscript.c \
+	src/treebuilder/in_row.c \
+	src/treebuilder/in_select.c \
+	src/treebuilder/in_select_in_table.c \
+	src/treebuilder/in_table.c \
+	src/treebuilder/in_table_body.c \
+	src/treebuilder/initial.c \
+	src/treebuilder/treebuilder.c \
+	src/utils/errors.c \
+	src/utils/string.c \
+	$(NULL)
+
+C_OBJS = $(patsubst %.c,%.o,$(C_SRC))
+CFLAGS += -I$(VPATH)/src -I$(VPATH)/include -I../../libparserutils/include -fPIC
+
+.PHONY: all
+all: libparserutils.dummy
+
+src/tokeniser/entities.inc: $(VPATH)/build/make-entities.pl $(VPATH)/build/Entities
+	cd $(VPATH) && perl build/make-entities.pl
+
+src/tokeniser/entities.o: src/tokeniser/entities.inc
+
+libparserutils.a: $(C_OBJS)
+	$(AR) rcs $@ $^
+
+%.o: %.c
+	mkdir -p `dirname $@` && $(CC) $(CFLAGS) -o $@ -c $<
+
+libparserutils.dummy: libparserutils.a
+	touch $@
+
+.PHONY: clean
+clean:
+	rm -f *.so *.dylib *.dll *.dummy src/*.o
+	
+
