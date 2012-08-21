@@ -45,20 +45,20 @@ C_OBJS = $(patsubst %.c,%.o,$(C_SRC))
 CFLAGS += -I$(VPATH)/src -I$(VPATH)/include -I$(VPATH)/../libparserutils/include -fPIC
 
 .PHONY: all
-all: libparserutils.dummy
+all: libhubbub.dummy
 
 src/tokeniser/entities.inc: $(VPATH)/build/make-entities.pl $(VPATH)/build/Entities
 	cd $(VPATH) && perl build/make-entities.pl
 
 src/tokeniser/entities.o: src/tokeniser/entities.inc
 
-libparserutils.a: $(C_OBJS)
+libhubbub.a: $(C_OBJS)
 	$(AR) rcs $@ $^
 
 %.o: %.c
 	mkdir -p `dirname $@` && $(CC) $(CFLAGS) -o $@ -c $<
 
-libparserutils.dummy: libparserutils.a
+libhubbub.dummy: libhubbub.a
 	touch $@
 
 .PHONY: clean
