@@ -42,7 +42,7 @@ C_SRC= \
 	$(NULL)
 
 C_OBJS = $(patsubst %.c,%.o,$(C_SRC))
-CFLAGS += -I$(VPATH)/src -I$(VPATH)/include -I../../libparserutils/include -fPIC
+CFLAGS += -I$(VPATH)/src -I$(VPATH)/include -I$(VPATH)/../libparserutils/include -fPIC
 
 .PHONY: all
 all: libparserutils.dummy
