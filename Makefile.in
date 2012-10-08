@@ -61,8 +61,10 @@ libhubbub.a: $(C_OBJS)
 libhubbub.dummy: libhubbub.a
 	touch $@
 
+.PHONY: check
+check:
+
 .PHONY: clean
 clean:
 	rm -f *.so *.dylib *.dll *.dummy src/*.o
-	
 
