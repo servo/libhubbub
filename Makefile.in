@@ -42,7 +42,8 @@ C_SRC= \
 	$(NULL)
 
 C_OBJS = $(patsubst %.c,%.o,$(C_SRC))
-CFLAGS += -I$(VPATH)/src -I$(VPATH)/include -I$(VPATH)/../libparserutils/include -fPIC
+# -DNDEBUG is here to keep hubbub from spewing out debug info to the consolo
+CFLAGS += -I$(VPATH)/src -I$(VPATH)/include -I$(VPATH)/../libparserutils/include -fPIC -DNDEBUG
 
 .PHONY: all
 all: libhubbub.dummy
