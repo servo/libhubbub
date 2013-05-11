@@ -1,11 +1,12 @@
 VPATH=%VPATH%
 
-UNAME=$(shell uname)
-
-ifeq ($(UNAME),Darwin)
+ifeq ($(CFG_OSTYPE),apple-darwin)
     OSTYPE=darwin
 endif
-ifeq ($(UNAME),Linux)
+ifeq ($(CFG_OSTYPE),unknown-linux-gnu)
+    OSTYPE=linux
+endif
+ifeq ($(CFG_OSTYPE),linux-androideabi)
     OSTYPE=linux
 endif
 
