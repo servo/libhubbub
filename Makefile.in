@@ -67,5 +67,5 @@ check:
 
 .PHONY: clean
 clean:
-	rm -f *.so *.dylib *.dll *.dummy src/*.o
+	rm -f *.so *.dylib *.dll *.dummy */*.o */*/*.o
 

@@ -67,6 +67,11 @@ hubbub_error handle_generic_rcdata(hubbub_treebuilder *treebuilder,
 			err = complete_script(treebuilder);
 		}
 
+		if ((treebuilder->context.enable_styling == true) &&
+		    (type == STYLE)) {
+			err = complete_style(treebuilder);
+		}
+
 		done = true;
 	}
 		break;

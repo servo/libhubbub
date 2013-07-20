@@ -258,6 +258,10 @@ hubbub_error hubbub_treebuilder_setopt(hubbub_treebuilder *treebuilder,
 		treebuilder->context.enable_scripting =
 				params->enable_scripting;
 		break;
+	case HUBBUB_TREEBUILDER_ENABLE_STYLING:
+		treebuilder->context.enable_styling =
+				params->enable_styling;
+		break;
 	}
 
 	return HUBBUB_OK;
@@ -934,6 +938,22 @@ hubbub_error complete_script(hubbub_treebuilder *treebuilder)
 {
 	hubbub_error error = HUBBUB_OK;
 	error = treebuilder->tree_handler->complete_script(
+		treebuilder->tree_handler->ctx,
+		treebuilder->context.element_stack[
+			treebuilder->context.current_node].node);
+	return error;
+}
+
+/**
+ * Style processing and execution
+ *
+ * \param treebuilder  The treebuilder instance
+ * \return HUBBUB_OK on success, appropriate error otherwise
+ */
+hubbub_error complete_style(hubbub_treebuilder *treebuilder)
+{
+	hubbub_error error = HUBBUB_OK;
+	error = treebuilder->tree_handler->complete_style(
 		treebuilder->tree_handler->ctx,
 		treebuilder->context.element_stack[
 			treebuilder->context.current_node].node);
