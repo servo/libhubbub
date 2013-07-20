@@ -27,7 +27,8 @@ typedef enum hubbub_treebuilder_opttype {
 	HUBBUB_TREEBUILDER_ERROR_HANDLER,
 	HUBBUB_TREEBUILDER_TREE_HANDLER,
 	HUBBUB_TREEBUILDER_DOCUMENT_NODE,
-	HUBBUB_TREEBUILDER_ENABLE_SCRIPTING
+	HUBBUB_TREEBUILDER_ENABLE_SCRIPTING,
+	HUBBUB_TREEBUILDER_ENABLE_STYLING
 } hubbub_treebuilder_opttype;
 
 /**
@@ -44,6 +45,7 @@ typedef union hubbub_treebuilder_optparams {
 	void *document_node;			/**< The document node */
 
 	bool enable_scripting;			/**< Enable scripting */
+	bool enable_styling;			/**< Enable styling */
 } hubbub_treebuilder_optparams;
 
 /* Create a hubbub treebuilder */
