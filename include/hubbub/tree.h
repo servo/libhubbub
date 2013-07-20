@@ -268,6 +268,15 @@ typedef hubbub_error (*hubbub_tree_encoding_change)(void *ctx,
 typedef hubbub_error (*hubbub_tree_complete_script)(void *ctx, void *script);
 
 /**
+ * Complete style processing
+ *
+ * \param ctx   Client's context
+ * \param style The style
+ * \return HUBBUB_OK on success, appropriate error otherwise.
+ */
+typedef hubbub_error (*hubbub_tree_complete_style)(void *ctx, void *style);
+
+/**
  * Hubbub tree handler
  */
 typedef struct hubbub_tree_handler {
@@ -289,6 +298,7 @@ typedef struct hubbub_tree_handler {
 	hubbub_tree_set_quirks_mode set_quirks_mode;	/**< Set quirks mode */
 	hubbub_tree_encoding_change encoding_change;	/**< Change encoding */
 	hubbub_tree_complete_script complete_script;	/**< Script Complete */
+	hubbub_tree_complete_style complete_style;	/**< Style Complete */
 	void *ctx;					/**< Context pointer */
 } hubbub_tree_handler;
 

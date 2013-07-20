@@ -93,6 +93,7 @@ typedef struct hubbub_treebuilder_context
 	void *document;			/**< Pointer to the document node */
 
 	bool enable_scripting;		/**< Whether scripting is enabled */
+	bool enable_styling;            /**< Whether styling is enabled */
 
 	struct {
 		insertion_mode mode;	/**< Insertion mode to return to */
@@ -155,6 +156,7 @@ void reset_insertion_mode(hubbub_treebuilder *treebuilder);
 hubbub_error append_text(hubbub_treebuilder *treebuilder,
 		const hubbub_string *string);
 hubbub_error complete_script(hubbub_treebuilder *treebuilder);
+hubbub_error complete_style(hubbub_treebuilder *treebuilder);
 
 element_type element_type_from_name(hubbub_treebuilder *treebuilder,
 		const hubbub_string *tag_name);

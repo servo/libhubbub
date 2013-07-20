@@ -55,6 +55,7 @@ static hubbub_error add_attributes(void *ctx, void *node,
 		const hubbub_attribute *attributes, uint32_t n_attributes);
 static hubbub_error set_quirks_mode(void *ctx, hubbub_quirks_mode mode);
 static hubbub_error complete_script(void *ctx, void *script);
+static hubbub_error complete_style(void *ctx, void *style);
 
 static hubbub_tree_handler tree_handler = {
 	create_comment,
@@ -75,6 +76,7 @@ static hubbub_tree_handler tree_handler = {
 	set_quirks_mode,
 	NULL,
 	complete_script,
+	complete_style,
 	NULL
 };
 
@@ -413,6 +415,14 @@ hubbub_error complete_script(void *ctx, void *script)
 {
 	UNUSED(ctx);
 	UNUSED(script);
+
+	return HUBBUB_OK;
+}
+
+hubbub_error complete_style(void *ctx, void *style)
+{
+	UNUSED(ctx);
+	UNUSED(style);
 
 	return HUBBUB_OK;
 }
