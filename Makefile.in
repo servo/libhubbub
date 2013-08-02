@@ -8,6 +8,9 @@ endif
 ifeq ($(UNAME),Linux)
     OSTYPE=linux
 endif
+ifeq ($(CFG_OSTYPE),linux-androideabi)
+    OSTYPE=android
+endif
 
 C_SRC= \
 	src/charset/detect.c \
