@@ -1,0 +1,16 @@
+[package]
+
+name = "hubbub-sys"
+version = "0.1.2"
+authors = ["J-M Bell"]
+
+build = "make -f makefile.cargo"
+
+[lib]
+
+name = "hubbub-sys"
+path = "lib.rs"
+
+[dependencies.parserutils-sys]
+
+git = "http://github.com/servo/libparserutils"

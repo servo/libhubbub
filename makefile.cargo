@@ -1,0 +1,60 @@
+ifeq (darwin,$(findstring darwin,$(TARGET)))
+    OSTYPE=darwin
+endif
+ifeq (linux,$(findstring linux,$(TARGET)))
+    OSTYPE=linux
+endif
+ifeq (androideabi,$(findstring androideabi,$(TARGET)))
+    OSTYPE=android
+endif
+
+C_SRC= \
+	src/charset/detect.c \
+	src/parser.c \
+	src/tokeniser/entities.c \
+	src/tokeniser/tokeniser.c \
+	src/treebuilder/after_after_body.c \
+	src/treebuilder/after_after_frameset.c \
+	src/treebuilder/after_body.c \
+	src/treebuilder/after_frameset.c \
+	src/treebuilder/after_head.c \
+	src/treebuilder/before_head.c \
+	src/treebuilder/before_html.c \
+	src/treebuilder/generic_rcdata.c \
+	src/treebuilder/in_body.c \
+	src/treebuilder/in_caption.c \
+	src/treebuilder/in_cell.c \
+	src/treebuilder/in_column_group.c \
+	src/treebuilder/in_foreign_content.c \
+	src/treebuilder/in_frameset.c \
+	src/treebuilder/in_head.c \
+	src/treebuilder/in_head_noscript.c \
+	src/treebuilder/in_row.c \
+	src/treebuilder/in_select.c \
+	src/treebuilder/in_select_in_table.c \
+	src/treebuilder/in_table.c \
+	src/treebuilder/in_table_body.c \
+	src/treebuilder/initial.c \
+	src/treebuilder/treebuilder.c \
+	src/utils/errors.c \
+	src/utils/string.c \
+	$(NULL)
+
+C_OBJS = $(patsubst %.c,$(OUT_DIR)/%.o,$(C_SRC))
+PARSERUTILS_OUTDIR = $(shell find $(OUT_DIR)/.. -name 'parserutils-sys-*' -type d)
+# -DNDEBUG is here to keep hubbub from spewing out debug info to the consolo
+CFLAGS += -Isrc -Iinclude -I$(PARSERUTILS_OUTDIR)/include -fPIC -DNDEBUG
+
+.PHONY: all
+all: $(OUT_DIR)/libhubbub.a
+
+src/tokeniser/entities.inc: build/make-entities.pl build/Entities
+	perl build/make-entities.pl
+
+$(OUT_DIR)/src/tokeniser/entities.o: src/tokeniser/entities.inc
+
+$(OUT_DIR)/libhubbub.a: $(C_OBJS)
+	$(AR) rcs $@ $^
+
+$(OUT_DIR)/%.o: %.c
+	mkdir -p `dirname $@` && $(CC) $(CFLAGS) -o $@ -c $<
